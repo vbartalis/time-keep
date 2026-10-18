@@ -11,6 +11,17 @@ Dockerfile) and [`scripts/devcontainer-setup.sh`](../scripts/devcontainer-setup.
 Ubuntu devcontainers base, plus: tmux, jq, ripgrep, GitHub CLI, Node.js 24 (the app's
 runtime, decision 1, and the agent tooling's hooks), Claude Code and CodeGraph.
 
+## First start
+
+After **Dev Containers: Reopen in Container** finishes (the build, then
+`scripts/devcontainer-setup.sh`), in a VS Code terminal inside the container:
+
+1. `claude` once and log in; `~/.claude` is a fresh volume. Exit.
+2. `gh auth login -s project`.
+3. If the setup script's plugin step ran before the login, rerun it:
+   `bash scripts/devcontainer-setup.sh` (idempotent).
+4. `dev` to open the `main` tmux session; type `claude` in its `claude` window.
+
 ## State that survives a rebuild
 
 | What | Where | Kept by |
