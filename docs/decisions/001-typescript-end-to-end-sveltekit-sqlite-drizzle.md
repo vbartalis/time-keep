@@ -18,7 +18,7 @@ for phone and PC from one codebase.
 
 History with batch undo must be the single path every write takes; owning every write
 path makes that the design rather than a fence around a framework's generic API, which
-PocketBase would require. One language spans UI, API and MCP, and the stack repeats
-one already proven in the weather-py hub. SQLite fits one user's data and keeps the
+PocketBase would require. One language spans UI, API and MCP, and the MCP server uses
+the reference SDK in the same process. SQLite fits one user's data and keeps the
 deployment to one container. The cost is building user management and backup and
 restore, both small.

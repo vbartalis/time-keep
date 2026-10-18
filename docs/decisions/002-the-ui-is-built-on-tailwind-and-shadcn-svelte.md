@@ -17,4 +17,4 @@ not consumed as a dependency.
 shadcn-svelte gives accessible, unstyled-by-default building blocks (dialogs,
 pickers, tables) that the dense PC surface and the quick phone surface both need,
 while leaving every component editable in the repo. Tailwind keeps the tokens in one
-place. The pair is the one already proven in the weather-py hub.
+place.
