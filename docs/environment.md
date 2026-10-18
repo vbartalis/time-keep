@@ -19,7 +19,8 @@ After **Dev Containers: Reopen in Container** finishes (the build, then
 1. `claude` once and log in; `~/.claude` is a fresh volume. Exit.
 2. `gh auth login -s project`.
 3. If the setup script's plugin step ran before the login, rerun it:
-   `bash scripts/devcontainer-setup.sh` (idempotent).
+   `bash scripts/devcontainer-setup.sh` (idempotent). It pins ECC to a release
+   tag; to move the pin, edit the tag in the script and in `~/.claude/settings.json`.
 4. `dev` to open the `main` tmux session; type `claude` in its `claude` window.
 
 ## State that survives a rebuild

@@ -20,7 +20,9 @@ fi
 
 # Plugins: superpowers is the process spine; ECC and impeccable extend it.
 claude plugin marketplace add anthropics/claude-plugins-official 2>/dev/null || true
-claude plugin marketplace add affaan-m/ECC 2>/dev/null || true
+# ECC's plugin is its marketplace repo ("./"), so the ref is the plugin pin;
+# unpinned, main ships under the release's version string.
+claude plugin marketplace add 'affaan-m/ECC#v2.2.3' 2>/dev/null || true
 claude plugin marketplace add pbakaus/impeccable 2>/dev/null || true
 
 for plugin in superpowers@claude-plugins-official ecc@ecc impeccable@impeccable; do

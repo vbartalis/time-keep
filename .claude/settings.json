@@ -57,7 +57,7 @@
   },
   "enabledPlugins": {
     "superpowers@claude-plugins-official": true,
-    "ecc@ecc": true,
-    "impeccable@impeccable": true
+    "impeccable@impeccable": true,
+    "ecc@ecc": true
   }
 }
