@@ -170,6 +170,84 @@ describe('batch', () => {
 	});
 });
 
+describe('entries and timers', () => {
+	function withProject() {
+		const t = setup();
+		const c = t.val(t.core.customers.create({ name: 'Acme' }));
+		const p = t.val(t.core.projects.create({ customerId: c.id, name: 'Web' }));
+		return { ...t, p };
+	}
+	const labels = (b: { batches: () => { label: string }[] }) => b.batches().map((x) => x.label);
+
+	it('labels each command with the project name', () => {
+		const t = withProject();
+		const { core, val, p } = t;
+		const e = val(
+			core.entries.create({
+				projectId: p.id,
+				timeZone: 'UTC',
+				start: '2026-10-18T09:00',
+				durationMinutes: 30
+			})
+		);
+		val(core.entries.update({ id: e.id, description: 'x' }));
+		val(core.entries.delete({ id: e.id }));
+		const timer = val(core.timers.start({ projectId: p.id, timeZone: 'UTC' }));
+		val(core.timers.stop({ id: timer.id }));
+		expect(labels(t).slice(2)).toEqual([
+			'Create entry on "Web"',
+			'Edit entry on "Web"',
+			'Delete entry on "Web"',
+			'Start timer on "Web"',
+			'Stop timer on "Web"'
+		]);
+	});
+
+	it('labels an edit that moves an entry with the new project', () => {
+		const t = withProject();
+		const { core, val, p } = t;
+		const q = val(core.projects.create({ customerId: p.customerId, name: 'App' }));
+		const e = val(
+			core.entries.create({
+				projectId: p.id,
+				timeZone: 'UTC',
+				start: '2026-10-18T09:00',
+				durationMinutes: 30
+			})
+		);
+		val(core.entries.update({ id: e.id, projectId: q.id }));
+		expect(labels(t).at(-1)).toBe('Edit entry on "App"');
+	});
+
+	it('reads entries through the core', () => {
+		const { core, val, p } = withProject();
+		const e = val(
+			core.entries.create({
+				projectId: p.id,
+				timeZone: 'UTC',
+				start: '2026-10-18T09:00',
+				durationMinutes: 30
+			})
+		);
+		expect(val(core.entries.get({ id: e.id }))).toMatchObject({ projectName: 'Web' });
+		expect(val(core.entries.list()).map((x) => x.id)).toEqual([e.id]);
+	});
+
+	it('returns warnings through the core and merges them in a batch', () => {
+		const { core, val, p } = withProject();
+		const input = { projectId: p.id, timeZone: 'UTC', start: '2026-10-18T09:00' };
+		val(core.entries.create({ ...input, durationMinutes: 60 }));
+		const overlap = core.entries.create({ ...input, durationMinutes: 30 });
+		expect(overlap.ok && overlap.warnings.map((w) => w.code)).toEqual(['overlap']);
+		const r = core.batch('Both', (c) => {
+			const a = c.entries.create({ ...input, durationMinutes: 45 });
+			if (!a.ok) return a;
+			return c.timers.start({ projectId: p.id, timeZone: 'UTC' });
+		});
+		expect(r.ok && r.warnings.map((w) => w.code)).toEqual(['overlap']);
+	});
+});
+
 describe('users are separate', () => {
 	it("cannot see or undo another user's data", () => {
 		const { core, other, val, batches } = setup();

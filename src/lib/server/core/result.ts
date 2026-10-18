@@ -1,6 +1,12 @@
 import type { ZodError } from 'zod';
 
-export type Warning = { code: string; message: string };
+/** A non-blocking finding about one record (`subject`, when given, is its id); unique by `code` and `subject`. */
+export type Warning = {
+	code: string;
+	message: string;
+	subject?: string;
+	details?: Record<string, unknown>;
+};
 
 export type CoreError = {
 	code: 'invalid' | 'not_found' | 'conflict' | 'archived';

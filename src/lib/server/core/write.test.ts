@@ -273,6 +273,40 @@ describe('runBatch and the writer', () => {
 		expect(res.ok).toBe(false);
 		expect(db.select().from(customer).get()!.name).toBe('A');
 	});
+
+	it('removes a row and records a delete with the row before and no after', () => {
+		const { db, userId, named, counts } = setup();
+		const c = named('A');
+		runBatch(db, userId, 'ui', 'c', (w) => ok(w.insert('customer', c)), 1000);
+		const res = runBatch(db, userId, 'ui', 'd', (w) => ok(w.remove('customer', c.id)), 2000);
+		expect(res.ok && res.value).toMatchObject({ id: c.id, name: 'A' });
+		expect(counts()).toEqual({ batches: 2, changes: 2, customers: 0 });
+		const del = db
+			.select()
+			.from(change)
+			.all()
+			.find((ch) => ch.op === 'delete')!;
+		expect(del).toMatchObject({ entityId: c.id, after: null, reverts: null, seq: 0 });
+		expect(JSON.parse(del.before!)).toMatchObject({ id: c.id, name: 'A' });
+	});
+
+	it("refuses to remove a missing or another user's row as not found", () => {
+		const { db, userId, named } = setup();
+		const c = named('A');
+		runBatch(db, userId, 'ui', 'c', (w) => ok(w.insert('customer', c)), 1000);
+		const other = newId();
+		db.insert(user)
+			.values({ id: other, username: 'o', passwordHash: 'x', createdAt: 1, updatedAt: 1 })
+			.run();
+		for (const [uid, id] of [
+			[userId, 'nope'],
+			[other, c.id]
+		]) {
+			const res = runBatch(db, uid, 'ui', 'd', (w) => ok(w.remove('customer', id)));
+			expect(res).toMatchObject({ ok: false, error: { code: 'not_found' } });
+		}
+		expect(db.select().from(customer).all()).toHaveLength(1);
+	});
 });
 
 describe('restore', () => {

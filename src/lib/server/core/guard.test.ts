@@ -35,7 +35,15 @@ function importedNames(list: string): string[] {
 /** Any import or export-from whose path goes into core/; captures what follows `core/`. */
 const CORE_IMPORT = /(?:from|import)\s*\(?\s*['"][^'"]*\bcore(?:\/([^'"]*))?['"]/g;
 
-const CORE_TABLES = new Set(['customer', 'project', 'activity', 'location', 'batch', 'change']);
+const CORE_TABLES = new Set([
+	'customer',
+	'project',
+	'activity',
+	'location',
+	'entry',
+	'batch',
+	'change'
+]);
 
 /** A drizzle insert/update/delete on a handle named like a database or transaction, or raw SQL writes. */
 const DRIZZLE_WRITE = /\b\w*(?:tx|db|Tx|Db|DB)\s*\.\s*(?:insert|update|delete)\s*\(/;

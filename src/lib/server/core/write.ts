@@ -5,21 +5,22 @@
  */
 import { and, eq, getTableColumns } from 'drizzle-orm';
 import type { DB } from '../db/index';
-import { activity, batch, change, customer, location, project } from '../db/schema';
+import { activity, batch, change, customer, entry, location, project } from '../db/schema';
 import { newId } from '../id';
-import type { CoreError } from './result';
+import type { CoreError, Warning } from './result';
 
-export type Entity = 'customer' | 'project' | 'activity' | 'location';
+export type Entity = 'customer' | 'project' | 'activity' | 'location' | 'entry';
 
 /** Each entity's shape version: raise it when a migration renames, removes or retypes a column. */
 export const SHAPES: Record<Entity, number> = {
 	customer: 1,
 	project: 1,
 	activity: 1,
-	location: 1
+	location: 1,
+	entry: 1
 };
 
-const TABLES = { customer, project, activity, location } as const;
+const TABLES = { customer, project, activity, location, entry } as const;
 type Tables = typeof TABLES;
 type AnyTable = Tables[Entity];
 
@@ -38,6 +39,29 @@ export class CoreFailure extends Error {
 		super(error.message);
 		this.name = 'CoreFailure';
 	}
+}
+
+/** Runs once at the end of a batch on the rows it touched (deleted ones included), seeing its final state. */
+export type BatchCheck = (
+	tx: Tx,
+	ctx: { userId: string; batchId: string; touched: string[]; now: number }
+) => { error?: CoreError; warnings?: Warning[] } | null;
+
+const batchChecks = new Map<Entity, BatchCheck[]>();
+
+/** Adds a check run, in registration order, at the end of every batch that touched the entity. */
+export function registerBatchCheck(entity: Entity, check: BatchCheck): void {
+	batchChecks.set(entity, [...(batchChecks.get(entity) ?? []), check]);
+}
+
+/** Removes an entity's batch checks. Tests only. */
+export function clearBatchChecks(entity: Entity): void {
+	batchChecks.delete(entity);
+}
+
+/** The checks of an entity, in registration order. */
+export function batchChecksOf(entity: Entity): readonly BatchCheck[] {
+	return batchChecks.get(entity) ?? [];
 }
 
 const rules = new Map<Entity, Rule[]>();
@@ -68,6 +92,7 @@ const MANAGED = new Set(['id', 'userId', 'version', 'createdAt', 'updatedAt']);
 export class Writer {
 	private seq = 0;
 	private failed: { error: unknown } | undefined;
+	private readonly touchedIds = new Map<Entity, Set<string>>();
 
 	constructor(
 		readonly tx: Tx,
@@ -80,6 +105,11 @@ export class Writer {
 		return this.seq;
 	}
 
+	/** The ids written in this batch (inserted, updated, restored or deleted), per entity, once each. */
+	get touched(): ReadonlyMap<Entity, readonly string[]> {
+		return new Map([...this.touchedIds].map(([entity, ids]) => [entity, [...ids]]));
+	}
+
 	/**
 	 * The first error any write of this writer threw (a `CoreFailure` or a driver
 	 * error), or undefined. Once set, runBatch rolls the batch back even if the
@@ -87,6 +117,16 @@ export class Writer {
 	 */
 	get failure(): { error: unknown } | undefined {
 		return this.failed;
+	}
+
+	/**
+	 * Refuses the command: records the failure like a failed write, so the batch rolls
+	 * back even if the command's caller catches the error, and throws it as `CoreFailure`.
+	 */
+	refuse(error: CoreError): never {
+		const failure = new CoreFailure(error);
+		this.failed ??= { error: failure };
+		throw failure;
 	}
 
 	/** Runs one write, remembering the first error it throws before rethrowing it. */
@@ -162,6 +202,23 @@ export class Writer {
 		return after;
 	}
 
+	/** Deletes the user's row and records a `delete`; returns the row as it was. */
+	remove(entity: Entity, id: string): Row {
+		return this.guard(() => this.doRemove(entity, id));
+	}
+
+	private doRemove(entity: Entity, id: string): Row {
+		const t = TABLES[entity];
+		const before = this.read(t, id);
+		if (!before) throw new CoreFailure({ code: 'not_found', message: 'Not found.' });
+		this.tx
+			.delete(t)
+			.where(and(eq(t.id, id), eq(t.userId, this.userId)))
+			.run();
+		this.record(entity, id, 'delete', before, null);
+		return before;
+	}
+
 	/**
 	 * Writes `before` back, reverting change `reverts`: deletes the row when `before` is
 	 * null, inserts it when absent, else updates it to the stored columns. Either way
@@ -233,6 +290,9 @@ export class Writer {
 		after: Row | null,
 		reverts: string | null = null
 	): void {
+		let ids = this.touchedIds.get(entity);
+		if (!ids) this.touchedIds.set(entity, (ids = new Set()));
+		ids.add(entityId);
 		this.tx
 			.insert(change)
 			.values({

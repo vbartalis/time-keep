@@ -2,8 +2,8 @@ import { eq, max } from 'drizzle-orm';
 import type { DB } from '../db/index';
 import { batch } from '../db/schema';
 import { newId } from '../id';
-import { fail, type Result } from './result';
-import { CoreFailure, inTransaction, insertBatch, Writer } from './write';
+import { fail, type Result, type Warning } from './result';
+import { batchChecksOf, CoreFailure, inTransaction, insertBatch, Writer } from './write';
 
 export type Actor = 'ui' | 'agent' | 'system';
 
@@ -17,6 +17,17 @@ function sqliteCode(error: unknown): string | undefined {
 		if (typeof code === 'string' && code.startsWith('SQLITE_')) return code;
 	}
 	return undefined;
+}
+
+/** Drops later warnings with the same code and subject as an earlier one. */
+function uniqueWarnings(list: Warning[]): Warning[] {
+	const seen = new Set<string>();
+	return list.filter((w) => {
+		const key = JSON.stringify([w.code, w.subject]);
+		if (seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	});
 }
 
 /**
@@ -54,6 +65,19 @@ export function runBatch<T>(
 			// A write that failed rolls the batch back even if the command caught it.
 			if (w.failure) throw w.failure.error;
 			if (!result.ok || w.changeCount === 0) throw ROLLBACK;
+			// Checks judge the batch as a whole, once, after its last write.
+			const found: Warning[] = [];
+			for (const [entity, touched] of w.touched) {
+				for (const check of batchChecksOf(entity)) {
+					const outcome = check(tx, { userId, batchId, touched: [...touched], now: at });
+					if (outcome?.error) {
+						result = { ok: false, error: outcome.error };
+						throw ROLLBACK;
+					}
+					found.push(...(outcome?.warnings ?? []));
+				}
+			}
+			result = { ...result, warnings: uniqueWarnings([...result.warnings, ...found]) };
 		});
 	} catch (thrown) {
 		if (thrown === ROLLBACK) return result!;

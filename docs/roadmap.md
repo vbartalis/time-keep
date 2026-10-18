@@ -87,9 +87,21 @@ Split 2026-10-18 into three parts, worked in order:
   a batch inside a batch refused, and lists in English collation order. Carried into
   2b: rules need a way to return warnings (overlaps), and unique-index errors must be
   told apart once an index other than a name's exists.
-- **2b. Entries and timers — next.** Entries as intervals with their time zones, start +
-  duration, overlap warnings, timers and the one-timer-per-project rule.
-- **2c. Templates.** Partial entries saved and used, a duration standing in for the
+- **2b. Entries and timers — done 2026-10-18.** Entries as intervals with their time
+  zones, start + duration, overlap warnings, timers and the one-timer-per-project rule.
+  Spec `docs/superpowers/specs/2026-10-18-entries-timers-design.md`, plan
+  `docs/superpowers/plans/2026-10-18-entries-timers.md`, `docs/core.md` extended; 244
+  unit tests. Calls made in the operator's place: every **(call)** in the spec, among
+  them activity and location optional, archived references allowed on entries, times
+  given as an instant with an offset or as a local time in a zone (a daylight-saving
+  gap refused, a repeated hour read as the earlier one), checks run once at the end of
+  a batch, overlap and over-24-hour warnings only for entries whose time changed and
+  never for running timers, and lists as an instant primitive with day grouping left
+  to phase 6; also changing only a time zone keeps the instant, a new zone on an edit
+  applies to a new end too, and the one-minute future limit covers every running entry
+  and a timer's stop. Deferred: paging for `entries.list` (6, 7), and one query per
+  touched entry in the change check (9, if the import is slow).
+- **2c. Templates — next.** Partial entries saved and used, a duration standing in for the
   end, saving an entry as a template.
 
 ## 3. Design direction

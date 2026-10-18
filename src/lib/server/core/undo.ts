@@ -6,7 +6,8 @@ import { and, desc, eq, inArray, ne } from 'drizzle-orm';
 import { z } from 'zod';
 import { batch, change } from '../db/schema';
 import { newer, undoneBy } from './history';
-// Registers the entity rules, so a restore is always checked by them.
+// Register the entity rules, so a restore is always checked by them.
+import './entries';
 import './reference';
 import { fail, fromZod, ok, type Result } from './result';
 import { rowJson, SHAPES, table, type Entity, type Row, type Writer } from './write';

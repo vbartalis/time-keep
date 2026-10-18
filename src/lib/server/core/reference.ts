@@ -10,7 +10,8 @@ import { nameKey, nameSchema } from './names';
 import { fail, fromZod, ok, type CoreError, type Result } from './result';
 import { registerRules, table, type Entity, type Row, type Tx, type Writer } from './write';
 
-export type Kind = Entity;
+/** The reference data kinds. */
+export type Kind = Exclude<Entity, 'entry'>;
 
 /** A reference row as stored (camelCase columns). */
 export type Named = {

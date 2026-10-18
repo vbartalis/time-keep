@@ -25,6 +25,17 @@ import {
 	type ProjectListItem,
 	type ProjectRow
 } from './reference';
+import {
+	createEntry,
+	deleteEntry,
+	getEntry,
+	listEntries,
+	startTimer,
+	stopTimer,
+	updateEntry,
+	type Entry,
+	type EntryItem
+} from './entries';
 import { nameSchema } from './names';
 import { fail, type Result } from './result';
 import { undo, undoLabel } from './undo';
@@ -33,6 +44,7 @@ import { table, type Writer } from './write';
 export type { Actor } from './batch';
 export type { HistoryBatch, HistoryChange } from './history';
 export type { Named, ProjectListItem, ProjectRow } from './reference';
+export type { Entry, EntryItem } from './entries';
 export type { CoreError, Result, Warning } from './result';
 
 /** The commands and reads of one kind of reference data. */
@@ -51,8 +63,20 @@ export type ProjectReference = Omit<
 
 export type UndoInput = { batchId: string } | { changeIds: string[] };
 
+export type EntryCommands = {
+	entries: {
+		create(input: unknown): Result<Entry>;
+		update(input: unknown): Result<Entry>;
+		delete(input: unknown): Result<Entry>;
+	};
+	timers: {
+		start(input: unknown): Result<Entry>;
+		stop(input: unknown): Result<Entry>;
+	};
+};
+
 /** Commands that run inside whatever batch is open. */
-export type BatchCore = {
+export type BatchCore = EntryCommands & {
 	customers: Omit<Reference<Named>, 'list'>;
 	projects: Omit<ProjectReference, 'list'>;
 	activities: Omit<Reference<Named>, 'list'>;
@@ -65,6 +89,11 @@ export type Core = {
 	projects: ProjectReference;
 	activities: Reference<Named>;
 	locations: Reference<Named>;
+	timers: BatchCore['timers'];
+	entries: BatchCore['entries'] & {
+		list(input?: unknown): Result<EntryItem[]>;
+		get(input: unknown): Result<EntryItem>;
+	};
 	history: {
 		list: (input?: { before?: string; limit?: number }) => ReturnType<typeof listHistory>;
 	};
@@ -127,7 +156,46 @@ function commands(db: DB, userId: string, exec: Exec) {
 				(w) => unarchive(w, kind, input) as Result<Row>
 			)
 	});
+	/** The project name for a label: of `input.projectId` when given and found, else of the entry `input.id` names. */
+	const entryProject = (input: unknown, byEntry: boolean): string => {
+		const i = input as { id?: unknown; projectId?: unknown } | null;
+		const p = table('project');
+		const e = table('entry');
+		const moved = byEntry && typeof i?.projectId === 'string' ? entryProject(input, false) : '';
+		if (moved !== '') return moved;
+		const key = byEntry ? i?.id : i?.projectId;
+		if (typeof key !== 'string') return '';
+		const row = byEntry
+			? db
+					.select({ name: p.name })
+					.from(e)
+					.innerJoin(p, eq(p.id, e.projectId))
+					.where(and(eq(e.id, key), eq(e.userId, userId)))
+					.get()
+			: db
+					.select({ name: p.name })
+					.from(p)
+					.where(and(eq(p.id, key), eq(p.userId, userId)))
+					.get();
+		return row?.name ?? '';
+	};
+	const entryCommand =
+		(verb: string, byEntry: boolean, run: (w: Writer, input: unknown) => Result<Entry>) =>
+		(input: unknown) =>
+			exec(
+				() => `${verb} on "${entryProject(input, byEntry)}"`,
+				(w) => run(w, input)
+			);
 	return {
+		entries: {
+			create: entryCommand('Create entry', false, createEntry),
+			update: entryCommand('Edit entry', true, updateEntry),
+			delete: entryCommand('Delete entry', true, deleteEntry)
+		},
+		timers: {
+			start: entryCommand('Start timer', false, startTimer),
+			stop: entryCommand('Stop timer', true, stopTimer)
+		},
 		customers: reference<Named>('customer', createCustomer),
 		projects: reference<ProjectRow>('project', createProject) as unknown as BatchCore['projects'],
 		activities: reference<Named>('activity', createActivity),
@@ -165,6 +233,12 @@ export function openCore(
 		projects: { ...own.projects, list: (input) => listProjects(db, userId, input) },
 		activities: { ...own.activities, list: (input) => listActivities(db, userId, input) },
 		locations: { ...own.locations, list: (input) => listLocations(db, userId, input) },
+		entries: {
+			...own.entries,
+			list: (input) => listEntries(db, userId, input, clock()),
+			get: (input) => getEntry(db, userId, input)
+		},
+		timers: own.timers,
 		history: { list: (input) => listHistory(db, userId, input) },
 		undo: own.undo,
 		batch: (label, fn) => {

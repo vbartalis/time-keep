@@ -1,7 +1,7 @@
 # The core
 
 The core is the one way to read and write the time data: customers, projects,
-activities and locations now; entries and timers later. It lives in
+activities, locations, entries and timers. It lives in
 `src/lib/server/core/`. Routes and, later, the MCP server import only
 `core/index.ts`; a test fails if any other module outside `core/` imports from it, or
 imports the core tables, `table` or `Writer`. Decision 4 is the rule; this is how it
@@ -16,6 +16,8 @@ milliseconds and defaults to `Date.now`; tests inject it.
 ```
 core.customers | projects | activities | locations
     .create / .rename / .archive / .unarchive / .list
+core.entries.create / .update / .delete / .list / .get
+core.timers.start / .stop
 core.history.list({ before?, limit? })
 core.undo({ batchId } | { changeIds })
 core.batch(label, (c) => result)
@@ -30,7 +32,7 @@ same checks. Another user's ids are `not_found`, never `forbidden`.
 Every command and read returns `{ ok: true, value, warnings }` or
 `{ ok: false, error: { code, message, fields? } }`. `code` is `invalid`, `not_found`,
 `conflict` or `archived`; `fields` maps an input field to its message. `Warning` is
-`{ code, message }`. `Result`, `CoreError`, `Warning` and `Actor` are exported from
+`{ code, message, subject?, details? }` (see Warnings). `Result`, `CoreError`, `Warning` and `Actor` are exported from
 `core/index.ts`.
 
 ## Batches
@@ -48,6 +50,11 @@ A batch is the unit of history and undo: one transaction, one `batch` row (`id`,
   violation, or any failed write rolls the whole batch back and the result is that
   failure. Calling the outer core inside `fn` throws (it would commit a second batch);
   use the `BatchCore` passed in.
+- A refusal thrown inside a command (`Writer.refuse`, as for a timer that started
+  later or a start in the future) is recorded like a failed write, so the batch rolls
+  back even if `fn` catches it and returns ok. Inside `core.batch` the commands of the
+  `BatchCore` signal such refusals by throwing (`runBatch` turns the throw into the
+  returned failure), so callers should let them propagate rather than catch them.
 - A batch that changed nothing (renaming to the same name, archiving an archived
   row) is rolled back and not stored.
 - A user's batch times strictly increase, so history and undo order is exact.
@@ -79,7 +86,14 @@ sanctioned rewrite of history. Restoring writes only the columns the stored JSON
 Each entity registers rules with `registerRules`; the write path runs them on every
 write, undo included. A write that breaks one is refused and its batch rolled back.
 Today: a project's customer must exist, and an active project's customer must be
-active.
+active; an entry's references must exist and be the user's, its end and end zone are
+both set or both null, and its end is after its start.
+
+Batch checks (`registerBatchCheck`) run once per entity, after the batch's last write
+and before it commits, on the rows the batch touched (deleted ones included), seeing
+the final state. A check returns an error, which refuses and rolls back the batch, and
+warnings. Undo and redo are batches, so they run the checks too. Entries register
+two: one running entry per project (`conflict`), and the warnings below.
 
 ## Undo
 
@@ -136,6 +150,89 @@ are never updated or deleted, and there is no command to delete them.
 - A project cannot be created or unarchived under an archived customer (`archived`).
   Archiving a customer leaves its projects' rows alone; they leave the default lists
   with it.
+
+## Entries
+
+| Field | Rule |
+|-------|------|
+| `project_id` | required, the user's project |
+| `activity_id`, `location_id` | optional, the user's |
+| `start_at` | instant, epoch milliseconds |
+| `start_zone` | IANA zone name |
+| `end_at`, `end_zone` | both null while running; otherwise `end_at` is after `start_at` |
+| `reference` | optional, trimmed, at most 200 characters |
+| `description` | optional, trimmed, at most 2000 characters |
+
+Plus the usual `id`, `user_id`, `version`, `created_at`, `updated_at`. The customer is
+the project's; an entry's day is the date of `start_at` in `start_zone`, and nothing
+day-like is stored. Stored data is exact: nothing is rounded.
+
+Archived projects, activities and locations are allowed on new and edited entries (the
+pickers hide them, not the core); a missing or foreign reference is `not_found`.
+
+**Input.** `start` and `end` are ISO 8601 date-times. With `Z` or an offset
+(`2026-10-18T09:00:00+02:00`) they are an instant; without one (`2026-10-18T09:00`)
+they are a local time read in `timeZone` (an `end` in `endTimeZone`, else `timeZone`).
+A local time that does not exist (a daylight-saving gap) is `invalid`; one that exists
+twice takes the earlier instant, so a local time in the second occurrence of a
+repeated hour cannot be entered as one; give an instant with an offset. Seconds are kept. `timeZone` is stored as `start_zone`
+and as `end_zone` unless `endTimeZone` is given. Give `end` or `durationMinutes` (a
+positive whole number of minutes, at most 5 years), not both; neither means running.
+
+**Commands.** `entries.create` takes `projectId`, `activityId?`, `locationId?`,
+`start`, `timeZone`, `end?` or `durationMinutes?`, `endTimeZone?`, `reference?` and
+`description?`. `entries.update` takes `id`, `expectedVersion?` and any of those
+fields; `end: null` makes a finished entry running, and `durationMinutes` sets the end
+from the (possibly new) start. Whenever the end is (re)computed (a new `end` or a
+`durationMinutes`) its zone is `endTimeZone`, else `timeZone`, else the kept end zone,
+else the start zone, and a local `end` is read in that zone. Changing only `timeZone`
+keeps the instants and relabels the start zone only; `endTimeZone` without a new end
+on a running entry is `invalid` (`fields.endTimeZone`). Resend `start` as a local time to keep the wall time. `entries.delete`
+is recorded with op `delete` and is undoable. Labels: `Create entry on "<project>"`,
+`Edit entry on "<project>"`, `Delete entry on "<project>"`, with the entry's project
+before the command (the input's project for a create; the new project for an edit
+that moves the entry).
+
+**Reads.** `entries.get({ id })` and `entries.list({ from?, to?, projectId?,
+customerId?, running? })` return entries with `projectName`, `customerId`,
+`customerName`, `activityName` and `locationName`, newest start first. `from` and `to`
+are instants with an offset; the list holds entries whose interval touches
+`[from, to)`, a running one reaching the core's clock. Lists are an instant
+primitive: grouping by local day (`start_zone`) is the reports' job.
+
+## Timers
+
+- `timers.start({ projectId, activityId?, locationId?, timeZone, start?, reference?,
+  description? })` starts a running entry; `start` defaults to now. Label
+  `Start timer on "<project>"`.
+- `timers.stop({ id, expectedVersion?, end?, endTimeZone? })` ends a running entry;
+  `end` defaults to now and is read in `endTimeZone`, else the start zone. Stopping a
+  stopped entry is `conflict`. Label `Stop timer on "<project>"`.
+- Several timers may run, at most one per project. Anything that makes an entry running
+  on a project (a start, a create or edit without an end, moving a running entry to
+  the project) first stops that project's timer at the new start, in its start zone,
+  in the same batch. If that timer started at or after the new start the command is
+  refused with `conflict`. The end-of-batch check is the backstop (`conflict`).
+- A running entry cannot start more than a minute after now, and a timer cannot stop
+  more than a minute after now (`invalid`, `fields.end`), nor at or before its start
+  (`invalid`, `fields.end`, `A timer cannot stop before it started.`). The limit applies to every running entry,
+  created, edited or started. A finished entry may end in the future.
+
+## Warnings
+
+`Warning` is `{ code, message, subject?, details? }`; `subject` is the id of the entry
+it is about, and a batch's warnings are unique by `code` and `subject`. They are
+returned on the result, never block, and are not stored, so they come back on undo and
+redo (which run the checks) but not on a read.
+
+- `overlap`: a finished entry whose start or end the batch created or changed overlaps
+  other finished entries (half-open intervals). `Overlaps <n> other entr(y|ies).`, the
+  other ids in `details.with`. Running timers are left out on both sides; an edit that
+  only rewords an entry does not warn.
+- `long`: a finished entry longer than 24 hours whose interval the batch created or
+  changed. `Longer than 24 hours.`
+
+`core.batch` returns the warnings of all its commands and checks, merged.
 
 ## Adding an entity
 
