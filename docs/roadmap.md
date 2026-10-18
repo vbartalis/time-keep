@@ -71,6 +71,27 @@ Exit: every rule in the vision's entry, customers and projects, templates, timer
 history sections is enforced by the API and covered by tests, and any change or batch
 can be undone as one step.
 
+Split 2026-10-18 into three parts, worked in order:
+
+- **2a. The write path and reference data — done 2026-10-18.** The core API's shape,
+  the one write path that records every change into batches, undo, and the history;
+  customers, projects, activities and locations as its first users, with archiving.
+  Spec `docs/superpowers/specs/2026-10-18-core-write-path-design.md`, plan
+  `docs/superpowers/plans/2026-10-18-core-write-path.md`, decision 4, part doc
+  `docs/core.md`; 161 unit tests. Calls made in the operator's place: every **(call)**
+  in the spec, among them no project moves between customers, undo of a batch or of
+  chosen changes with a per-row conflict check, row versions refusing stale writes,
+  shape versions on recorded changes, Unicode case-insensitive names, no HTTP API, and
+  accounts outside the history; also restore raising a row's version, batch times kept
+  strictly increasing per user, an undo of a partly undone batch reverting the rest,
+  a batch inside a batch refused, and lists in English collation order. Carried into
+  2b: rules need a way to return warnings (overlaps), and unique-index errors must be
+  told apart once an index other than a name's exists.
+- **2b. Entries and timers — next.** Entries as intervals with their time zones, start +
+  duration, overlap warnings, timers and the one-timer-per-project rule.
+- **2c. Templates.** Partial entries saved and used, a duration standing in for the
+  end, saving an entry as a template.
+
 ## 3. Design direction
 
 The look and feel, decided once before any screen is built, with impeccable: a

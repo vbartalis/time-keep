@@ -19,6 +19,7 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/server/auth/bootstrap.ts` | Creates the first admin from the environment. |
 | `src/lib/server/users.ts` | User operations: create, list, authenticate, set password, change own password, disable and enable. Returns `Result` values instead of throwing for expected failures. |
 | `src/lib/server/guards.ts` | `requireUser` (redirect to `/login`) and `requireAdmin` (403). |
+| `src/lib/server/core/` | The only way to read and write the time data: batches, recorded changes, undo, history, reference data. Import only `core/index.ts`. See [core.md](core.md) and decision 4. |
 | `src/lib/server/id.ts` | Random base32 ids. |
 | `src/routes/login`, `logout` | Sign in and out. |
 | `src/routes/(app)/` | Signed-in screens: home, `account`, `admin/users`. The layout requires a user. |
