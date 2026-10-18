@@ -26,7 +26,7 @@ After **Dev Containers: Reopen in Container** finishes (the build, then
 
 | What | Where | Kept by |
 |------|-------|---------|
-| Working tree | `/workspaces/time-keep` | host bind mount of the repo |
+| Working tree | `/workspaces/time-keep` | the container volume of "Clone Repository in Container Volume", or a host bind mount of the repo's parent when a local folder is reopened |
 | Claude Code plugins, credentials | `~/.claude` | named volume `claude-home` |
 | Session memory | `.claude/memory/` | the working tree; linked from `~/.claude/projects/…/memory` by the setup script |
 | `gh` credential | `~/.config/gh` | nothing: container filesystem |

@@ -12,8 +12,10 @@ services:
     # exited first stays a zombie for the life of the container.
     init: true
     volumes:
-      # The repository only; nothing else on the host is visible.
-      - ..:/workspaces/time-keep:cached
+      # The parent of the repo, at /workspaces itself. "Clone Repository in
+      # Container Volume" mounts its volume at /workspaces and replaces this
+      # entry; a deeper target would be mounted over the clone and hide it.
+      - ../..:/workspaces:cached
       # Persist Claude Code state (plugins, credentials) across image rebuilds.
       - claude-home:/home/vscode/.claude
     command: sleep infinity

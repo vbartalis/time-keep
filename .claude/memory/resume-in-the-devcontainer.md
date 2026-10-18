@@ -18,6 +18,6 @@ inside it.
    `gh auth login -s project`, plugins installed, `dev` works).
 2. Next work: scaffold the SvelteKit app per decisions 1 and 2. Brainstorm and plan
    first (superpowers); the design gate is the operator's.
-3. Open concern: the repo is bind-mounted from the Windows drive, so `npm` is slow
-   and Vite's file watching may need polling. The alternative is cloning into a WSL
-   Ubuntu distro; the operator has not chosen yet.
+3. The operator opens the repo with "Clone Repository in Container Volume", so the
+   working tree is in a Docker volume, not on the Windows drive: no bind-mount
+   slowness, no WSL step needed.
