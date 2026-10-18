@@ -1,0 +1,24 @@
+{
+  "name": "time-keep",
+  "dockerComposeFile": ["./docker-compose.yaml"],
+  "service": "devcontainer",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  // Keep the container running when the VS Code window closes so long-lived
+  // tmux sessions survive.
+  "shutdownAction": "none",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode-remote.remote-containers",
+        "Anthropic.claude-code",
+        "PKief.material-icon-theme",
+        "github.vscode-github-actions"
+      ]
+    }
+  },
+  // CodeGraph index, memory link and Claude Code plugin bootstrap; idempotent.
+  "postCreateCommand": "bash scripts/devcontainer-setup.sh",
+  "remoteEnv": {
+    "WORKSPACE_DIR": "${containerWorkspaceFolder}"
+  }
+}

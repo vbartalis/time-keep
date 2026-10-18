@@ -1,0 +1,21 @@
+# Node
+node_modules/
+
+# Per-machine Claude Code settings (team policy lives in .claude/settings.json)
+.claude/settings.local.json
+.claude/worktrees/
+
+# Secrets and local config
+.env
+*.local
+
+# superpowers brainstorm visual-companion scratch
+.superpowers/
+
+# impeccable: per-developer overrides and caches
+.impeccable/config.local.json
+.impeccable/hook.cache.json
+.impeccable/critique/
+
+# Git Bash crash dumps (Windows host)
+*.stackdump

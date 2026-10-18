@@ -1,0 +1,7 @@
+.devcontainer/
+.vscode/
+.git/
+.gitignore
+.env
+*.local
+node_modules/

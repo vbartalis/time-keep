@@ -1,0 +1,3 @@
+# LF everywhere: the repo is mounted into a Linux container, where CRLF breaks
+# shell scripts.
+* text=auto eol=lf

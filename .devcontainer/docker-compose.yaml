@@ -1,0 +1,22 @@
+services:
+  devcontainer:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      target: base
+    # Come back after a host reboot / daemon restart. Pairs with
+    # "shutdownAction": "none" in devcontainer.json.
+    restart: unless-stopped
+    # tini as PID 1, so orphaned children are reaped. `sleep infinity` never
+    # waits on anything; without this, every git/node/bash process whose parent
+    # exited first stays a zombie for the life of the container.
+    init: true
+    volumes:
+      # The repository only; nothing else on the host is visible.
+      - ..:/workspaces/time-keep:cached
+      # Persist Claude Code state (plugins, credentials) across image rebuilds.
+      - claude-home:/home/vscode/.claude
+    command: sleep infinity
+
+volumes:
+  claude-home:

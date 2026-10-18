@@ -25,6 +25,7 @@ Gates are human decisions. Present the design, stop, and wait for a yes.
 - **GitHub Issues and the Project** ([time-keep #12](https://github.com/users/vbartalis/projects/12))
   are the tracker. Small untracked work is fine; never create issues to satisfy
   process. Query on demand (`gh issue list`).
+- **Environment** is the devcontainer; runbook in [docs/environment.md](docs/environment.md).
 - **Session memory** is `.claude/memory/`, written only when asked.
 - **Never run `docker` or `docker compose`.** Containers belong to Coolify and VS
   Code (`.claude/rules/never-use-the-docker-cli.md`).
