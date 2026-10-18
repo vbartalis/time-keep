@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isTimeZone, parseTime } from './time';
+import { isTimeZone, localParts, nextDate, parseTime, previousDate } from './time';
 
 const FORMAT = 'Use a date and time like 2026-10-18T09:00.';
 const at = (iso: string) => Date.parse(iso);
@@ -83,5 +83,34 @@ describe('isTimeZone', () => {
 		expect(isTimeZone('Europe/Budapest')).toBe(true);
 		expect(isTimeZone('Mars/Base')).toBe(false);
 		expect(isTimeZone('')).toBe(false);
+	});
+});
+
+describe('localParts', () => {
+	it('gives the local date and time of an instant in a zone', () => {
+		expect(localParts(Date.UTC(2026, 9, 18, 23, 5), 'Europe/Budapest')).toEqual({
+			date: '2026-10-19',
+			time: '01:05'
+		});
+		expect(localParts(Date.UTC(2026, 0, 1, 0, 0), 'UTC')).toEqual({
+			date: '2026-01-01',
+			time: '00:00'
+		});
+	});
+});
+
+describe('nextDate', () => {
+	it('adds one calendar day', () => {
+		expect(nextDate('2026-10-24')).toBe('2026-10-25');
+		expect(nextDate('2026-12-31')).toBe('2027-01-01');
+		expect(nextDate('2028-02-28')).toBe('2028-02-29');
+	});
+});
+
+describe('previousDate', () => {
+	it('takes away one calendar day', () => {
+		expect(previousDate('2026-10-25')).toBe('2026-10-24');
+		expect(previousDate('2027-01-01')).toBe('2026-12-31');
+		expect(previousDate('2028-03-01')).toBe('2028-02-29');
 	});
 });

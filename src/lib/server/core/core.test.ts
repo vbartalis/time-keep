@@ -265,3 +265,71 @@ describe('users are separate', () => {
 		expect(batches()).toHaveLength(1);
 	});
 });
+
+describe('templates', () => {
+	it('labels each template command', () => {
+		const { core, val, batches } = setup();
+		const c = val(core.customers.create({ name: 'Acme' }));
+		const p = val(core.projects.create({ customerId: c.id, name: 'Web' }));
+		const t = val(core.templates.create({ name: ' Standup ', projectId: p.id, timeZone: 'UTC' }));
+		val(core.templates.update({ id: t.id, name: 'Daily' }));
+		const e = val(
+			core.entries.create({
+				projectId: p.id,
+				timeZone: 'UTC',
+				start: '2026-10-18T09:00',
+				durationMinutes: 30
+			})
+		);
+		val(core.templates.fromEntry({ entryId: e.id, name: ' Saved ' }));
+		val(
+			core.entries.fromTemplate({
+				templateId: t.id,
+				start: '2026-10-18T10:00',
+				end: '2026-10-18T11:00'
+			})
+		);
+		val(core.entries.fromTemplate({ templateId: t.id }));
+		expect(val(core.templates.list()).map((x) => x.name)).toEqual(['Daily', 'Saved']);
+		expect(val(core.templates.get({ id: t.id })).projectName).toBe('Web');
+		val(core.templates.delete({ id: t.id }));
+		expect(
+			batches()
+				.map((b) => b.label)
+				.slice(2)
+		).toEqual([
+			'Create template "Standup"',
+			'Edit template "Standup"',
+			'Create entry on "Web"',
+			'Save entry as template "Saved"',
+			'Create entry from template "Daily"',
+			'Start timer from template "Daily"',
+			'Delete template "Daily"'
+		]);
+	});
+
+	it('stores no batch for a failed command and labels inside a batch', () => {
+		const { core, val, batches } = setup();
+		const c = val(core.customers.create({ name: 'Acme' }));
+		const p = val(core.projects.create({ customerId: c.id, name: 'Web' }));
+		const t = val(core.templates.create({ name: 'T', projectId: p.id, timeZone: 'UTC' }));
+		const before = batches().length;
+		expect(core.entries.fromTemplate({ templateId: t.id, end: '2026-10-18T10:00' }).ok).toBe(false);
+		expect(batches()).toHaveLength(before);
+		val(core.batch('Morning', (b) => b.entries.fromTemplate({ templateId: t.id })));
+		expect(batches().at(-1)?.label).toBe('Morning');
+	});
+
+	it('returns warnings from entries.fromTemplate', () => {
+		const { core, val } = setup();
+		const c = val(core.customers.create({ name: 'Acme' }));
+		const p = val(core.projects.create({ customerId: c.id, name: 'Web' }));
+		const t = val(
+			core.templates.create({ name: 'T', projectId: p.id, timeZone: 'UTC', durationMinutes: 60 })
+		);
+		const input = { templateId: t.id, start: '2026-10-18T09:00' };
+		val(core.entries.fromTemplate(input));
+		const r = core.entries.fromTemplate(input);
+		expect(r.ok && r.warnings.map((w) => w.code)).toEqual(['overlap']);
+	});
+});

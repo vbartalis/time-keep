@@ -11,7 +11,7 @@ import { fail, fromZod, ok, type CoreError, type Result } from './result';
 import { registerRules, table, type Entity, type Row, type Tx, type Writer } from './write';
 
 /** The reference data kinds. */
-export type Kind = Exclude<Entity, 'entry'>;
+export type Kind = Exclude<Entity, 'entry' | 'template'>;
 
 /** A reference row as stored (camelCase columns). */
 export type Named = {

@@ -5,11 +5,20 @@
  */
 import { and, eq, getTableColumns } from 'drizzle-orm';
 import type { DB } from '../db/index';
-import { activity, batch, change, customer, entry, location, project } from '../db/schema';
+import {
+	activity,
+	batch,
+	change,
+	customer,
+	entry,
+	location,
+	project,
+	template
+} from '../db/schema';
 import { newId } from '../id';
 import type { CoreError, Warning } from './result';
 
-export type Entity = 'customer' | 'project' | 'activity' | 'location' | 'entry';
+export type Entity = 'customer' | 'project' | 'activity' | 'location' | 'entry' | 'template';
 
 /** Each entity's shape version: raise it when a migration renames, removes or retypes a column. */
 export const SHAPES: Record<Entity, number> = {
@@ -17,10 +26,11 @@ export const SHAPES: Record<Entity, number> = {
 	project: 1,
 	activity: 1,
 	location: 1,
-	entry: 1
+	entry: 1,
+	template: 1
 };
 
-const TABLES = { customer, project, activity, location, entry } as const;
+const TABLES = { customer, project, activity, location, entry, template } as const;
 type Tables = typeof TABLES;
 type AnyTable = Tables[Entity];
 

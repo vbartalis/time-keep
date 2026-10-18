@@ -41,6 +41,7 @@ const CORE_TABLES = new Set([
 	'activity',
 	'location',
 	'entry',
+	'template',
 	'batch',
 	'change'
 ]);

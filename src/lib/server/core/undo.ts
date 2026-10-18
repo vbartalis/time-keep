@@ -9,6 +9,7 @@ import { newer, undoneBy } from './history';
 // Register the entity rules, so a restore is always checked by them.
 import './entries';
 import './reference';
+import './templates';
 import { fail, fromZod, ok, type Result } from './result';
 import { rowJson, SHAPES, table, type Entity, type Row, type Writer } from './write';
 

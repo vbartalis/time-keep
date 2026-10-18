@@ -1,7 +1,7 @@
 # The core
 
 The core is the one way to read and write the time data: customers, projects,
-activities, locations, entries and timers. It lives in
+activities, locations, entries, timers and templates. It lives in
 `src/lib/server/core/`. Routes and, later, the MCP server import only
 `core/index.ts`; a test fails if any other module outside `core/` imports from it, or
 imports the core tables, `table` or `Writer`. Decision 4 is the rule; this is how it
@@ -87,7 +87,9 @@ Each entity registers rules with `registerRules`; the write path runs them on ev
 write, undo included. A write that breaks one is refused and its batch rolled back.
 Today: a project's customer must exist, and an active project's customer must be
 active; an entry's references must exist and be the user's, its end and end zone are
-both set or both null, and its end is after its start.
+both set or both null, and its end is after its start; a template's references
+exist and are the user's (archived allowed), its project belongs to its customer, an
+end time has a start time and never sits beside a duration, and its zone is valid.
 
 Batch checks (`registerBatchCheck`) run once per entity, after the batch's last write
 and before it commits, on the rows the batch touched (deleted ones included), seeing
@@ -217,6 +219,73 @@ primitive: grouping by local day (`start_zone`) is the reports' job.
   more than a minute after now (`invalid`, `fields.end`), nor at or before its start
   (`invalid`, `fields.end`, `A timer cannot stop before it started.`). The limit applies to every running entry,
   created, edited or started. A finished entry may end in the future.
+
+## Templates
+
+A template is a saved starting point for entries: the user's own convenience, not
+reference data. It has no archive; `templates.delete` removes it (recorded with op
+`delete`, undoable).
+
+| Field | Rule |
+|-------|------|
+| `name` | required, unique per user by the same key as reference names |
+| `customer_id`, `project_id`, `activity_id`, `location_id` | optional, the user's (archived allowed); a project must belong to the customer |
+| `start_time`, `end_time` | optional local times `HH:MM`; an end time needs a start time |
+| `duration_minutes` | optional positive whole number; never beside an end time |
+| `time_zone` | optional IANA zone |
+| `reference`, `description` | optional, trimmed, at most 200 and 2000 characters |
+
+**Commands.** `templates.create`, `templates.update` (a field left out is kept, one set
+to `null` is cleared; `expectedVersion?`), `templates.delete`, `templates.fromEntry`
+and `entries.fromTemplate`. Reads: `templates.list()` (sorted by name) and
+`templates.get({ id })`, with `customerName`, `projectName`, `activityName` and
+`locationName`. Labels: `Create template "<name>"`, `Edit template "<name>"` (the
+name before the edit), `Delete template "<name>"`, `Save entry as template "<name>"`,
+`Create entry from template "<name>"`, or `Start timer from template "<name>"` when
+the entry comes out running.
+
+**`entries.fromTemplate`** takes `templateId` and optional `date`, `start`, `timeZone`,
+`end`, `durationMinutes`, `endTimeZone`, `projectId`, `activityId`, `locationId`,
+`reference` and `description`, and creates the entry through `entries.create`, so
+every entry rule, the timer auto-stop, the future limit and the warnings apply. What
+is given wins over the template.
+
+- **Zone.** The `timeZone` given wins over the template's; with neither, `invalid`.
+  `endTimeZone` defaults to the zone.
+- **Project.** The given `projectId`, else the template's; with neither, `invalid`. A
+  given project of another customer than the template's is `invalid`.
+- **Start.** The given `start`; else the template's `start_time` on `date`. Without
+  `date` that is today in the zone, except for an overnight template (an `end_time`
+  not after its `start_time`) whose start today is still ahead of now: then it is
+  yesterday, so a 22:00–06:00 template tapped at 06:30 logs last night's shift (at
+  23:00 it is tonight's). A `date` on a template without a start time, and no given
+  `start`, is `invalid` on `date`. With no start at all and a known duration (given
+  or the template's) the entry ends at the given `end` (read in the end zone) or now
+  and starts that duration earlier; with no duration a given `end` is `invalid`, and
+  otherwise it is a running timer from now.
+- **End.** The given `end` or `durationMinutes`; else the template's `end_time` read in
+  the end zone on the start's local date, or on the next calendar day (not 24 hours)
+  only when the same-day end exists and is not after the start. An end time in a
+  daylight-saving gap on the start's date is `invalid` on `end`, never rolled to the
+  next day; else the template's duration from the start; else running. A start in a
+  gap is `invalid`.
+- **Replacements.** A given `activityId`, `locationId`, `reference` or `description`
+  replaces the template's; it is never appended. An explicit `null` clears it; a
+  `reference` or `description` blank after trimming counts as not given, so the
+  template's applies.
+- **Errors.** A time the template's start or end time resolves to that fails (a gap,
+  an end not after the start) comes back on `fields.start`, `fields.end` or
+  `fields.date`, though the caller may not have sent that field. A client without
+  those inputs, a phone tapping a template, shows it as a general message.
+- A running result is refused when its start is more than a minute in the future, like
+  any running entry.
+
+**`templates.fromEntry({ entryId, name })`** saves an entry: its project (and the
+project's customer), activity, location, reference, description and start zone, its
+start as a local time, and its end as a local time in the start zone when it is later
+on the same local date, or on the next local date at a time of day not after the
+start's (an overnight entry, which then lands on any date as the same shift); else as
+a duration. A running entry gives no end.
 
 ## Warnings
 

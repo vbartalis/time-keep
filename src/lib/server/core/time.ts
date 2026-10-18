@@ -35,12 +35,18 @@ export function isTimeZone(name: string): boolean {
 	}
 }
 
-/** The zone's wall-clock fields at an instant, read back as if they were UTC. */
-function wallAsUtc(instant: number, zone: string): number {
+/** The zone's wall-clock fields at an instant. */
+function fieldsAt(instant: number, zone: string): Record<string, number> {
 	const p: Record<string, number> = {};
 	for (const part of formatterFor(zone).formatToParts(new Date(instant))) {
 		if (part.type !== 'literal') p[part.type] = Number(part.value);
 	}
+	return p;
+}
+
+/** The zone's wall-clock fields at an instant, read back as if they were UTC. */
+function wallAsUtc(instant: number, zone: string): number {
+	const p = fieldsAt(instant, zone);
 	return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
 }
 
@@ -86,3 +92,26 @@ export function parseTime(text: string, zone: string): ParsedTime {
 	if (at === null) return { ok: false, message: `That time does not exist in ${zone}.` };
 	return { ok: true, at };
 }
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+/** The local date (`YYYY-MM-DD`) and time of day (`HH:mm`) of an instant in a known zone. */
+export function localParts(at: number, zone: string): { date: string; time: string } {
+	const p = fieldsAt(at, zone);
+	return {
+		date: `${String(p.year).padStart(4, '0')}-${pad(p.month)}-${pad(p.day)}`,
+		time: `${pad(p.hour)}:${pad(p.minute)}`
+	};
+}
+
+/** The calendar day `days` after a `YYYY-MM-DD` date. */
+function addDays(date: string, days: number): string {
+	const [y, m, d] = date.split('-').map(Number);
+	return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+/** The calendar day after a `YYYY-MM-DD` date. */
+export const nextDate = (date: string): string => addDays(date, 1);
+
+/** The calendar day before a `YYYY-MM-DD` date. */
+export const previousDate = (date: string): string => addDays(date, -1);

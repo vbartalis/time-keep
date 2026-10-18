@@ -57,7 +57,7 @@ the username after a failure (3); passwords not Unicode-normalised; the throttle
 memory only pruned on access; the image's health check without a start period and the
 proxy headers to confirm against Coolify (9).
 
-## 2. The core
+## 2. The core — done 2026-10-18
 
 Everything the vision says about the data, enforced in one place, with no screens:
 customers › projects, activities, locations, entries, templates and timers, each
@@ -101,8 +101,23 @@ Split 2026-10-18 into three parts, worked in order:
   applies to a new end too, and the one-minute future limit covers every running entry
   and a timer's stop. Deferred: paging for `entries.list` (6, 7), and one query per
   touched entry in the change check (9, if the import is slow).
-- **2c. Templates — next.** Partial entries saved and used, a duration standing in for the
-  end, saving an entry as a template.
+- **2c. Templates — done 2026-10-18.** Partial entries saved and used, a duration
+  standing in for the end, saving an entry as a template. Spec
+  `docs/superpowers/specs/2026-10-18-templates-design.md`, plan
+  `docs/superpowers/plans/2026-10-18-templates.md`, `docs/core.md` extended; 302 unit
+  tests. Calls made in the operator's place: every **(call)** in the spec, among them
+  templates deleted rather than archived, every given field winning over the
+  template's (a blank text meaning not given), the zone given at use winning, a
+  duration-only template ending now, an end time on the next day when not after the
+  start, an end inside a daylight-saving gap refused, an overnight template used
+  without a date logging the shift already started, a date without a template start
+  time refused, and an entry saved as a template keeping its end time when it ends the
+  next morning. Known traps for phase 4: errors from a template's times come back on
+  `start`, `end` and `date`, which the phone may not show as fields.
+
+Phase 2 exit met 2026-10-18: every rule in the vision's entry, customers and projects,
+templates, timers and history sections is enforced by the core and covered by tests,
+and any change or batch can be undone as one step.
 
 ## 3. Design direction
 
@@ -121,8 +136,8 @@ start and stop, and today's entries can be corrected.
 
 ## 5. PC
 
-Dense work: managing customers, projects, activities, locations and templates
-(archiving included), finding entries and editing them in bulk, seeing history and
+Dense work: managing customers, projects, activities and locations (archiving
+included) and templates (deleted, undoably), finding entries and editing them in bulk, seeing history and
 undoing any batch.
 
 Exit: a month can be reorganised from the PC alone, and any change made there is

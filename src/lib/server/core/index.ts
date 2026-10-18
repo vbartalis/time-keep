@@ -37,6 +37,18 @@ import {
 	type EntryItem
 } from './entries';
 import { nameSchema } from './names';
+import {
+	createTemplate,
+	deleteTemplate,
+	entryFromTemplate,
+	getTemplate,
+	listTemplates,
+	resolveFromTemplate,
+	templateFromEntry,
+	updateTemplate,
+	type Template,
+	type TemplateItem
+} from './templates';
 import { fail, type Result } from './result';
 import { undo, undoLabel } from './undo';
 import { table, type Writer } from './write';
@@ -45,6 +57,7 @@ export type { Actor } from './batch';
 export type { HistoryBatch, HistoryChange } from './history';
 export type { Named, ProjectListItem, ProjectRow } from './reference';
 export type { Entry, EntryItem } from './entries';
+export type { Template, TemplateItem } from './templates';
 export type { CoreError, Result, Warning } from './result';
 
 /** The commands and reads of one kind of reference data. */
@@ -68,10 +81,17 @@ export type EntryCommands = {
 		create(input: unknown): Result<Entry>;
 		update(input: unknown): Result<Entry>;
 		delete(input: unknown): Result<Entry>;
+		fromTemplate(input: unknown): Result<Entry>;
 	};
 	timers: {
 		start(input: unknown): Result<Entry>;
 		stop(input: unknown): Result<Entry>;
+	};
+	templates: {
+		create(input: unknown): Result<Template>;
+		update(input: unknown): Result<Template>;
+		delete(input: unknown): Result<Template>;
+		fromEntry(input: unknown): Result<Template>;
 	};
 };
 
@@ -93,6 +113,10 @@ export type Core = {
 	entries: BatchCore['entries'] & {
 		list(input?: unknown): Result<EntryItem[]>;
 		get(input: unknown): Result<EntryItem>;
+	};
+	templates: BatchCore['templates'] & {
+		list(): Result<TemplateItem[]>;
+		get(input: unknown): Result<TemplateItem>;
 	};
 	history: {
 		list: (input?: { before?: string; limit?: number }) => ReturnType<typeof listHistory>;
@@ -118,7 +142,7 @@ function inputName(input: unknown): string {
 	return parsed.success ? parsed.data : String(name ?? '');
 }
 
-function commands(db: DB, userId: string, exec: Exec) {
+function commands(db: DB, userId: string, exec: Exec, clock: () => number) {
 	/** The stored name of a row, for labels; empty when it is not there. */
 	const currentName = (kind: Kind, input: unknown): string => {
 		const id = (input as { id?: unknown } | null)?.id;
@@ -186,8 +210,54 @@ function commands(db: DB, userId: string, exec: Exec) {
 				() => `${verb} on "${entryProject(input, byEntry)}"`,
 				(w) => run(w, input)
 			);
+	/** The stored name of the template `input.id` or `input.templateId` names, for labels. */
+	const templateName = (input: unknown): string => {
+		const i = input as { id?: unknown; templateId?: unknown } | null;
+		const key = typeof i?.id === 'string' ? i.id : i?.templateId;
+		if (typeof key !== 'string') return '';
+		const t = table('template');
+		const row = db
+			.select({ name: t.name })
+			.from(t)
+			.where(and(eq(t.id, key), eq(t.userId, userId)))
+			.get();
+		return row?.name ?? '';
+	};
+	/** Whether an entry made from the template now would be a running timer. */
+	const runsFromTemplate = (input: unknown): boolean => {
+		const r = resolveFromTemplate(db, userId, clock(), input);
+		return r.ok && r.value.end === undefined && r.value.durationMinutes === undefined;
+	};
 	return {
+		templates: {
+			create: (input: unknown) =>
+				exec(
+					() => `Create template "${inputName(input)}"`,
+					(w) => createTemplate(w, input)
+				),
+			update: (input: unknown) =>
+				exec(
+					() => `Edit template "${templateName(input)}"`,
+					(w) => updateTemplate(w, input)
+				),
+			delete: (input: unknown) =>
+				exec(
+					() => `Delete template "${templateName(input)}"`,
+					(w) => deleteTemplate(w, input)
+				),
+			fromEntry: (input: unknown) =>
+				exec(
+					() => `Save entry as template "${inputName(input)}"`,
+					(w) => templateFromEntry(w, input)
+				)
+		},
 		entries: {
+			fromTemplate: (input: unknown) =>
+				exec(
+					() =>
+						`${runsFromTemplate(input) ? 'Start timer' : 'Create entry'} from template "${templateName(input)}"`,
+					(w) => entryFromTemplate(w, input)
+				),
 			create: entryCommand('Create entry', false, createEntry),
 			update: entryCommand('Edit entry', true, updateEntry),
 			delete: entryCommand('Delete entry', true, deleteEntry)
@@ -227,7 +297,7 @@ export function openCore(
 	clock: () => number = Date.now
 ): Core {
 	const alone: Exec = (label, fn) => runBatch(db, userId, actor, label(), fn, clock());
-	const own = commands(db, userId, alone);
+	const own = commands(db, userId, alone, clock);
 	return {
 		customers: { ...own.customers, list: (input) => listCustomers(db, userId, input) },
 		projects: { ...own.projects, list: (input) => listProjects(db, userId, input) },
@@ -239,6 +309,11 @@ export function openCore(
 			get: (input) => getEntry(db, userId, input)
 		},
 		timers: own.timers,
+		templates: {
+			...own.templates,
+			list: () => listTemplates(db, userId),
+			get: (input) => getTemplate(db, userId, input)
+		},
 		history: { list: (input) => listHistory(db, userId, input) },
 		undo: own.undo,
 		batch: (label, fn) => {
@@ -253,7 +328,7 @@ export function openCore(
 				userId,
 				actor,
 				trimmed,
-				(w) => fn(commands(db, userId, (_label, run) => run(w))),
+				(w) => fn(commands(db, userId, (_label, run) => run(w), clock)),
 				clock()
 			);
 		}

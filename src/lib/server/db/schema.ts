@@ -138,6 +138,35 @@ export const entry = sqliteTable(
 	]
 );
 
+export const template = sqliteTable(
+	'template',
+	{
+		id: text('id').primaryKey(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		name: text('name').notNull(),
+		nameKey: text('name_key').notNull(),
+		customerId: text('customer_id').references(() => customer.id),
+		projectId: text('project_id').references(() => project.id),
+		activityId: text('activity_id').references(() => activity.id),
+		locationId: text('location_id').references(() => location.id),
+		startTime: text('start_time'),
+		endTime: text('end_time'),
+		durationMinutes: integer('duration_minutes'),
+		timeZone: text('time_zone'),
+		reference: text('reference'),
+		description: text('description'),
+		version: integer('version').notNull(),
+		createdAt: integer('created_at').notNull(),
+		updatedAt: integer('updated_at').notNull()
+	},
+	(t) => [
+		index('template_user_id_idx').on(t.userId),
+		uniqueIndex('template_user_id_name_key_unq').on(t.userId, t.nameKey)
+	]
+);
+
 export type User = typeof user.$inferSelect;
 export type Session = typeof session.$inferSelect;
 export type Batch = typeof batch.$inferSelect;
@@ -147,3 +176,4 @@ export type Project = typeof project.$inferSelect;
 export type Activity = typeof activity.$inferSelect;
 export type Location = typeof location.$inferSelect;
 export type Entry = typeof entry.$inferSelect;
+export type Template = typeof template.$inferSelect;
