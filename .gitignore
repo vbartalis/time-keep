@@ -19,3 +19,11 @@ node_modules/
 
 # Git Bash crash dumps (Windows host)
 *.stackdump
+
+# App data and build output
+data/
+build/
+.svelte-kit/
+test-results/
+playwright-report/
+*.db

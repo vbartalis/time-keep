@@ -1,0 +1,23 @@
+# Package Managers
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lock
+bun.lockb
+
+# Miscellaneous
+/static/
+/drizzle/
+
+# Repo docs and tooling config, not app code
+/.claude/
+/.codegraph/
+/.devcontainer/
+/.superpowers/
+/.mcp.json
+/docs/
+/scripts/
+/README.md
+/CLAUDE.md
+/.svelte-kit/
+/build/

@@ -9,7 +9,14 @@ Dockerfile) and [`scripts/devcontainer-setup.sh`](../scripts/devcontainer-setup.
 ## Image
 
 Ubuntu devcontainers base, plus: tmux, jq, ripgrep, GitHub CLI, Node.js 24 (the app's
-runtime, decision 1, and the agent tooling's hooks), Claude Code and CodeGraph.
+runtime, decision 1, and the agent tooling's hooks), Claude Code and CodeGraph, and
+the system libraries and fonts Chromium needs for the browser tests.
+
+## The app
+
+`npm run dev` (dev server), `build`, `check`, `lint`, `format`, `test:unit`,
+`test:e2e`, `test`, and `db:generate`. Details, configuration and the test setup are in
+[`app.md`](app.md).
 
 ## First start
 

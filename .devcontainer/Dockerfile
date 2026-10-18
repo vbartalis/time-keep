@@ -22,6 +22,14 @@ RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
+# Shared libraries and fonts for Playwright's browser tests (Chromium).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libnspr4 libnss3 libatk1.0-0t64 libatk-bridge2.0-0t64 libdbus-1-3 libx11-6 \
+    libxcomposite1 libxdamage1 libxext6 libxfixes3 libxrandr2 libgbm1 libxcb1 \
+    libxkbcommon0 libasound2t64 libatspi2.0-0t64 libxres1 \
+    fontconfig fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+
 # tmux: persistent sessions that outlive the editor.
 # Written inline because .devcontainer/ is not copied into the image.
 RUN printf '%s\n' \

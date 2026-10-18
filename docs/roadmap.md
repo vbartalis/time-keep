@@ -32,7 +32,7 @@ release to live with; the order serves building, not adoption.
   recorded, and any call made in the operator's place.
 - Phase 9 is the operator's: it is never started automatically.
 
-## 1. Foundation — next
+## 1. Foundation — done 2026-10-18
 
 The app exists, runs and deploys: the SvelteKit project per decisions 1 and 2, SQLite
 through Drizzle with migrations, the test setup, the app's own session login, the
@@ -41,6 +41,21 @@ and the container definition that phase 9 deploys.
 
 Exit: on a local production build, the admin logs in, creates a user, and that user
 logs in and out; the checks and tests pass.
+
+Done 2026-10-18 (spec `docs/superpowers/specs/2026-10-18-foundation-design.md`, plan
+`docs/superpowers/plans/2026-10-18-foundation.md`, decision 3, part doc `docs/app.md`).
+Met by the browser test on the production build at phone and PC sizes, with check,
+lint and 61 unit tests passing. Calls made in the operator's place: every **(call)**
+in the spec; the admin flag fixed at creation; the sign-in throttle keyed on username
+and client address, counting attempts in flight; SvelteKit 3's `#lib` imports and its
+private env for configuration; times as integer milliseconds; no `ORIGIN` (adapter-node
+6 has none), the image taking the origin from `x-forwarded-proto` and
+`x-forwarded-host` instead. Owed to the operator: a devcontainer rebuild, which
+installs Chromium's libraries and fonts for the browser tests. Deferred minors, each
+for the item that touches it: dates shown in UTC (4, 5); the login form not keeping
+the username after a failure (3); passwords not Unicode-normalised; the throttle's
+memory only pruned on access; the image's health check without a start period and the
+proxy headers to confirm against Coolify (9).
 
 ## 2. The core
 
