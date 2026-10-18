@@ -119,14 +119,26 @@ Phase 2 exit met 2026-10-18: every rule in the vision's entry, customers and pro
 templates, timers and history sections is enforced by the core and covered by tests,
 and any change or batch can be undone as one step.
 
-## 3. Design direction
+## 3. Design direction — done 2026-10-18
 
 The look and feel, decided once before any screen is built, with impeccable: a
 direction chosen, in Tailwind tokens and shadcn-svelte per decision 2, and recorded.
 
 Exit: the chosen direction is recorded and the app shell uses it.
 
-## 4. Phone
+Done 2026-10-18: the punch-clock time card (decision 5; `PRODUCT.md`, `DESIGN.md` with
+`.impeccable/design.json`, and the shell's surface brief under `.impeccable/surfaces/`):
+blue card stock, blue-black ink, hairline rules, violet only for what is live or
+primary, red only for what is irregular or destructive; a dark rail on the PC, a top
+bar and bottom navigation on the phone; Archivo and Martian Mono, self-hosted. The
+shell and the phase 1 screens use it, with labelled placeholders for phases 4 and 5.
+Calls made in the operator's place: the product record's inferred facts, the
+direction (impeccable's roll, its six challengers declined), and every visual choice.
+Checked at 390 and 1440 px in light and dark; impeccable's detector found nothing and
+its finish reviewer's seven fixes were all scored resolved. Deferred to 4 and 5: the
+default alert's violet border and the unchecked checkbox's grey in dark mode.
+
+## 4. Phone — next
 
 Quick capture, in the installable web app: start and stop timers, log an entry from a
 template with only the blanks typed, fix today's entries.

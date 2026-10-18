@@ -13,11 +13,14 @@ bun.lockb
 /.claude/
 /.codegraph/
 /.devcontainer/
+/.impeccable/
 /.superpowers/
 /.mcp.json
 /docs/
 /scripts/
 /README.md
 /CLAUDE.md
+/DESIGN.md
+/PRODUCT.md
 /.svelte-kit/
 /build/

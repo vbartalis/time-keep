@@ -2,16 +2,18 @@
 	import { type VariantProps, tv } from 'tailwind-variants';
 
 	export const badgeVariants = tv({
-		base: 'h-5 gap-1 rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium transition-all has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&>svg]:size-3! group/badge inline-flex w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none',
+		base: 'printed h-5 gap-1 rounded-sm border px-1.5 text-xs leading-none transition-colors has-data-[icon=inline-end]:pr-1 has-data-[icon=inline-start]:pl-1 [&>svg]:size-3! group/badge inline-flex w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap focus-visible:ring-2 focus-visible:ring-ring aria-invalid:border-destructive [&>svg]:pointer-events-none',
 		variants: {
 			variant: {
-				default: 'bg-primary text-primary-foreground [a]:hover:bg-primary/80',
-				secondary: 'bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80',
-				destructive:
-					'bg-destructive/10 [a]:hover:bg-destructive/20 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive dark:bg-destructive/20',
-				outline: 'border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground',
-				ghost: 'hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50',
-				link: 'text-primary underline-offset-4 hover:underline'
+				default: 'border-foreground/70 text-foreground [a]:hover:bg-accent',
+				live: 'border-primary/70 text-primary [a]:hover:bg-primary/10',
+				spent: 'border-input text-muted-foreground line-through decoration-1',
+				secondary:
+					'border-transparent bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80',
+				destructive: 'border-destructive/70 text-destructive [a]:hover:bg-destructive/10',
+				outline: 'border-input text-foreground [a]:hover:bg-accent',
+				ghost: 'border-transparent hover:bg-accent',
+				link: 'border-transparent text-foreground underline-offset-4 hover:underline'
 			}
 		},
 		defaultVariants: {

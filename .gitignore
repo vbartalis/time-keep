@@ -27,3 +27,6 @@ build/
 test-results/
 playwright-report/
 *.db
+
+# impeccable: review captures (regenerated per review)
+.impeccable/review/

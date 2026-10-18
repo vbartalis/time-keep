@@ -1,8 +1,10 @@
 # The app
 
 A SvelteKit 3.1 server (adapter-node 6) over SQLite through Drizzle, TypeScript
-throughout (decision 1). The UI is Tailwind and shadcn-svelte (decision 2). The app
-owns every write to the database.
+throughout (decision 1). The UI is Tailwind and shadcn-svelte (decision 2), dressed as
+a punch-clock time card (decision 5); [DESIGN.md](../DESIGN.md) is the visual system
+and `PRODUCT.md` the product record it serves. The app owns every write to the
+database.
 
 Imports use `#lib` (the `imports` map in `package.json`, `src/lib/*`), not `$lib`.
 Hook types come from `@sveltejs/kit/hooks`.
@@ -22,7 +24,9 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/server/core/` | The only way to read and write the time data: batches, recorded changes, undo, history, reference data. Import only `core/index.ts`. See [core.md](core.md) and decision 4. |
 | `src/lib/server/id.ts` | Random base32 ids. |
 | `src/routes/login`, `logout` | Sign in and out. |
-| `src/routes/(app)/` | Signed-in screens: home, `account`, `admin/users`. The layout requires a user. |
+| `src/routes/(app)/` | Signed-in screens: home (Today), `account`, `admin/users`. The layout requires a user and draws the shell: a left rail on the PC, a top bar and bottom navigation on the phone. |
+| `src/routes/layout.css` | Design tokens as Tailwind theme values, light and dark (see DESIGN.md). |
+| `src/lib/components/ui/` | shadcn-svelte components, copied in and restyled (decision 2). |
 | `src/routes/healthz` | Health check: `{"status":"ok"}`, or 503 when the database fails a query. |
 | `drizzle/` | Generated SQL migrations. |
 | `e2e/` | Playwright tests. |
