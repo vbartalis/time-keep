@@ -6,6 +6,7 @@ Guidance for Claude Code when working in this repository.
 
 A personal time tracker replacing Kimai. The charter is [docs/vision.md](docs/vision.md):
 read it before proposing anything. No features outside that scope without approval.
+The order of the work is [docs/roadmap.md](docs/roadmap.md).
 
 ## Process
 

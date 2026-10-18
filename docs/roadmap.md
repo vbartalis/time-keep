@@ -1,0 +1,112 @@
+# Roadmap
+
+The order of the work that takes time-keep from nothing to replacing Kimai. Detail
+lives in the specs, plans and issues each phase links to; this page only says what
+comes next and why. The scope is [the vision](vision.md); this page adds no features.
+
+## The principle
+
+**The core is finished and stable before anything that depends on it is built.** The
+screens and the MCP server both sit on the data model, the single write path and its
+history; those are settled first, so nothing is later bent to fit a dependent that
+already holds it in place.
+
+**Nothing is used until the whole thing works.** Kimai stays in use until phase 9 is
+done (operator, 2026-10-18: "cant use it until it is working"). There is no early
+release to live with; the order serves building, not adoption.
+
+## How an item is worked
+
+- The numbered sections are items, worked in order, one at a time. An item starts
+  when the one before it meets its exit.
+- Every item is worked the same way, whatever it is (a phase, a part of one, a fix,
+  a cleanup, a check): its own brainstorm, spec, plan, build, review and merge. An
+  item too big for one spec is split when it is brainstormed (5a, 5b, …); the parts
+  are written here and each is worked as an item.
+- Anything found along the way is fixed in the current item when its exit needs it,
+  or when it is small and inside the item's scope. Anything else becomes a new item
+  here, placed before the first item that needs it, else at the end.
+- Screens are checked in a browser driven by automation, at phone and PC sizes, not
+  by the operator.
+- When an item lands, it gets a done note: the date, the spec, the decisions it
+  recorded, and any call made in the operator's place.
+- Phase 9 is the operator's: it is never started automatically.
+
+## 1. Foundation — next
+
+The app exists, runs and deploys: the SvelteKit project per decisions 1 and 2, SQLite
+through Drizzle with migrations, the test setup, the app's own session login, the
+admin created from environment variables on first start, the admin managing users,
+and the container definition that phase 9 deploys.
+
+Exit: on a local production build, the admin logs in, creates a user, and that user
+logs in and out; the checks and tests pass.
+
+## 2. The core
+
+Everything the vision says about the data, enforced in one place, with no screens:
+customers › projects, activities, locations, entries, templates and timers, each
+user's data their own. Every write goes through one path that records old and new
+values and groups a request's changes into a batch; archive instead of delete for
+reference data; overlap warnings; start + duration stored as start and end; starting
+an entry on a project stops that project's timer. The API the UI and the MCP server
+will both call, with its validation.
+
+Exit: every rule in the vision's entry, customers and projects, templates, timers and
+history sections is enforced by the API and covered by tests, and any change or batch
+can be undone as one step.
+
+## 3. Design direction
+
+The look and feel, decided once before any screen is built, with impeccable: a
+direction chosen, in Tailwind tokens and shadcn-svelte per decision 2, and recorded.
+
+Exit: the chosen direction is recorded and the app shell uses it.
+
+## 4. Phone
+
+Quick capture, in the installable web app: start and stop timers, log an entry from a
+template with only the blanks typed, fix today's entries.
+
+Exit: on a phone, a new entry from a template is a tap and a typed description, timers
+start and stop, and today's entries can be corrected.
+
+## 5. PC
+
+Dense work: managing customers, projects, activities, locations and templates
+(archiving included), finding entries and editing them in bulk, seeing history and
+undoing any batch.
+
+Exit: a month can be reorganised from the PC alone, and any change made there is
+undone in one step from the history.
+
+## 6. Output
+
+Reports (totals per day, week, customer and project), the month copy-out with columns
+chosen at output time, CSV, rounding to 5 minutes on output only, splitting at
+midnight as an output option, and the vision's formats.
+
+Exit: a month pastes into Excel as the chosen columns and exports as CSV, and the
+reports match the stored entries.
+
+## 7. MCP server
+
+The MCP server as a first-class client of the same API, behind authentication, for
+bulk entry, reorganising and rewording. One agent request is one batch.
+
+Exit: an authenticated agent can do through the MCP server what the UI can, and no
+more, and a wrong agent change is undone in one step.
+
+## 8. Backup and restore
+
+Admin-only backup and restore, through the app.
+
+Exit: a backup taken from the app restores into it, and only the admin can do either.
+
+## 9. Go-live — the operator's
+
+The container deployed on Coolify at its domain, the Kimai import as an agent working
+through the MCP server, and the switch from Kimai.
+
+Exit: the deployed app holds the years of Kimai data, and the operator tracks time in
+time-keep instead of Kimai.
