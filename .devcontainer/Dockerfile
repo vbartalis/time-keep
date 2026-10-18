@@ -1,6 +1,5 @@
 # Toolchain image for the devcontainer. Languages are design decisions; each
-# one is added here once decided. Node.js is here for the agent tooling's
-# hooks, not as a stack choice.
+# one is added here once decided: TypeScript on Node.js (decision 1).
 FROM mcr.microsoft.com/devcontainers/base:ubuntu AS base
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -17,8 +16,9 @@ RUN mkdir -p -m 755 /etc/apt/keyrings \
     && apt-get update && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/*
 
-# Node.js — the agent tooling's hooks (ECC, impeccable).
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+# Node.js — the app's runtime (decision 1) and the agent tooling's hooks
+# (ECC, impeccable).
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
@@ -49,6 +49,5 @@ RUN printf '%s\n' \
 USER vscode
 RUN curl -fsSL https://claude.ai/install.sh | bash
 RUN curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh
-# ── Language toolchain: added here once the stack is decided. ──
 ENV PATH="/home/vscode/.local/bin:${PATH}"
 USER root

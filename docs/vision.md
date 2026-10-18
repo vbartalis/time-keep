@@ -111,8 +111,7 @@ backend admin UI if the stack has one, otherwise through buttons in the app.
 
 ## Decided later
 
-- The stack, backend and frontend.
-- A native mobile app versus an installable web app.
+- A native mobile app, beside the installable web app (decision 1).
 - GPS: an optional reading at start and end, and location suggestions from saved
   places. Planned, not v1.
 - The copy-out view's details.

@@ -11,6 +11,8 @@
       "extensions": [
         "ms-vscode-remote.remote-containers",
         "Anthropic.claude-code",
+        "svelte.svelte-vscode",
+        "bradlc.vscode-tailwindcss",
         "PKief.material-icon-theme",
         "github.vscode-github-actions"
       ]

@@ -8,9 +8,8 @@ Dockerfile) and [`scripts/devcontainer-setup.sh`](../scripts/devcontainer-setup.
 
 ## Image
 
-Ubuntu devcontainers base, plus: tmux, jq, ripgrep, GitHub CLI, Node.js 22 (the agent
-tooling's hooks), Claude Code and CodeGraph. The language toolchain is added once the
-stack is decided.
+Ubuntu devcontainers base, plus: tmux, jq, ripgrep, GitHub CLI, Node.js 24 (the app's
+runtime, decision 1, and the agent tooling's hooks), Claude Code and CodeGraph.
 
 ## State that survives a rebuild
 
