@@ -6,7 +6,7 @@
 	import { Label } from '#lib/components/ui/label/index.js';
 	import type { PageProps } from './$types';
 
-	let { form }: PageProps = $props();
+	let { data, form }: PageProps = $props();
 </script>
 
 <svelte:head><title>Sign in</title></svelte:head>
@@ -24,6 +24,11 @@
 			{#if form?.error}
 				<Alert variant="destructive" class="mt-3"
 					><AlertDescription>{form.error}</AlertDescription></Alert
+				>
+			{:else if data.restored}
+				<Alert class="mt-3"
+					><AlertDescription>Restored. Sign in with the backup's passwords.</AlertDescription
+					></Alert
 				>
 			{/if}
 			<div class="flex flex-col gap-2 border-b border-border py-3">

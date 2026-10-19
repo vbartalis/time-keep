@@ -161,8 +161,10 @@ exact (the core's `undo` and `redo` return no batch id, hence the read).
 
 - One `change` is at most 1000 operations; `list_entries` at most 999 rows (the extra
   row stays within the core's 1000); `list_history` at most 200 batches.
-- A request body is at most adapter-node's `BODY_SIZE_LIMIT`, 512 KB by default, which
-  1000 entries with ordinary descriptions fit. An import is sent in month-sized calls.
+- A request body is at most 512 KB (524288 bytes, counted as it is read): `/mcp`
+  refuses a larger one itself with 413 `{"error":"Too large."}`, whatever
+  `BODY_SIZE_LIMIT` is (the image raises it to 100M for backups). 1000 entries with
+  ordinary descriptions fit. An import is sent in month-sized calls.
 - No rate limit, token scopes or expiry: revoking on Account is the control.
 
 ## Connecting an agent

@@ -485,11 +485,68 @@ confirmed); a refused create without JavaScript clears the typed name and shows 
 message at the section's head, not on the field; without JavaScript the focus does not
 move to Yes, revoke (as on the entry delete).
 
-## 8. Backup and restore — next
+## 8. Backup and restore — done 2026-10-19
 
 Admin-only backup and restore, through the app.
 
 Exit: a backup taken from the app restores into it, and only the admin can do either.
+
+Done 2026-10-19: a Backup screen (`/admin/backup`, in the PC rail after Users, admins
+only) downloads the whole database as a SQLite file without sessions or access tokens
+and restores an uploaded one, with the data as it was just before the last restore
+kept for download. Spec `docs/superpowers/specs/2026-10-19-backup-restore-design.md`,
+plan `docs/superpowers/plans/2026-10-19-backup-restore.md`, decision 7 (backups are the
+whole database, restored in one transaction); `docs/app.md` (the layout rows for
+`backup.ts` and `routes/(app)/admin/backup`, the Backup screen, the navigation, the
+login screen's `restored`, `BODY_SIZE_LIMIT` in the environment table and the image, the
+tests), `docs/mcp.md` (Limits) and `DESIGN.md` (the file input and the confirm
+checkbox) extended; 600 unit tests and 140 browser tests (8 of them new, phone and PC
+sizes, JavaScript off included; 138 pass and two are skipped, as in 6b), check and lint
+clean. `DESIGN.md` was edited directly rather than through impeccable's document step,
+so `.impeccable/design.json` is stale for the backup screen, as in 6b and 7. Calls made
+in the operator's place: every **(call)** in the spec, namely the database as the
+format with no JSON export, sessions and access tokens left out of a backup and never
+restored, `VACUUM INTO` a temporary file beside the database, the download's name and
+type in the admin's zone, a confirm checkbox in the same form rather than a second
+step, the restore's order (check, migrate an older backup, keep the before-restore
+copy, copy every row in one transaction on the app's own connection rather than swap
+the file, sign everyone out and redirect to `/login?restored=1`), one before-restore
+copy replaced at each restore and downloadable, no scheduled, kept, per-user or
+merged backups, none through the MCP server, no encryption, no history record of a
+restore, no maintenance mode, `BODY_SIZE_LIMIT=100M` in the image and the browser
+tests with adapter-node's own 413 above it, `/mcp` keeping its 512 KB cap by counting
+bytes itself, `backup.ts` as the home of the logic, and the screen on the PC rail only;
+and, made during the build, the plan's round trip creating a session with
+`createSession`, "restore twice, then the before-restore file brings the later data
+back" read as restoring a copy of the before-restore file taken after the first
+restore (as a download and upload would, since the second restore's own copy holds
+nothing later), and `docs/mcp.md`'s Limits left stale on the branch until this step
+rather than fixed with the cap. Deferred minors (the final branch review may add
+more): `writeBackup`'s catch can remove a file already at its target (no caller does
+that); `DEFAULT_FOLDER` is resolved at import, not per call; a table missing from a
+backup is skipped silently (only `sqlite_sequence` can be) with no comment; the
+failed-restore test does not assert that sessions and tokens survive; the exactly
+512 KB `/mcp` test asserts only a status other than 413, not a 200; a missing blank
+line before `describe('body limit')` in `http.test.ts`; the `/mcp` body copied twice
+(`Buffer.concat`, then `new Uint8Array`); the
+download links lack `data-sveltekit-reload`; an upload held in memory twice
+(`formData`, then `arrayBuffer`); the Backup sections lack `aria-labelledby` (Users has
+it); and no test of the download's failure path surfacing the real error.
+
+Final branch review, fixed 2026-10-19: the schema comparison and the row copy no longer
+include `__drizzle_migrations` (its DDL text belongs to drizzle-orm, so a drizzle
+upgrade would have refused every old backup; after the migration step both sides hold
+the same set, so the live journal is already right, and the table must still exist in
+the upload); the upload's connection no longer sets `foreign_keys` (a future
+table-rebuilding migration would fail under it); a failed upload write answers "The
+restore failed; nothing was changed." rather than a 500; downloads carry `Cache-Control:
+no-store` and `nosniff`; the browser tests now open the before-restore file and check
+its data (the JS-off test checks its own change is gone). `DESIGN.md`'s "an 18 px" and
+`docs/app.md`'s long Image line were fixed. Accepted: a failed copy has already
+replaced the previous before-restore file (nothing is lost: the new one holds the
+unchanged current data). Still deferred: the refusal browser test implies rather than
+asserts that the admin is still signed in and nothing changed; the JS-off test's
+original run asserted only the before-restore section (now also the data).
 
 ## 9. Go-live — the operator's
 

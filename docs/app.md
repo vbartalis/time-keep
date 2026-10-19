@@ -21,13 +21,15 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/server/auth/tokens.ts` | Agents' access tokens: create (shown once, only the hash stored), list, revoke, and `authenticateToken` for a `Bearer` header (decision 6). |
 | `src/lib/server/auth/bootstrap.ts` | Creates the first admin from the environment. |
 | `src/lib/server/users.ts` | User operations: create, list, authenticate, set password, change own password, disable and enable. Returns `Result` values instead of throwing for expected failures. |
+| `src/lib/server/backup.ts` | Backup and restore of the whole database (decision 7): `writeBackup` (a vacuumed copy without sessions and access tokens), `restoreBackup` (check, migrate, keep the before-restore copy, copy every row in one transaction), `beforeRestoreInfo`. |
 | `src/lib/server/guards.ts` | `requireUser` (redirect to `/login`) and `requireAdmin` (403). |
 | `src/lib/server/core/` | The only way to read and write the time data: batches, recorded changes, undo, history, reference data. Import only `core/index.ts`. See [core.md](core.md) and decision 4. |
 | `src/lib/server/id.ts` | Random base32 ids. |
 | `src/lib/server/mcp/` | The MCP server, a client of the core as actor `agent`: `http.ts` (the Origin check, the bearer token, one stateless exchange), `server.ts` (the 13 tools), `change.ts` (the `change` tool's operations and refs as one batch), `rows.ts` (rows as the agent reads them). See [mcp.md](mcp.md). |
-| `src/routes/login`, `logout` | Sign in and out. |
+| `src/routes/login`, `logout` | Sign in and out. `/login?restored=1` shows "Restored. Sign in with the backup's passwords." above the form, after a restore. |
+| `src/routes/(app)/admin/backup` | The Backup screen (`+page.svelte`, `+page.server.ts`) and its download route (`download/+server.ts`), admin only. |
 | `src/routes/mcp` | `POST /mcp`, the MCP endpoint, outside the signed-in screens (see [mcp.md](mcp.md)). |
-| `src/routes/(app)/` | Signed-in screens: Today (`/`), `entries` and the entry edit screen (`entries/[id]`), `copy-out` and its CSV route (`copy-out/csv`), `reports`, `account`, `admin/users`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell: a left rail on the PC (Today, Entries, Copy-out, Reports, Templates, Setup, History, Account, Users for an admin), a top bar and bottom navigation on the phone (Today, Setup, Account, Users for an admin; Entries, Copy-out, Reports, Templates and History are PC screens). The current item follows the route; the entry edit screen keeps Entries current when its `back` starts with `/entries`, else Today. |
+| `src/routes/(app)/` | Signed-in screens: Today (`/`), `entries` and the entry edit screen (`entries/[id]`), `copy-out` and its CSV route (`copy-out/csv`), `reports`, `account`, `admin/users`, `admin/backup`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell: a left rail on the PC (Today, Entries, Copy-out, Reports, Templates, Setup, History, Account, Users and Backup for an admin), a top bar and bottom navigation on the phone (Today, Setup, Account, Users for an admin; Entries, Copy-out, Reports, Templates and History are PC screens). The current item follows the route; the entry edit screen keeps Entries current when its `back` starts with `/entries`, else Today. |
 | `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`, `edit.ts`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries search and bulk change (`entries.ts`: `readSearch`, `searchInput`, `searchFilters`, `searchPath`, `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`), the copy-out's rows and query (`copy-out.ts`: `outputRows`, `readCopyOut`, `copyOutQuery`, `monthRange`, `csvName`, `sheetFor`, and the pieces and options Reports shares: `outputPieces`, `readOptions`, `optionsQuery`), the reports' totals (`reports.ts`: `isoWeek`, `reportTotals`, `readReport`, `reportFor`, `reportQuery`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`). |
 | `src/lib/components/entries/` | The Entries screen's parts: the filter form (shared with Copy-out), the change form, the selectable table. |
 | `src/lib/components/copy-out/` | The Copy-out screen's parts: the column and option pickers (`OutputFields`), the option pickers alone (`OutputOptions`, shared with Reports), the Copy button and its status (`CopyRows`), the sheet table (`SheetTable`). |
@@ -378,6 +380,43 @@ unknown id says "Token not found.". No undo: accounts are outside the history
 (decision 4). The posts work without JavaScript; a refusal shows as a red alert at the
 section's head.
 
+### Backup (`/admin/backup`)
+
+Admin only (`requireAdmin`: signed out 303 to `/login`, a non-admin 403), in the PC
+rail after Users and not on the phone's bar; the URL works on the phone (decision 7).
+Three sections, each a printed head over ruled lines.
+
+**Backup**: "A backup is the whole database: every user, their time data and history.
+Keep it somewhere safe; it holds password hashes." and **Download backup**, the
+primary button, a link to `GET /admin/backup/download`. The route answers
+`application/vnd.sqlite3` as an attachment named `time-keep-YYYY-MM-DD-HHmm.db` (the
+admin's zone, from the `tz` cookie); the file is a vacuumed copy of the database with
+no `session` or `access_token` row, taken in a temporary file next to the database and
+removed when the request ends.
+
+**Restore**: "Restoring replaces every user's data with the backup's and signs
+everyone out.", a file input **Backup file** (`accept=".db"`), a checkbox **Replace all
+data with this backup** and a red **Restore**, in one `multipart/form-data` form posted
+to `?/restore` (it works without JavaScript). The action refuses, changing nothing,
+with "Choose a backup file." (none or empty), "Tick the box to confirm the restore.",
+"This file is not a time-keep backup." (not SQLite, a failed integrity check, no
+`__drizzle_migrations`, a table or column that differs from the running schema, or a
+foreign key violation; `__drizzle_migrations` must exist but is neither compared nor
+copied), "This backup is from a newer version of time-keep.", "This
+backup has no admin who can sign in." and "The restore failed; nothing was changed."
+(the copy rolled back, or the upload could not be written); the message shows as a red alert under the form. An older
+backup is migrated first. Then the running data is written, as a backup, to
+`time-keep.before-restore.db` beside the database (one file, replaced at each
+restore), and every row is copied into the running database in one transaction on the
+app's own connection (sessions and tokens are not copied, so everyone is signed out,
+the restoring admin included, and agents need new tokens). The action redirects to
+`/login?restored=1`. A restore is not recorded in the history: it replaces it.
+
+**Before the last restore**: only when that file exists: "The data as it was just
+before the last restore, <YYYY-MM-DD HH:mm>." (the file's time, in the admin's zone)
+and an outline **Download**, `GET /admin/backup/download?before-restore=1`, named
+`time-keep-before-restore-YYYY-MM-DD-HHmm.db`. Restoring it is an ordinary restore.
+
 ### Time zones
 
 The request's zone is, in order: the form's hidden `timeZone` field, the `tz`
@@ -421,6 +460,7 @@ of scope.
 | `DATABASE_PATH` | `./data/time-keep.db` | SQLite file. The directory is created. The image sets `/data/time-keep.db`. |
 | `ADMIN_USERNAME`, `ADMIN_PASSWORD` | none | The first admin. Read only while no admin exists; startup fails if there is none and these are unset. |
 | `PORT` | `3000` | Listen port. |
+| `BODY_SIZE_LIMIT` | `512K` (adapter-node's) | The largest request body. The image and the browser tests set `100M` so a backup uploads; `/mcp` still refuses a body over 512 KB itself (see [mcp.md](mcp.md)). |
 | `PROTOCOL_HEADER`, `HOST_HEADER` | unset locally | Where adapter-node builds the request origin. |
 | `ADDRESS_HEADER`, `XFF_DEPTH` | unset locally | Where the client address comes from (sign-in throttle). |
 
@@ -514,6 +554,19 @@ files.
   (every tool through the SDK's client over an in-memory transport, on the real core),
   `mcp/change.test.ts` (operations, refs and refusals as one batch) and
   `mcp/rows.test.ts` (the rows' times and dropped fields).
+- The backup's unit tests: `backup.test.ts`, on real files in a temporary directory (a
+  backup's rows without sessions or tokens and no token hash left in its bytes, a round
+  trip, every refusal leaving the data and the directory unchanged, an older backup
+  migrated, a forced failure rolled back, the before-restore copy), and the body limit
+  tests in `mcp/http.test.ts`.
+- `e2e/backup.test.ts` covers Backup with the seeded admin: a non-admin refused on the
+  screen and the download with no Backup in the rail; a download (its name, the SQLite
+  header), a customer made after it, the restore of that file landing on
+  `/login?restored=1`, the customer gone after signing in again and the before-restore
+  download; the two refusals (box unticked, no file) leaving the admin signed in; and
+  the no-JavaScript download and restore. A restore signs out every session, so each
+  test signs in again after it and restores only the backup it just downloaded, which
+  leaves the other tests' seeded users in place.
 - `npm test` runs both.
 
 Chromium needs system libraries and fonts. The devcontainer image installs them, so
@@ -555,7 +608,8 @@ Decision 3 is the rule; these are the details.
 ## Image
 
 The `Dockerfile` builds with adapter-node and runs `node build` as the `node` user.
-It sets `DATABASE_PATH=/data/time-keep.db`, `PORT=3000`, `PROTOCOL_HEADER=x-forwarded-proto`,
+It sets `DATABASE_PATH=/data/time-keep.db`, `BODY_SIZE_LIMIT=100M` (a backup is
+uploaded in one request), `PORT=3000`, `PROTOCOL_HEADER=x-forwarded-proto`,
 `HOST_HEADER=x-forwarded-host`, `ADDRESS_HEADER=X-Forwarded-For` and `XFF_DEPTH=1`,
 which suits one reverse proxy (Coolify's). `/data` is a volume and must be persistent.
 The image contains `drizzle/` for startup migrations. The healthcheck calls

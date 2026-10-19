@@ -501,9 +501,17 @@ shown again." in medium 14 px ink; "Copied" follows in 14 px ink, announced poli
 No card around it and no colour: the punched token is the mark. Without JavaScript there is no
 Copy button and the field is copied by hand. It is gone on the next load.
 
+### File input and confirm checkbox
+Backup's Restore form, in the same ruled lines and 12 rem label column on the PC: the
+native file input under "Backup file", its button styled as an outline control (36 px
+tall, 4 px corners, card-face fill, 1 px ink-stroke border), and under it an 18 px
+checkbox (accent violet) with "Replace all data with this backup" as its label on a
+ruled line, 56 px tall on the phone. Restore is the one red button; Download backup
+is the one violet primary, a link styled as a button.
+
 ### Navigation
 - **PC:** the rack. Wordmark at the top, then Today, Entries, Copy-out (a sheet
-  icon), Reports (a column chart icon), Templates, Setup, History, Account (and Users for an admin), items of 40 px with a 16 px line icon and
+  icon), Reports (a column chart icon), Templates, Setup, History, Account (and Users and Backup for an admin), items of 40 px with a 16 px line icon and
   15 px text, the signed-in user and Sign out at the foot. Hover fills with
   rack-ink-raised. The current item is filled with card stock and card-ink text; an
   entry opened from the Entries list keeps Entries current, from Today keeps Today.

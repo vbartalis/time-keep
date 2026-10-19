@@ -145,4 +145,53 @@ describe('handleMcp', () => {
 		expect(res.status).toBe(400);
 		expect((await res.json()).error.code).toBe(-32700);
 	});
+	describe('body limit', () => {
+		// A tools/call padded with a long string argument to exactly `size` bytes.
+		function padded(size: number) {
+			const make = (n: number) =>
+				JSON.stringify(
+					call('tools/call', { name: 'list_customers', arguments: { pad: 'x'.repeat(n) } })
+				);
+			const base = make(0).length;
+			return make(size - base);
+		}
+
+		it('answers 413 for a body over 512 KB', async () => {
+			const { token } = tokenFor(userId);
+			const res = await handle(post(padded(524289), bearer(token)));
+			expect(res.status).toBe(413);
+			expect(await res.json()).toEqual({ error: 'Too large.' });
+		});
+
+		it('answers 413 for a streamed body with no content-length', async () => {
+			const { token } = tokenFor(userId);
+			const bytes = new TextEncoder().encode(padded(524289));
+			const body = new ReadableStream<Uint8Array>({
+				start(controller) {
+					for (let i = 0; i < bytes.length; i += 65536)
+						controller.enqueue(bytes.slice(i, i + 65536));
+					controller.close();
+				}
+			});
+			const res = await handle(
+				new Request(`${ORIGIN}/mcp`, {
+					method: 'POST',
+					headers: {
+						'content-type': 'application/json',
+						accept: 'application/json, text/event-stream',
+						...bearer(token)
+					},
+					body,
+					duplex: 'half'
+				} as RequestInit)
+			);
+			expect(res.status).toBe(413);
+		});
+
+		it('passes a body of exactly 512 KB to the server', async () => {
+			const { token } = tokenFor(userId);
+			const res = await handle(post(padded(524288), bearer(token)));
+			expect(res.status).not.toBe(413);
+		});
+	});
 });

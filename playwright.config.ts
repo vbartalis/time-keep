@@ -20,7 +20,8 @@ export default defineConfig({
 			ADMIN_USERNAME: 'admin',
 			ADMIN_PASSWORD: 'admin-password-1',
 			PORT: '4173',
-			PROTOCOL_HEADER: 'x-forwarded-proto'
+			PROTOCOL_HEADER: 'x-forwarded-proto',
+			BODY_SIZE_LIMIT: '100M'
 		}
 	},
 	projects: [

@@ -4,8 +4,9 @@ import { getDb } from '#lib/server/db/index.js';
 import { authenticate } from '#lib/server/users.js';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = ({ locals }) => {
+export const load: PageServerLoad = ({ locals, url }) => {
 	if (locals.user) redirect(303, '/');
+	return { restored: url.searchParams.get('restored') === '1' };
 };
 
 export const actions: Actions = {

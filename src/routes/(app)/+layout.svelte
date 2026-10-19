@@ -4,6 +4,7 @@
 	import { page } from '$app/state';
 	import ChartColumn from '@lucide/svelte/icons/chart-column';
 	import Clock from '@lucide/svelte/icons/clock';
+	import DatabaseBackup from '@lucide/svelte/icons/database-backup';
 	import History from '@lucide/svelte/icons/history';
 	import LayoutTemplate from '@lucide/svelte/icons/layout-template';
 	import List from '@lucide/svelte/icons/list';
@@ -66,6 +67,13 @@
 		icon: Users
 	};
 
+	const backup = {
+		route: '/(app)/admin/backup',
+		href: resolve('/(app)/admin/backup'),
+		label: 'Backup',
+		icon: DatabaseBackup
+	};
+
 	// Entries, Copy-out, Reports, Templates and History are PC screens: the rail lists them, the phone bar does not.
 	const rail = $derived([
 		today,
@@ -76,7 +84,7 @@
 		setup,
 		history,
 		account,
-		...(data.user.isAdmin ? [users] : [])
+		...(data.user.isAdmin ? [users, backup] : [])
 	]);
 	const bar = $derived([today, setup, account, ...(data.user.isAdmin ? [users] : [])]);
 
