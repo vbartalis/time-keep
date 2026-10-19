@@ -197,7 +197,8 @@ the button is not shown; selecting the table and copying it pastes into Excel as
 columns too.
 
 In copied text a tab, a carriage return or a line feed inside a value becomes one
-space **(call: one entry stays one row)**.
+space **(call: one entry stays one row)**. A value that starts with a quote is written
+wrapped in quotes, inner quotes doubled, so Excel keeps it whole.
 
 ### CSV
 

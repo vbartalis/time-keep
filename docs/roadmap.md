@@ -304,6 +304,74 @@ midnight as an output option, and the vision's formats.
 Exit: a month pastes into Excel as the chosen columns and exports as CSV, and the
 reports match the stored entries.
 
+Split 2026-10-19 into two parts, worked in order:
+
+- **6a. Copy-out — done 2026-10-19.** A Copy-out screen (`/copy-out`, in the PC rail
+  after Entries) writes the entries the Entries filters find as the columns chosen
+  (Date, Start, End, Duration, Customer, Project, Activity, Location, Reference,
+  Description, in that order), rounded to 5 minutes and split at midnight when asked,
+  durations as `h:mm` or decimal hours; Copy puts the rows on the clipboard to paste
+  into Excel and Download CSV (`/copy-out/csv`) gives the same rows as a file. Nothing
+  rounded or split is stored; the output rules live in `src/lib/output.ts` and
+  `screens/copy-out.ts` for 6b to reuse. Spec
+  `docs/superpowers/specs/2026-10-19-copy-out-design.md`, plan
+  `docs/superpowers/plans/2026-10-19-copy-out.md`; `docs/app.md` (the Copy-out screen
+  and the CSV route, the navigation, the layout rows for `output.ts`,
+  `screens/copy-out.ts` and `components/copy-out/`, the browser tests) and
+  `DESIGN.md` (the filter bar's Copy-out use, column and option pickers, result bar,
+  sheet table, the navigation's items) extended; 497 unit tests and 110 browser tests
+  (18 of them new, phone and PC sizes, JavaScript off included; Copy runs on the PC
+  only, so 109 pass and one is skipped), check and lint clean. impeccable's detector
+  ran over the 6 changed .svelte files with its regex rules and found nothing; over
+  the rendered `/copy-out` (the month, split with decimal hours and fewer columns, no
+  column ticked, nothing matching, a bad date) at 390 and 1440 px, saved from a
+  signed-in browser and scanned by its browser engine, it found nothing; its HTML
+  engine reported "cramped padding" on the section heads' and ruled lines' bottom
+  inset, as in 5c; nothing to fix. Calls made in the operator's place: every
+  **(call)** in the spec, namely the split of phase 6 into 6a and 6b, the columns in
+  one fixed order, the choice remembered only in the URL, no change to the core, no
+  `.xlsx`, other delimiters, number formats or zones, This month and Last month
+  links, no row limit, running entries left out with a faded line, start and end
+  each split into a date and a time, `24:00` for an end at the next midnight and
+  date and time for an unsplit overnight end, "Choose at least one column." for none,
+  the options' defaults (rounded, unsplit, `h:mm`), rounding both ends rather than
+  only the duration, an entry rounding to nothing kept as a `0:00` row, a split
+  entry's pieces in its start zone, decimal hours to two decimals rounded half up,
+  unrounded times cut to the minute with the duration from those minutes, every
+  column of a row from the same rounded times with no clamp to the month, ISO dates,
+  24-hour times, a dot as decimal mark and a comma between CSV values, Show as the
+  one primary, the count in rows summed from minutes, Copy and Download CSV outline,
+  no header in the copy, its status copy, a tab or line break in a copied value
+  becoming a space, the CSV's byte-order mark, header row and file name
+  (`time-keep-<from>-<to>.csv`, a blank side `all`), the leading apostrophe against
+  formulas, one output module shared by server and browser, Copy-out in the rail
+  after Entries with the sheet icon but not the phone's bar, and no decision record;
+  and, made during the build, the query names (`show=1`, `col`, `round=1`,
+  `split=1`, `duration=hm|decimal`) with the hidden `show=1` telling a submitted form
+  from the defaults, an unknown column or option value ignored, the Entries filter
+  bar shared as `EntryFilters` with the screen's pickers and month links inside it,
+  `searchFilters` moved to `screens/entries.ts`, an unknown project id listing
+  nothing (as Entries does) rather than a refusal, and `readSearch` refusing an
+  impossible date such as 2026-13-01 with "Use dates like 2026-10-01." instead of
+  throwing, which also fixes a 500 on Entries. Deferred minors (the final branch
+  review may add more): the CSV CRLF test checks one row only; `formatDuration`
+  assumes whole non-negative minutes; Task 2 recorded no failing run before its code;
+  an unrequested clamp of the end to the start in `outputRows`; the "never prefixed"
+  test is weak and Customer and Project `safeText` untested; no test splitting an
+  entry with differing start and end zones;
+  `monthRange` repeats `readSearch`'s month arithmetic; a partial `Search` cast in
+  the `csvName` test and the 600-row test data built in a `describe` body; the
+  refusal test pins the core's generic "The input is not valid."; the load sends an
+  unused `heads`; the section head reads "Result" with the count beside it, as
+  Entries' "Found"; the duration choice is a `role=radiogroup` div rather than a
+  fieldset; the copy-out form keeps `role=search`; the running line shows under "No
+  entries match." when only running entries match; the browser tests run in a
+  fixed-offset zone, so an entry crossing the month's end and daylight-saving days
+  are covered by unit tests only; the detector's rendered pass scanned saved pages,
+  not the live one.
+- **6b. Reports — next.** Totals per day, week, customer and project, over the same
+  filters and the same output rules.
+
 ## 7. MCP server
 
 The MCP server as a first-class client of the same API, behind authentication, for

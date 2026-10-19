@@ -24,9 +24,10 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/server/core/` | The only way to read and write the time data: batches, recorded changes, undo, history, reference data. Import only `core/index.ts`. See [core.md](core.md) and decision 4. |
 | `src/lib/server/id.ts` | Random base32 ids. |
 | `src/routes/login`, `logout` | Sign in and out. |
-| `src/routes/(app)/` | Signed-in screens: Today (`/`), `entries` and the entry edit screen (`entries/[id]`), `account`, `admin/users`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell: a left rail on the PC (Today, Entries, Templates, Setup, History, Account, Users for an admin), a top bar and bottom navigation on the phone (Today, Setup, Account, Users for an admin; Entries, Templates and History are PC screens). The current item follows the route; the entry edit screen keeps Entries current when its `back` starts with `/entries`, else Today. |
-| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`, `edit.ts`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries search and bulk change (`entries.ts`: `readSearch`, `searchInput`, `searchPath`, `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`). |
-| `src/lib/components/entries/` | The Entries screen's parts: the filter form, the change form, the selectable table. |
+| `src/routes/(app)/` | Signed-in screens: Today (`/`), `entries` and the entry edit screen (`entries/[id]`), `copy-out` and its CSV route (`copy-out/csv`), `account`, `admin/users`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell: a left rail on the PC (Today, Entries, Copy-out, Templates, Setup, History, Account, Users for an admin), a top bar and bottom navigation on the phone (Today, Setup, Account, Users for an admin; Entries, Copy-out, Templates and History are PC screens). The current item follows the route; the entry edit screen keeps Entries current when its `back` starts with `/entries`, else Today. |
+| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`, `edit.ts`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries search and bulk change (`entries.ts`: `readSearch`, `searchInput`, `searchFilters`, `searchPath`, `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`), the copy-out's rows and query (`copy-out.ts`: `outputRows`, `readCopyOut`, `copyOutQuery`, `monthRange`, `csvName`, `sheetFor`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`). |
+| `src/lib/components/entries/` | The Entries screen's parts: the filter form (shared with Copy-out), the change form, the selectable table. |
+| `src/lib/components/copy-out/` | The Copy-out screen's parts: the column and option pickers (`OutputFields`), the Copy button and its status (`CopyRows`), the sheet table (`SheetTable`). |
 | `src/lib/components/history/` | The History screen's parts: a batch's line with its changes (`BatchLine`), and the types its load returns. |
 | `src/lib/components/narrowing.svelte.ts` | Customer and project pickers that narrow each other with JavaScript, shared by the template form and the Entries filters. |
 | `src/lib/components/templates/` | The template form shared by the new and edit screens. |
@@ -35,6 +36,7 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/components/UndoStrip.svelte` | The undo strip every screen shows after an action; posts to `/undo`. |
 | `src/routes/(app)/undo/` | The shared `/undo` route: `core.undo`, then back to the screen it came from. |
 | `src/lib/format.ts` | Formatting shared by server and browser: elapsed time, template times, warning text. |
+| `src/lib/output.ts` | The copy-out's columns and writers, shared by server and browser (no server imports): `COLUMNS` and their heads, `formatDuration` (`h:mm` or decimal hours), `safeText` (the formula guard), `toTsv` and `toCsv`. |
 | `src/routes/layout.css` | Design tokens as Tailwind theme values, light and dark (see DESIGN.md). |
 | `src/lib/components/ui/` | shadcn-svelte components, copied in and restyled (decision 2). |
 | `static/manifest.webmanifest`, `static/icons/` | The web app manifest and icons (see Installable). |
@@ -49,6 +51,7 @@ Every screen action is one core call (one batch) through `openCore(getDb(), user
 as it gives them. Forms are plain posts that work without JavaScript; `use:enhance`
 enhances them. A successful action redirects (303) back to the screen it was posted
 from (Today, `/setup`, `/templates`, the Entries search, the History page), with the undo strip. No browser dialogs.
+Copy-out only reads: it has no actions.
 
 ### Today (`/`)
 
@@ -180,6 +183,65 @@ stale. An entry deleted elsewhere since the list loaded cannot be named: when th
 would set a field on it the core's "Not found." shows alone, with no Reload; when it
 would not (a Find its text no longer has), it is skipped. Field messages show beside
 the change form's fields.
+
+### Copy-out (`/copy-out`, `/copy-out/csv`)
+
+A PC screen (in the rail after Entries, not the phone's bar) that writes a month's
+entries out as the columns chosen, to paste into Excel or download as CSV; it stays
+usable at phone widths. It only reads: nothing rounded or split is stored.
+
+**The form** is one `GET` form, so a copy-out is a URL. The Filters are the Entries
+filter bar (`EntryFilters`, read by the same `readSearch`, the same query names and
+messages), with **This month** and **Last month** beside Clear: each sets From and To
+to that month in the request's zone (`monthRange`) and keeps every other filter,
+column and option. Below the filters, **Columns**: ten checkboxes in one fixed order,
+Date, Start, End, Duration, Customer, Project, Activity, Location, Reference,
+Description (`col=<column>`, repeated); and **Options**: Round to 5 minutes (`round=1`,
+on by default), Split at midnight (`split=1`, off) and Duration as `h:mm` or Decimal
+hours (`duration=hm|decimal`). The form sends a hidden `show=1`; `readCopyOut` takes
+the columns and switches as sent when it is there and the defaults (all ten, rounded,
+unsplit, `h:mm`) when it is not. An unknown column or option value is ignored. A
+submitted form with no column says "Choose at least one column." by the columns and
+shows no rows. Show is the screen's one primary button.
+
+**The rows.** `sheetFor` asks `entries.list` for the entries that started in the
+range, oldest first, with no row limit, and `outputRows` turns them into rows of
+text: the date and start in the start zone, the end in the end zone (a time on the
+row's date, `24:00` at exactly the next midnight, else `YYYY-MM-DD HH:mm`), the
+duration in the chosen format, and the names, reference and description as stored.
+Rounding moves both ends to the nearest 5 minutes (2.5 up) and the duration is their
+difference; without it times are cut to the minute. Splitting
+comes after rounding and cuts an entry at each midnight of its start zone into one
+row per day, a piece of no length not written. A text value starting with `=`, `+`,
+`-`, `@`, a tab or a carriage return gets a leading `'` (`safeText`); dates, times
+and durations never do. Running entries are left out and counted.
+
+**The result** sits under a "Result" head with "<n> rows, <total>" ("1 row"), the
+rows' minutes summed in the chosen format; a Copy button and a Download CSV link,
+both outline; "1 running entry left out." / "<n> running entries left out." when any;
+then the rows as a ruled table with the chosen columns as heads, every value as it is
+copied, the times and durations punched. The table scrolls sideways at any width and
+never stacks. None says "No entries match." with Clear (and the running line, when
+the only matches run). A date mistake shows as on Entries, with no result.
+
+**Copy** (`CopyRows`, shown only once the page's script runs) writes `toTsv` of the
+page's rows to the clipboard: values separated by tabs, lines by `\r\n`, no header, a
+tab or line break inside a value replaced by a space, and a value that starts with a
+quote wrapped in quotes with its inner quotes doubled (so Excel keeps it whole). A polite status line says
+"Copied <n> rows." ("Copied 1 row.") or "Copy failed; select the table and copy it."
+and clears when the rows change. Without JavaScript the table is selected and copied
+by hand.
+
+**The CSV route** (`/copy-out/csv`, `+server.ts`) takes the same query (the screen
+links it with `copyOutQuery`) and answers `toCsv` of the same rows: a byte-order mark,
+a header row of the column heads, values comma-separated and quoted when they hold a
+comma, a quote or a line break (quotes doubled, line breaks kept), lines ending
+`\r\n`; `Content-Type: text/csv; charset=utf-8`, `Content-Disposition: attachment`,
+named `time-keep-<from>-<to>.csv` with a blank side written `all` (`csvName`). The
+app layout's load does not cover a `+server.ts`, so the route calls `requireUser`
+itself (signed out: 303 to `/login`) and reads only that user's entries. A query the
+screen would refuse (a bad date, From after To, no column, a refused list) is a 400
+with the screen's message as plain text.
 
 ### Edit entry (`/entries/[id]`)
 
@@ -360,7 +422,17 @@ files.
   `openCore(db, userId, 'agent')`), a batch's own Undo beating a tick on another
   batch, an unknown `before` returning to the newest page, a forged batch id showing
   "Not found.", an undo on an older page landing back there, the rail's current item
-  and the no-JavaScript undo of a ticked change.
+  and the no-JavaScript undo of a ticked change; `copy-out.test.ts` covers Copy-out
+  with a user of its own per test (`seedCopyOut`: four entries this month, one of
+  them overnight, one with a comma, a quote and a line break in its description
+  (`QUOTED`) and one starting with `-`, one last month and a running timer): the month
+  with all ten columns and the running line, fewer columns and decimal hours, Last
+  month and This month keeping the columns, no column ticked, Split at midnight and
+  rounding off, Copy on the PC (the clipboard granted; tab-separated, no header, one
+  line per row), Download CSV (its name, byte-order mark and header, every value
+  read back through a small CSV reader, the line break kept), the rail's current
+  item, the CSV route signed out, for another user and with bad queries, and the
+  no-JavaScript Show, table and CSV link with no Copy button.
 - `npm test` runs both.
 
 Chromium needs system libraries and fonts. The devcontainer image installs them, so

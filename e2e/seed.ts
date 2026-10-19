@@ -238,6 +238,82 @@ export async function seedMonth(prefix: string, zone: string) {
 
 export type Month = Awaited<ReturnType<typeof seedMonth>>;
 
+/** A description with a comma, a quote and a line break, which must stay one value. */
+export const QUOTED = 'Met Anna, said "ship it"\nthen left';
+
+/**
+ * A user for the copy-out (in `zone`): four finished entries this month, one last
+ * month and a timer running today.
+ *
+ * | when                 | in–out      | project              | activity / location / ref  | description                 |
+ * | day 02               | 09:02–10:31 | Acme › Website       | Development / Office / T-101 | Fixed the login form      |
+ * | day 03 to day 04     | 22:00–02:00 | Northwind › Support  |                            | Night deploy                |
+ * | day 05               | 13:00–14:00 | Acme › Website       |                            | `QUOTED`                    |
+ * | day 06               | 15:00–15:45 | Northwind › Support  |                            | - fixed the export          |
+ * | last month's 1st     | 09:00–10:00 | Acme › Website       |                            | Reviewed last month         |
+ * | today, running       | from 07:15  | Northwind › Support  |                            | Deploying                   |
+ */
+export async function seedCopyOut(prefix: string, zone: string) {
+	const user = await newUser(prefix);
+	const core = asUi(user.id);
+	const today = dateIn(zone);
+	const [year, month] = [Number(today.slice(0, 4)), Number(today.slice(5, 7))];
+	const iso = (d: Date) => d.toISOString().slice(0, 10);
+
+	const acme = value(core.customers.create({ name: 'Acme' })).id;
+	const north = value(core.customers.create({ name: 'Northwind' })).id;
+	const website = value(core.projects.create({ customerId: acme, name: 'Website' })).id;
+	const support = value(core.projects.create({ customerId: north, name: 'Support' })).id;
+	const development = value(core.activities.create({ name: 'Development' })).id;
+	const office = value(core.locations.create({ name: 'Office' })).id;
+
+	const entry = (
+		start: string,
+		end: string,
+		input: {
+			projectId: string;
+			activityId?: string;
+			locationId?: string;
+			reference?: string;
+			description: string;
+		}
+	) => value(core.entries.create({ ...input, start, end, timeZone: zone })).id;
+
+	const day = (n: number) => dayOf(today, n);
+	const lastMonth = iso(new Date(Date.UTC(year, month - 2, 1)));
+	entry(`${day(2)}T09:02`, `${day(2)}T10:31`, {
+		projectId: website,
+		activityId: development,
+		locationId: office,
+		reference: 'T-101',
+		description: 'Fixed the login form'
+	});
+	entry(`${day(3)}T22:00`, `${day(4)}T02:00`, { projectId: support, description: 'Night deploy' });
+	entry(`${day(5)}T13:00`, `${day(5)}T14:00`, { projectId: website, description: QUOTED });
+	entry(`${day(6)}T15:00`, `${day(6)}T15:45`, {
+		projectId: support,
+		description: '- fixed the export'
+	});
+	entry(`${lastMonth}T09:00`, `${lastMonth}T10:00`, {
+		projectId: website,
+		description: 'Reviewed last month'
+	});
+	startElsewhere(user.id, support, zone, '07:15', 'Deploying');
+
+	return {
+		...user,
+		/** A day of this month, `YYYY-MM-DD`. */
+		day,
+		/** This month's last day. */
+		lastDay: iso(new Date(Date.UTC(year, month, 0))),
+		/** Last month's first and last day. */
+		lastMonth: { from: lastMonth, to: iso(new Date(Date.UTC(year, month - 1, 0))) },
+		projects: { website, support }
+	};
+}
+
+export type CopyOutUser = Awaited<ReturnType<typeof seedCopyOut>>;
+
 /** Starts a timer for `userId` at `start` (`HH:mm` today in `zone`), the way another device would. */
 export function startElsewhere(
 	userId: string,

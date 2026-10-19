@@ -4,9 +4,10 @@ import {
 	previousDate,
 	type Core,
 	type EntryItem,
+	type Named,
 	type Result
 } from '../core/index';
-import { given, text, wholeNumber } from './actions';
+import { given, groupProjects, rows, text, wholeNumber } from './actions';
 import { startOfDay } from './today';
 
 /** A picker's choice: any row, none, or the id of one. */
@@ -26,8 +27,12 @@ export type Search = {
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-const isDate = (value: string): boolean =>
-	DATE.test(value) && new Date(`${value}T00:00:00Z`).toISOString().startsWith(value);
+/** A real calendar day: month 13 and day 32 are not dates, nor does 02-30 roll over. */
+const isDate = (value: string): boolean => {
+	if (!DATE.test(value)) return false;
+	const day = new Date(`${value}T00:00:00Z`);
+	return !Number.isNaN(day.getTime()) && day.toISOString().startsWith(value);
+};
 
 /**
  * The search a query string asks for. With neither From nor To present it is the
@@ -63,6 +68,34 @@ export function readSearch(
 		error = 'From must not be after To.';
 	}
 	return { search, error };
+}
+
+const archived = (name: string, isArchived: boolean) => (isArchived ? `${name} (archived)` : name);
+
+/** Every row of a kind, archived ones marked. */
+const marked = (list: Named[]) =>
+	list.map((r) => ({ id: r.id, name: archived(r.name, r.archivedAt !== null) }));
+
+/**
+ * The filter bar's pickers: every customer, project (grouped by customer), activity and
+ * location, archived ones included and marked "(archived)".
+ */
+export function searchFilters(core: Core) {
+	const customers = rows(core.customers.list({ includeArchived: true }));
+	const archivedCustomers = new Set(
+		customers.filter((c) => c.archivedAt !== null).map((c) => c.id)
+	);
+	const projects = rows(core.projects.list({ includeArchived: true })).map((p) => ({
+		...p,
+		name: archived(p.name, p.archivedAt !== null || archivedCustomers.has(p.customerId)),
+		customerName: archived(p.customerName, archivedCustomers.has(p.customerId))
+	}));
+	return {
+		customers: marked(customers),
+		projects: groupProjects(projects),
+		activities: marked(rows(core.activities.list({ includeArchived: true }))),
+		locations: marked(rows(core.locations.list({ includeArchived: true })))
+	};
 }
 
 /** The `entries.list` input of a search: entries that started from From's day to To's, oldest first. */

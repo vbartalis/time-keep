@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
@@ -22,7 +23,12 @@
 		search,
 		filters,
 		error,
-		dateError
+		dateError,
+		clear = resolve('/(app)/entries'),
+		submit = 'Search',
+		primary = false,
+		children,
+		links
 	}: {
 		search: Search;
 		filters: {
@@ -33,6 +39,16 @@
 		};
 		error: string | null;
 		dateError: boolean;
+		/** Where Clear goes: the screen with no query. */
+		clear?: string;
+		/** The submit button's text. */
+		submit?: string;
+		/** Whether the submit is the screen's primary (else outline: another form owns it). */
+		primary?: boolean;
+		/** More fields of the same `GET` form, after the filters. */
+		children?: Snippet;
+		/** More links beside Clear. */
+		links?: Snippet;
 	} = $props();
 
 	const pick = narrowing(
@@ -135,9 +151,14 @@
 			/>
 		</div>
 	</div>
+	{@render children?.()}
 	<div class="flex flex-wrap items-center gap-x-4 gap-y-3">
-		<Button type="submit" variant="outline" class="flex-1 sm:flex-none">Search</Button>
-		<a href={resolve('/(app)/entries')} class={link}>Clear</a>
+		<Button type="submit" variant={primary ? 'default' : 'outline'} class="flex-1 sm:flex-none"
+			>{submit}</Button
+		>
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved by the caller -->
+		<a href={clear} class={link}>Clear</a>
+		{@render links?.()}
 	</div>
 	{#if !dateError && error}
 		<p role="alert" class="text-sm text-irregular">{error}</p>

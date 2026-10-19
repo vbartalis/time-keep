@@ -1,12 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { BulkFailure, Chosen, DeleteConfirm, ListRow } from '#lib/components/entries/types.js';
-import {
-	openCore,
-	type Core,
-	type CoreError,
-	type EntryItem,
-	type Named
-} from '#lib/server/core/index.js';
+import { openCore, type Core, type CoreError, type EntryItem } from '#lib/server/core/index.js';
 import { getDb } from '#lib/server/db/index.js';
 import { requireUser } from '#lib/server/guards.js';
 import { done, formFailure, groupProjects, rows, text } from '#lib/server/screens/actions.js';
@@ -18,6 +12,7 @@ import {
 	readBulk,
 	readSearch,
 	runBulk,
+	searchFilters,
 	searchInput,
 	searchPath,
 	selection
@@ -43,12 +38,6 @@ const VALUES = [
 	'find',
 	'replace'
 ] as const;
-
-const archived = (name: string, isArchived: boolean) => (isArchived ? `${name} (archived)` : name);
-
-/** Every row of a kind, archived ones marked, for the filters. */
-const marked = (list: Named[]) =>
-	list.map((r) => ({ id: r.id, name: archived(r.name, r.archivedAt !== null) }));
 
 export const load: PageServerLoad = ({ locals, cookies, url }) => {
 	const user = requireUser(locals);
@@ -84,16 +73,6 @@ export const load: PageServerLoad = ({ locals, cookies, url }) => {
 	}));
 	const total = shown.reduce((sum, e) => sum + Math.max(0, (e.endAt ?? now) - e.startAt), 0);
 
-	const customers = rows(core.customers.list({ includeArchived: true }));
-	const archivedCustomers = new Set(
-		customers.filter((c) => c.archivedAt !== null).map((c) => c.id)
-	);
-	const allProjects = rows(core.projects.list({ includeArchived: true })).map((p) => ({
-		...p,
-		name: archived(p.name, p.archivedAt !== null || archivedCustomers.has(p.customerId)),
-		customerName: archived(p.customerName, archivedCustomers.has(p.customerId))
-	}));
-
 	return {
 		search,
 		error: error ?? listError,
@@ -103,12 +82,7 @@ export const load: PageServerLoad = ({ locals, cookies, url }) => {
 		truncated,
 		count: entries.length,
 		total: formatHours(total),
-		filters: {
-			customers: marked(customers),
-			projects: groupProjects(allProjects),
-			activities: marked(rows(core.activities.list({ includeArchived: true }))),
-			locations: marked(rows(core.locations.list({ includeArchived: true })))
-		},
+		filters: searchFilters(core),
 		choices: {
 			projects: groupProjects(rows(core.projects.list())),
 			activities: rows(core.activities.list()).map(({ id, name }) => ({ id, name })),

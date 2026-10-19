@@ -8,6 +8,7 @@
 	import List from '@lucide/svelte/icons/list';
 	import LogOut from '@lucide/svelte/icons/log-out';
 	import Settings from '@lucide/svelte/icons/settings';
+	import Sheet from '@lucide/svelte/icons/sheet';
 	import UserRound from '@lucide/svelte/icons/user-round';
 	import Users from '@lucide/svelte/icons/users';
 	import type { LayoutProps } from './$types';
@@ -20,6 +21,12 @@
 		href: resolve('/(app)/entries'),
 		label: 'Entries',
 		icon: List
+	};
+	const copyOut = {
+		route: '/(app)/copy-out',
+		href: resolve('/(app)/copy-out'),
+		label: 'Copy-out',
+		icon: Sheet
 	};
 	const templates = {
 		route: '/(app)/templates',
@@ -52,10 +59,11 @@
 		icon: Users
 	};
 
-	// Entries, Templates and History are PC screens: the rail lists them, the phone bar does not.
+	// Entries, Copy-out, Templates and History are PC screens: the rail lists them, the phone bar does not.
 	const rail = $derived([
 		today,
 		entries,
+		copyOut,
 		templates,
 		setup,
 		history,

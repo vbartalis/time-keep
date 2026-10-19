@@ -41,6 +41,9 @@ describe('readSearch', () => {
 		expect(read('from=2026-10-09&to=2026-10-01').error).toBe('From must not be after To.');
 		expect(read('from=yesterday').error).toBe('Use dates like 2026-10-01.');
 		expect(read('from=2026-02-30').error).toBe('Use dates like 2026-10-01.');
+		// Not even a Date: month 13, day 32.
+		expect(read('from=2026-13-01').error).toBe('Use dates like 2026-10-01.');
+		expect(read('to=2026-10-32').error).toBe('Use dates like 2026-10-01.');
 	});
 
 	it('reads the pickers and all', () => {

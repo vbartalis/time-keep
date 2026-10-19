@@ -376,7 +376,10 @@ a hairline. Labels sit over their fields in a grid: one column on the phone, two
 are native pickers that start with "Any" (Activity and Location then "None"), archived
 rows marked "(archived)"; Text spans two columns. An outline Search button (full width
 on the phone) and an ink underlined Clear link close it. A date mistake shows beneath
-the dates in red, announced as an alert, and no list is shown.
+the dates in red, announced as an alert, and no list is shown. Copy-out uses the same
+bar with its pickers inside it, a primary Show in place of Search (the screen's only
+button that submits), and ink underlined "This month" and "Last month" links after
+Clear.
 
 ### Selectable ruled table
 The ruled table with a 44 px checkbox column first. The head checkbox selects every
@@ -441,15 +444,41 @@ Above the History list, closed by a hairline: outline "Undo selected changes" an
 while nothing is ticked. A refusal shows beneath it as a red-bordered message in red,
 announced as an alert, with the ticks kept.
 
+### Column and option pickers
+Copy-out's choices, inside its filter bar after the filters: two fieldsets, each a
+semibold 14 px legend over one wrapping row of native checkboxes and radios (18 px,
+20 px below 1024 px, violet when ticked), each choice a 44 px line on the phone and
+36 px on the PC with its label beside it, 20 px apart. **Columns** lists the ten in
+their fixed order; **Options** holds Round to 5 minutes, Split at midnight, then
+"Duration as" with its two radios, `h:mm` and Decimal hours. No column ticked shows
+"Choose at least one column." beneath the columns in red, announced as an alert.
+
+### Result bar
+Copy-out's result under a "Result" section head carrying "<n> rows, <total>" ("1
+row"), the total punched. Beneath it, closed by a hairline: an outline Copy button
+(only once the script runs) and an outline Download CSV link styled as a button,
+sharing the width on the phone and at their own width from 640 px; Show keeps the
+one primary. The copy's outcome follows on its own line in 14 px ink, announced
+politely ("Copied 4 rows.", or "Copy failed; select the table and copy it."). A
+faded line, closed by a hairline, says "1 running entry left out." when any were.
+None shows "No entries match." in faded ink with a Clear link, as on Entries.
+
+### Sheet table
+The ruled table as the sheet it pastes into: the chosen columns as the head band, in
+their fixed order, every cell exactly the value copied. Date, Start, End and Duration
+are punched and never wrap; the text columns wrap, at least 7 rem wide, the
+description at least 12 rem. It never stacks: at any width it scrolls sideways inside
+its own box, so the phone shows the first columns and the rest are a swipe away.
+
 ### Navigation
-- **PC:** the rack. Wordmark at the top, then Today, Entries, Templates, Setup,
-  History, Account (and Users for an admin), items of 40 px with a 16 px line icon and
+- **PC:** the rack. Wordmark at the top, then Today, Entries, Copy-out (a sheet
+  icon), Templates, Setup, History, Account (and Users for an admin), items of 40 px with a 16 px line icon and
   15 px text, the signed-in user and Sign out at the foot. Hover fills with
   rack-ink-raised. The current item is filled with card stock and card-ink text; an
   entry opened from the Entries list keeps Entries current, from Today keeps Today.
 - **Phone:** a 56 px top bar with the wordmark and Sign out, and a fixed bottom bar
   (Today, Setup, Account and, for an admin, Users; the PC screens Entries,
-  Templates and History left out) of
+  Copy-out, Templates and History left out) of
   equal 56 px items (20 px icon above 13 px text). The current item uses the same
   card-stock fill.
 
