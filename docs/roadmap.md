@@ -161,7 +161,7 @@ show 12-hour on an en-US phone; the browser tests run in a fixed-offset zone, so
 covered by unit tests only. Still open from 3, carried to 5: the default alert's violet
 border and the unchecked checkbox's grey in dark mode.
 
-## 5. PC — in progress
+## 5. PC — done 2026-10-19
 
 Dense work: managing customers, projects, activities and locations (archiving
 included) and templates (deleted, undoably), finding entries and editing them in bulk, seeing history and
@@ -169,6 +169,9 @@ undoing any batch.
 
 Exit: a month can be reorganised from the PC alone, and any change made there is
 undone in one step from the history.
+
+Done 2026-10-19 with its three parts below: from the PC the user reorganises a month
+on Setup and Entries and undoes any batch, or chosen changes, in one step from History.
 
 Split 2026-10-19 into three parts, worked in order:
 
@@ -249,10 +252,50 @@ Split 2026-10-19 into three parts, worked in order:
   Customer or Project chosen before the page's script loads is reset on hydration, on
   the Entries filters and the template form; DESIGN.md's Navigation bullet line
   breaks; a `.last()` Clear link in the browser test.
-- **5c. History — next.** Every batch listed with its changes, and any batch or chosen
-  changes undone and redone.
+- **5c. History — done 2026-10-19.** A History screen (`/history`, in the PC rail after
+  Setup) lists every batch newest first, 50 to a page under a heading per day, each with
+  its time, label, an Agent or System chip, its state and its changes in words on
+  demand, and undoes or redoes any batch, or changes chosen across batches, in one
+  step; a new core command `redo` undoes the undo by name. Spec
+  `docs/superpowers/specs/2026-10-19-history-design.md`, plan
+  `docs/superpowers/plans/2026-10-19-history.md`; `docs/core.md` (Redo), `docs/app.md`
+  (the History screen, the navigation, the layout rows for `screens/history.ts` and
+  `components/history/`, the browser tests) and `DESIGN.md` (history list, change
+  lines, selected-changes bar, the navigation's items) extended; 455 unit tests and 92
+  browser tests (28 of them new, phone and PC sizes, JavaScript off included), check
+  and lint clean. impeccable's detector ran over the 2 new .svelte files with its
+  regex rules and found nothing; over the rendered `/history` at 390 and 1440 px (a
+  signed-in page, so scanned in the browser by its injected script and as a saved
+  page by its HTML engine) it reported a glow on `body` that no element of the page
+  has (its own overlay) and "cramped padding" on the ruled lines, which its HTML
+  engine reports for any `padding-block` (Tailwind's `py-*`); nothing to fix. Calls
+  made in the operator's place: every **(call)** in the spec, namely a named `redo`
+  command labelled `Redo "<label>"` / `Redo <n> changes`, no search or filter (paging
+  is enough), no links from a change to its record, History in the rail but not the
+  phone's bar, 50 batches to a page, a heading per day, the Agent and System chips,
+  the changes behind a native disclosure, "Undone" and "Partly undone, <k> of <n>",
+  Undo and Redo both on a partly undone batch, undo and redo batches listed like any
+  other, an unknown `before` redirecting to `/history`, values cut at 80 characters,
+  bookkeeping columns never shown, an entry's start or end and its zone as one line,
+  an archive's undo reading Unarchived, a batch over 100 changes without checkboxes,
+  one form for the whole list, the selected-changes buttons above it with the
+  screen's own messages for none and over 1000, no confirmation, a refusal keeping
+  the ticks and opening their batches, and no decision record; and, made during the
+  build, a posted `batchId` winning over the ticks, the strip hidden while a refusal
+  shows, the batches to open derived from the posted ticks, and the day heading
+  as the punched date beside the printed weekday ("2026-10-19 Monday").
+  Deferred minors: `redo`'s unreachable second `not_found` branch and its redundant
+  `undoneBy` query; no test mixing standing and undone `changeIds` in `redo`;
+  `archivedAt` set→set reads Unarchived; `''` against `null` reads "none → none"; an
+  update with nothing visible reads a bare "Changed"; `namesFrom` drops list failures
+  silently and is untested; a `history.list` failure without `before` shows "Nothing
+  recorded yet."; the page rebuilds its query by splitting `back`; the changes
+  disclosure is not tied to its batch label for screen readers; a `form as
+  HistoryFailure` cast; on the phone the selected-changes bar wraps unevenly (Undo
+  selected full width, Redo selected beside the count); on the phone History is
+  reachable only by its URL.
 
-## 6. Output
+## 6. Output — next
 
 Reports (totals per day, week, customer and project), the month copy-out with columns
 chosen at output time, CSV, rounding to 5 minutes on output only, splitting at

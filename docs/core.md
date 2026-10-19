@@ -20,6 +20,7 @@ core.entries.create / .update / .delete / .list / .get
 core.timers.start / .stop
 core.history.list({ before?, limit? })
 core.undo({ batchId } | { changeIds })
+core.redo({ batchId } | { changeIds })
 core.batch(label, (c) => result)
 ```
 
@@ -119,6 +120,17 @@ Undo refuses with `conflict`, writing nothing, when:
 - the change was written under an older shape;
 - a restored row breaks a rule or a reference (for example removing a customer that
   a later batch gave a project).
+
+### Redo
+
+`redo({ batchId } | { changeIds })` takes the same input and undoes the standing
+changes that undid the named ones, as one new batch; `reverted` lists the original
+change ids. Its label is `Redo "<original label>"`, `Redo 1 change` or
+`Redo <n> changes`. `redo({ batchId })` redoes the undone changes of the batch and is
+refused (`conflict`, "That batch is not undone.") when none is; `redo({ changeIds })`
+is refused ("That change is not undone.") when any is not undone. Every other refusal
+is undo's, since redo is undo of the undoing changes. The redo is itself a batch, so
+undoing it undoes the redo again.
 
 Undo is per user. An unknown batch or change, or another user's, is `not_found`.
 

@@ -34,8 +34,8 @@ export type HistoryBatch = {
 	changes: HistoryChange[];
 };
 
-/** The batch that undid a change: its id and when it was written. */
-export type UndoneBy = { batchId: string; createdAt: number };
+/** The standing change that undid a change, with its batch's id and creation time. */
+export type UndoneBy = { batchId: string; changeId: string; createdAt: number };
 
 /** SQLite caps bound parameters; stay well under the limit. */
 const CHUNK = 500;
@@ -46,8 +46,7 @@ const CHUNK = 500;
  * query, so the cost grows with the depth of undo/redo, not with the number of changes.
  */
 export function undoneBy(db: Handle, ids: string[]): Map<string, UndoneBy | null> {
-	type Reverter = UndoneBy & { id: string };
-	const reverters = new Map<string, Reverter[]>();
+	const reverters = new Map<string, UndoneBy[]>();
 	const seen = new Set(ids);
 	let frontier = [...seen];
 	while (frontier.length > 0) {
@@ -68,7 +67,7 @@ export function undoneBy(db: Handle, ids: string[]): Map<string, UndoneBy | null
 				.all();
 			for (const r of rows) {
 				const list = reverters.get(r.reverts!) ?? [];
-				list.push({ id: r.id, batchId: r.batchId, createdAt: r.createdAt });
+				list.push({ changeId: r.id, batchId: r.batchId, createdAt: r.createdAt });
 				reverters.set(r.reverts!, list);
 				if (!seen.has(r.id)) {
 					seen.add(r.id);
@@ -84,8 +83,8 @@ export function undoneBy(db: Handle, ids: string[]): Map<string, UndoneBy | null
 		if (known !== undefined) return known;
 		let by: UndoneBy | null = null;
 		for (const r of reverters.get(id) ?? []) {
-			if (resolve(r.id) === null) {
-				by = { batchId: r.batchId, createdAt: r.createdAt };
+			if (resolve(r.changeId) === null) {
+				by = r;
 				break;
 			}
 		}
@@ -95,8 +94,10 @@ export function undoneBy(db: Handle, ids: string[]): Map<string, UndoneBy | null
 	return new Map(ids.map((id) => [id, resolve(id)]));
 }
 
+type Stamp = Pick<UndoneBy, 'batchId' | 'createdAt'>;
+
 /** Whether batch `a` is newer than batch `b` (by creation time, then id). */
-export const newer = (a: UndoneBy, b: UndoneBy): boolean =>
+export const newer = (a: Stamp, b: Stamp): boolean =>
 	a.createdAt !== b.createdAt ? a.createdAt > b.createdAt : a.batchId > b.batchId;
 
 const listSchema = z.object({

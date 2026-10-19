@@ -295,3 +295,34 @@ export function seedMany(userId: string, zone: string, count: number) {
 
 const nextDays = (date: string, n: number) =>
 	new Date(Date.parse(`${date}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+
+/** A customer created by an agent: one batch, `Create customer "<name>"`, made by `agent`. */
+export const seedAgentCustomer = (userId: string, name: string) =>
+	value(openCore(database(), userId, 'agent').customers.create({ name })).id;
+
+/**
+ * `n` cheap batches, oldest first: customers "Customer 1" … "Customer <n>", each its own
+ * batch `Create customer "Customer <i>"`. A user made by `seedEmptyUser` has no batch of
+ * its own, so the history then holds exactly `n`.
+ */
+export function seedBatches(userId: string, n: number) {
+	const core = asUi(userId);
+	for (let i = 1; i <= n; i++) value(core.customers.create({ name: `Customer ${i}` }));
+}
+
+/** One batch of three changes, labelled `label`: an activity, a location and a customer. */
+export function seedThreeChanges(
+	userId: string,
+	label: string,
+	names: { activity: string; location: string; customer: string }
+) {
+	value(
+		asUi(userId).batch(label, (c) => {
+			const a = c.activities.create({ name: names.activity });
+			if (!a.ok) return a;
+			const l = c.locations.create({ name: names.location });
+			if (!l.ok) return l;
+			return c.customers.create({ name: names.customer });
+		})
+	);
+}

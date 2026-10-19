@@ -24,9 +24,10 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/server/core/` | The only way to read and write the time data: batches, recorded changes, undo, history, reference data. Import only `core/index.ts`. See [core.md](core.md) and decision 4. |
 | `src/lib/server/id.ts` | Random base32 ids. |
 | `src/routes/login`, `logout` | Sign in and out. |
-| `src/routes/(app)/` | Signed-in screens: Today (`/`), `entries` and the entry edit screen (`entries/[id]`), `account`, `admin/users`, `setup`, and `templates`, `templates/new`, `templates/[id]` (see Screens). The layout requires a user and draws the shell: a left rail on the PC (Today, Entries, Templates, Setup, Account, Users for an admin), a top bar and bottom navigation on the phone (Today, Setup, Account, Users for an admin; Entries and Templates are PC screens). The current item follows the route; the entry edit screen keeps Entries current when its `back` starts with `/entries`, else Today. |
-| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`, `edit.ts`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries search and bulk change (`entries.ts`: `readSearch`, `searchInput`, `searchPath`, `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`). |
+| `src/routes/(app)/` | Signed-in screens: Today (`/`), `entries` and the entry edit screen (`entries/[id]`), `account`, `admin/users`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell: a left rail on the PC (Today, Entries, Templates, Setup, History, Account, Users for an admin), a top bar and bottom navigation on the phone (Today, Setup, Account, Users for an admin; Entries, Templates and History are PC screens). The current item follows the route; the entry edit screen keeps Entries current when its `back` starts with `/entries`, else Today. |
+| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`, `edit.ts`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries search and bulk change (`entries.ts`: `readSearch`, `searchInput`, `searchPath`, `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`). |
 | `src/lib/components/entries/` | The Entries screen's parts: the filter form, the change form, the selectable table. |
+| `src/lib/components/history/` | The History screen's parts: a batch's line with its changes (`BatchLine`), and the types its load returns. |
 | `src/lib/components/narrowing.svelte.ts` | Customer and project pickers that narrow each other with JavaScript, shared by the template form and the Entries filters. |
 | `src/lib/components/templates/` | The template form shared by the new and edit screens. |
 | `src/lib/components/setup/` | The Setup screen's parts: a rename-in-place row, the add lines, the Add project disclosure. |
@@ -47,7 +48,7 @@ Every screen action is one core call (one batch) through `openCore(getDb(), user
 'ui')`; no rule is enforced in a screen, the core's refusals and warnings are shown
 as it gives them. Forms are plain posts that work without JavaScript; `use:enhance`
 enhances them. A successful action redirects (303) back to the screen it was posted
-from (Today, `/setup`, `/templates`, the Entries search), with the undo strip. No browser dialogs.
+from (Today, `/setup`, `/templates`, the Entries search, the History page), with the undo strip. No browser dialogs.
 
 ### Today (`/`)
 
@@ -207,6 +208,53 @@ name) re-renders the disclosure open, by attribute so it also works without
 JavaScript, with the posted name and the message beside the field, which takes the
 focus.
 
+### History (`/history`)
+
+A PC screen (in the rail after Setup, not the phone's bar) listing every batch the
+user's changes were recorded in, newest first, to undo or redo any batch or chosen
+changes in one step; it stays usable at phone widths. Undo and redo are
+`core.undo` and `core.redo` (see [core.md](core.md)).
+
+**The list** asks `history.list` for 51 batches and shows 50, under a heading per day
+in the request's zone (`dayHeading` gives "2026-10-19, Monday"; the screen shows the
+date punched beside the weekday printed). Each batch is one ruled row: its time (`HH:mm`, punched), its label
+as the core stored it, an "Agent" or "System" chip when it was not made in the UI,
+its state ("Undone" when every change is undone, the row muted; "Partly undone, <k>
+of <n>" otherwise; nothing when it stands, from `batchState`), a disclosure "1
+change" / "<n> changes" (a native `<details>`) that opens its changes, and outline
+buttons: Undo when any change stands, Redo when any is undone, both when partly
+undone. Undo and redo batches are listed like any other. When a 51st batch exists an
+"Older" link loads `/history?before=<the 50th batch's id>`; a page reached that way
+has "Newest" back to `/history`. An unknown or blank `before` redirects to
+`/history`. None says "Nothing recorded yet."
+
+**A change** is one line, in the batch's order (`describeChange`): a checkbox, then
+Created, Changed, Archived, Unarchived or Deleted and the record ("Entry 2026-10-07
+09:00–10:30, CompA › ProjC", "Customer CompA", "Project CompA › ProjC", "Activity
+Travel", "Location Office", "Template Daily standup"; an entry named from its row
+after the change, before it for a delete, its times in its own zones, a running one
+"09:00–running"). An update adds a line per field that differs, "Description: old →
+new", blank written "none", ids as current names (`namesFrom`: every row, archived
+included; an id not found reads "(unknown)"), text cut at 80 characters with "…";
+an entry's start and its zone are one "Start" line, its end and zone one "End" line,
+naming the zones when the two sides differ. Bookkeeping columns and `id` never show.
+An update that changes only `archived_at` reads Archived or Unarchived with no field
+line. An undone change ends in a muted "Undone". A batch of more than 100 changes
+shows the first 100 and "and <n> more; undo or redo the whole batch." with no
+checkboxes.
+
+**Undoing and redoing.** The list is one `POST` form. A batch's Undo and Redo post
+its `batchId` to `?/undo` or `?/redo` (the ticks are then ignored). Above the list,
+"Undo selected changes" and "Redo selected changes" post every ticked `changeId`
+(`readChangeIds`: deduped; none says "Select at least one change.", more than 1000
+"Select at most 1000 changes."); with JavaScript a line says "<n> selected" and both
+are disabled at none. The core labels the new batch `Undo "<label>"` / `Redo
+"<label>"` for a batch, `Undo <n> changes` / `Redo 1 change` for chosen changes. No
+confirmation: success redirects (303) to the page posted from (`historyPath`, its
+`before` kept) with the strip, whose Undo returns there. A refusal re-renders that
+page with the core's message in a red-bordered alert above the list, the ticks kept
+and their batches open.
+
 ### Time zones
 
 The request's zone is, in order: the form's hidden `timeZone` field, the `tz`
@@ -303,7 +351,16 @@ files.
   change and a bulk delete with undo, an entry changed or deleted elsewhere, a
   refusal naming its entry, opening an entry and coming back to the search, the
   500-row cut (`seedMany`, one batch) and the no-JavaScript search, Select all and
-  apply.
+  apply; `history.test.ts` covers History with a user of its own per test, who has
+  no batch until seeded: a batch with its label, time and changes, undo and redo of a
+  batch (checked on Setup), two of a batch's three changes undone (`seedThreeChanges`:
+  Partly undone, 2 of 3), changes of two batches undone as one, a refused undo with
+  the ticks kept, 51 batches paging by Older and Newest and exactly 50 with no Older
+  (`seedBatches`), the Agent chip (`seedAgentCustomer`, through
+  `openCore(db, userId, 'agent')`), a batch's own Undo beating a tick on another
+  batch, an unknown `before` returning to the newest page, a forged batch id showing
+  "Not found.", an undo on an older page landing back there, the rail's current item
+  and the no-JavaScript undo of a ticked change.
 - `npm test` runs both.
 
 Chromium needs system libraries and fonts. The devcontainer image installs them, so

@@ -329,7 +329,7 @@ A message line under the screen title after every successful action: card-face f
 1 px hairline border, 4 px corners. "Done:" in semibold, the action's label, any
 warnings below it in red, and an outline Undo button on the right. It stays until
 the next load; nothing auto-dismisses. One strip serves every screen (Today, Setup,
-Templates). After a refused undo it is the error state: a red border at 60 % and the
+Templates, Entries, History). After a refused undo it is the error state: a red border at 60 % and the
 core's message in red in place of "Done:", announced as an alert, with the Undo
 button kept so the press can be tried again.
 
@@ -412,15 +412,44 @@ hairlines: "Delete 2 entries?" ("Delete 1 entry?"), a red "Yes, delete them", wh
 takes the focus, and an outline "Keep them" that returns to the search. Delete
 selected itself stays outline; only the confirming button is red.
 
+### History list
+The History screen's batches as one ruled list, grouped by day. A day head is the
+date punched beside the weekday printed, on a card-ink rule. Each batch is a
+hairline-divided line: a 3.5 rem column with the punched `HH:mm`, then the label in
+semibold with, after it, a mark chip "Agent" or "System" when the batch was not made
+in the UI and its state in faded ink ("Undone", "Partly undone, 2 of 3"); beneath
+the label an underlined disclosure "3 changes" ("1 change"). Outline Undo and Redo
+buttons (whichever apply, both when partly undone) sit at the line's right from
+640 px, beneath the label on the phone. A fully undone batch mutes its whole line to
+faded ink. Below the list, ink underlined "Newest" and "Older" links page it. None
+shows "Nothing recorded yet." in faded ink on a hairline.
+
+### Change lines
+A batch's disclosure opens into its changes, each a line on a hairline above it: a
+checkbox (18 px, 20 px below 1024 px) beside the change in words, the verb in
+semibold (Created, Changed, Archived, Unarchived, Deleted) then the record, and for
+a change one line per differing field ("Name: Acme → Acme Ltd"), long values
+wrapping. An undone change is faded with a faded "Undone" after it. A batch over 100
+changes drops the checkboxes and ends in a faded "and <n> more; undo or redo the
+whole batch." The whole line is the checkbox's label. A native disclosure; a refusal
+reopens the batches it ticked.
+
+### Selected-changes bar
+Above the History list, closed by a hairline: outline "Undo selected changes" and
+"Redo selected changes", sharing the width on the phone and at their own width from
+640 px, then "<n> selected" once the script runs; with JavaScript both are disabled
+while nothing is ticked. A refusal shows beneath it as a red-bordered message in red,
+announced as an alert, with the ticks kept.
+
 ### Navigation
 - **PC:** the rack. Wordmark at the top, then Today, Entries, Templates, Setup,
-  Account (and Users for an admin), items of 40 px with a 16 px line icon and
+  History, Account (and Users for an admin), items of 40 px with a 16 px line icon and
   15 px text, the signed-in user and Sign out at the foot. Hover fills with
   rack-ink-raised. The current item is filled with card stock and card-ink text; an
   entry opened from the Entries list keeps Entries current, from Today keeps Today.
 - **Phone:** a 56 px top bar with the wordmark and Sign out, and a fixed bottom bar
-  (Today, Setup, Account and, for an admin, Users; the PC screens Entries and
-  Templates left out) of
+  (Today, Setup, Account and, for an admin, Users; the PC screens Entries,
+  Templates and History left out) of
   equal 56 px items (20 px icon above 13 px text). The current item uses the same
   card-stock fill.
 

@@ -5,9 +5,10 @@ import { batch, change, customer, project, user } from '../db/schema';
 import { newId } from '../id';
 import { runBatch } from './batch';
 import { listHistory } from './history';
+import { openCore } from './index';
 import { archive, createCustomer, createProject, rename, unarchive } from './reference';
 import type { Result } from './result';
-import { undo, undoLabel } from './undo';
+import { redo, redoLabel, undo, undoLabel } from './undo';
 import type { Writer } from './write';
 
 function setup() {
@@ -47,6 +48,8 @@ function setup() {
 		val(run((w) => createCustomer(w, { name }), `Create ${name}`, uid));
 	const undoRun = (input: unknown, label = 'undo', uid = userId) =>
 		run((w) => undo(w, input), label, uid);
+	const redoRun = (input: unknown, label = 'redo', uid = userId) =>
+		run((w) => redo(w, input), label, uid);
 	return {
 		db,
 		userId,
@@ -58,7 +61,8 @@ function setup() {
 		getCustomer,
 		getProject,
 		mkCustomer,
-		undoRun
+		undoRun,
+		redoRun
 	};
 }
 
@@ -364,6 +368,153 @@ describe('redo', () => {
 		// The original can be undone again after the redo.
 		val(undoRun({ batchId: original.id }));
 		expect(getCustomer(c.id)!.name).toBe('Acme');
+	});
+});
+
+describe('redo command', () => {
+	/** One batch renaming two customers, then undone. */
+	const twoRenames = () => {
+		const t = setup();
+		const a = t.mkCustomer('A');
+		const b = t.mkCustomer('B');
+		t.val(
+			t.run((w) => {
+				t.val(rename(w, 'customer', { id: a.id, name: 'A2' }));
+				return rename(w, 'customer', { id: b.id, name: 'B2' });
+			}, 'Rename both')
+		);
+		const original = t.last();
+		t.val(t.undoRun({ batchId: original.id }));
+		return { ...t, a, b, original };
+	};
+
+	it('redoes an undone batch under a Redo label and lists the original ids', () => {
+		const { mkCustomer, run, last, undoRun, redoRun, val, getCustomer, db, userId } = setup();
+		const c = mkCustomer('Acme');
+		val(run((w) => rename(w, 'customer', { id: c.id, name: 'Beta' }), 'Rename'));
+		const original = last();
+		val(undoRun({ batchId: original.id }));
+		const r = val(redoRun({ batchId: original.id }, 'Redo "Rename"'));
+		expect(r.reverted).toEqual(original.changes.map((x) => x.id));
+		expect(getCustomer(c.id)!.name).toBe('Beta');
+		const h = val(listHistory(db, userId));
+		expect(h.find((b) => b.id === original.id)).toMatchObject({ undone: false, undoneBy: null });
+	});
+
+	it('is wired into the core with its label', () => {
+		const { db, userId, mkCustomer, last, val } = setup();
+		const c = mkCustomer('Acme');
+		const core = openCore(db, userId, 'ui');
+		val(core.customers.rename({ id: c.id, name: 'Beta' }));
+		const original = last();
+		val(core.undo({ batchId: original.id }));
+		val(core.redo({ batchId: original.id }));
+		const h = val(core.history.list());
+		const label = h.find((b) => b.id === original.id)!.label;
+		expect(h[0].label).toBe(`Redo "${label}"`);
+	});
+
+	it('redoes chosen changes only', () => {
+		const { original, redoRun, val, getCustomer, a, b, last } = twoRenames();
+		const first = original.changes[0].id;
+		val(redoRun({ changeIds: [first] }));
+		expect(getCustomer(a.id)!.name).toBe('A2');
+		expect(getCustomer(b.id)!.name).toBe('B');
+		expect(last().changes).toHaveLength(1);
+		expect(redoLabel({ changeIds: [first] })).toBe('Redo 1 change');
+	});
+
+	it('redoes only the undone changes of a partly undone batch', () => {
+		const t = setup();
+		const a = t.mkCustomer('A');
+		const b = t.mkCustomer('B');
+		t.val(
+			t.run((w) => {
+				t.val(rename(w, 'customer', { id: a.id, name: 'A2' }));
+				return rename(w, 'customer', { id: b.id, name: 'B2' });
+			}, 'Rename both')
+		);
+		const original = t.last();
+		t.val(t.undoRun({ changeIds: [original.changes[0].id] }));
+		const r = t.val(t.redoRun({ batchId: original.id }));
+		expect(r.reverted).toEqual([original.changes[0].id]);
+		expect(t.getCustomer(a.id)!.name).toBe('A2');
+		expect(t.getCustomer(b.id)!.name).toBe('B2');
+	});
+
+	it('refuses what is not undone and writes nothing', () => {
+		const { mkCustomer, last, redoRun, counts } = setup();
+		mkCustomer('Acme');
+		const original = last();
+		const before = counts();
+		expect(err(redoRun({ batchId: original.id }))).toMatchObject({
+			code: 'conflict',
+			message: 'That batch is not undone.'
+		});
+		expect(err(redoRun({ changeIds: [original.changes[0].id] }))).toMatchObject({
+			code: 'conflict',
+			message: 'That change is not undone.'
+		});
+		expect(counts()).toEqual(before);
+	});
+
+	it('refuses after a later change and names it', () => {
+		const { mkCustomer, run, last, undoRun, redoRun, val, counts } = setup();
+		const c = mkCustomer('Acme');
+		val(run((w) => rename(w, 'customer', { id: c.id, name: 'Beta' }), 'Rename'));
+		const original = last();
+		val(undoRun({ batchId: original.id }));
+		val(run((w) => rename(w, 'customer', { id: c.id, name: 'Gamma' }), 'Rename again'));
+		const before = counts();
+		const e = err(redoRun({ batchId: original.id }));
+		expect(e).toMatchObject({ code: 'conflict' });
+		expect(e!.message).toContain('Rename again');
+		expect(counts()).toEqual(before);
+	});
+
+	it('alternates with undo of the redo', () => {
+		const { mkCustomer, run, last, undoRun, redoRun, val, getCustomer } = setup();
+		const c = mkCustomer('Acme');
+		val(run((w) => rename(w, 'customer', { id: c.id, name: 'Beta' }), 'Rename'));
+		const original = last();
+		val(undoRun({ batchId: original.id }));
+		val(redoRun({ batchId: original.id }));
+		const redoBatch = last();
+		val(undoRun({ batchId: redoBatch.id }));
+		expect(getCustomer(c.id)!.name).toBe('Acme');
+	});
+
+	it('is not_found for unknown and foreign ids, invalid for no ids', () => {
+		const { mkCustomer, last, redoRun, other } = setup();
+		mkCustomer('Acme');
+		const original = last();
+		expect(err(redoRun({ batchId: 'nope' }))).toMatchObject({ code: 'not_found' });
+		expect(err(redoRun({ changeIds: ['nope'] }))).toMatchObject({ code: 'not_found' });
+		expect(err(redoRun({ batchId: original.id }, 'redo', other))).toMatchObject({
+			code: 'not_found'
+		});
+		expect(err(redoRun({ changeIds: [] }))).toMatchObject({ code: 'invalid' });
+	});
+
+	it('brings a created row back as one create change', () => {
+		const { mkCustomer, last, undoRun, redoRun, val, getCustomer } = setup();
+		const c = mkCustomer('Acme');
+		const original = last();
+		val(undoRun({ batchId: original.id }));
+		expect(getCustomer(c.id)).toBeUndefined();
+		val(redoRun({ batchId: original.id }));
+		expect(getCustomer(c.id)!.name).toBe('Acme');
+		const r = last();
+		expect(r.changes).toHaveLength(1);
+		expect(r.changes[0]).toMatchObject({ op: 'create' });
+	});
+});
+
+describe('redoLabel', () => {
+	it('quotes the batch label or counts the changes', () => {
+		expect(redoLabel({ batchId: 'x' }, 'Rename')).toBe('Redo "Rename"');
+		expect(redoLabel({ changeIds: ['a', 'b', 'a'] })).toBe('Redo 2 changes');
+		expect(redoLabel(null)).toBe('Redo');
 	});
 });
 

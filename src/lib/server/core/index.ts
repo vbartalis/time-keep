@@ -50,7 +50,7 @@ import {
 	type TemplateItem
 } from './templates';
 import { fail, type Result } from './result';
-import { undo, undoLabel } from './undo';
+import { redo, redoLabel, undo, undoLabel } from './undo';
 import { table, type Writer } from './write';
 
 export type { Actor } from './batch';
@@ -102,6 +102,7 @@ export type BatchCore = EntryCommands & {
 	activities: Omit<Reference<Named>, 'list'>;
 	locations: Omit<Reference<Named>, 'list'>;
 	undo(input: UndoInput): Result<{ reverted: string[] }>;
+	redo(input: UndoInput): Result<{ reverted: string[] }>;
 };
 
 export type Core = {
@@ -122,6 +123,7 @@ export type Core = {
 		list: (input?: { before?: string; limit?: number }) => ReturnType<typeof listHistory>;
 	};
 	undo: BatchCore['undo'];
+	redo: BatchCore['redo'];
 	batch<T>(label: string, fn: (c: BatchCore) => Result<T>): Result<T>;
 };
 
@@ -143,6 +145,16 @@ function inputName(input: unknown): string {
 }
 
 function commands(db: DB, userId: string, exec: Exec, clock: () => number) {
+	/** The label of the user's batch an undo or redo input names, when it names one. */
+	const batchLabel = (input: unknown): string | undefined => {
+		const id = (input as { batchId?: unknown } | null)?.batchId;
+		if (typeof id !== 'string') return undefined;
+		return db
+			.select({ label: batch.label })
+			.from(batch)
+			.where(and(eq(batch.id, id), eq(batch.userId, userId)))
+			.get()?.label;
+	};
 	/** The stored name of a row, for labels; empty when it is not there. */
 	const currentName = (kind: Kind, input: unknown): string => {
 		const id = (input as { id?: unknown } | null)?.id;
@@ -272,20 +284,14 @@ function commands(db: DB, userId: string, exec: Exec, clock: () => number) {
 		locations: reference<Named>('location', createLocation),
 		undo: ((input) =>
 			exec(
-				() => {
-					const id = (input as { batchId?: unknown } | null)?.batchId;
-					const original =
-						typeof id === 'string'
-							? db
-									.select({ label: batch.label })
-									.from(batch)
-									.where(and(eq(batch.id, id), eq(batch.userId, userId)))
-									.get()
-							: undefined;
-					return undoLabel(input, original?.label);
-				},
+				() => undoLabel(input, batchLabel(input)),
 				(w) => undo(w, input)
-			)) as BatchCore['undo']
+			)) as BatchCore['undo'],
+		redo: ((input) =>
+			exec(
+				() => redoLabel(input, batchLabel(input)),
+				(w) => redo(w, input)
+			)) as BatchCore['redo']
 	};
 }
 
@@ -316,6 +322,7 @@ export function openCore(
 		},
 		history: { list: (input) => listHistory(db, userId, input) },
 		undo: own.undo,
+		redo: own.redo,
 		batch: (label, fn) => {
 			const trimmed = typeof label === 'string' ? label.trim() : '';
 			if (trimmed.length < 1 || trimmed.length > 200) {

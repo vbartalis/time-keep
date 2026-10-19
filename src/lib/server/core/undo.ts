@@ -5,7 +5,7 @@
 import { and, desc, eq, inArray, ne } from 'drizzle-orm';
 import { z } from 'zod';
 import { batch, change } from '../db/schema';
-import { newer, undoneBy } from './history';
+import { newer, undoneBy, type UndoneBy } from './history';
 // Register the entity rules, so a restore is always checked by them.
 import './entries';
 import './reference';
@@ -89,29 +89,21 @@ function laterLabels(w: Writer, c: Found): string[] {
 }
 
 /**
- * Undoes `{ batchId }` (every change of the batch) or `{ changeIds }` (1–1000 chosen
- * changes), newest first. Refused with `conflict` when a chosen change (or a whole batch) is already undone, was
- * written under an older shape, or its row has changed since; rules and foreign keys
- * apply through the Writer and runBatch.
+ * Reverts `changes` (newest first) through the Writer. `skipUndone` leaves the ones
+ * already undone; otherwise one is refused. Refused with `conflict` when a change was
+ * written under an older shape or its row has changed since.
  */
-export function undo(w: Writer, input: unknown): Result<{ reverted: string[] }> {
-	const parsed = inputSchema.safeParse(input);
-	if (!parsed.success) return fromZod(parsed.error);
-	const changes = resolve(w, parsed.data);
-	if (!changes) return fail('not_found', 'Not found.');
-	const status = undoneBy(
-		w.tx,
-		changes.map((c) => c.id)
-	);
+function revert(
+	w: Writer,
+	changes: Found[],
+	status: Map<string, UndoneBy | null>,
+	skipUndone: boolean
+): Result<{ reverted: string[] }> {
 	const reverted: string[] = [];
-	const whole = 'batchId' in parsed.data;
-	if (whole && changes.every((c) => status.get(c.id) !== null)) {
-		return fail('conflict', 'That batch is already undone.');
-	}
 	for (const c of changes) {
 		if (status.get(c.id) !== null) {
 			// A batch undo finishes what a partial undo left; chosen changes are strict.
-			if (whole) continue;
+			if (skipUndone) continue;
 			return fail('conflict', 'That change is already undone.');
 		}
 		const entity = c.entity as Entity;
@@ -140,6 +132,63 @@ export function undo(w: Writer, input: unknown): Result<{ reverted: string[] }> 
 	return ok({ reverted });
 }
 
+/**
+ * Undoes `{ batchId }` (every change of the batch) or `{ changeIds }` (1–1000 chosen
+ * changes), newest first. Refused with `conflict` when a chosen change (or a whole batch) is already undone, was
+ * written under an older shape, or its row has changed since; rules and foreign keys
+ * apply through the Writer and runBatch.
+ */
+export function undo(w: Writer, input: unknown): Result<{ reverted: string[] }> {
+	const parsed = inputSchema.safeParse(input);
+	if (!parsed.success) return fromZod(parsed.error);
+	const changes = resolve(w, parsed.data);
+	if (!changes) return fail('not_found', 'Not found.');
+	const status = undoneBy(
+		w.tx,
+		changes.map((c) => c.id)
+	);
+	const whole = 'batchId' in parsed.data;
+	if (whole && changes.every((c) => status.get(c.id) !== null)) {
+		return fail('conflict', 'That batch is already undone.');
+	}
+	return revert(w, changes, status, whole);
+}
+
+/**
+ * Redoes `{ batchId }` or `{ changeIds }`: undoes the standing changes that undid them,
+ * so every refusal besides "not undone" is undo's. Returns the original change ids.
+ */
+export function redo(w: Writer, input: unknown): Result<{ reverted: string[] }> {
+	const parsed = inputSchema.safeParse(input);
+	if (!parsed.success) return fromZod(parsed.error);
+	const changes = resolve(w, parsed.data);
+	if (!changes) return fail('not_found', 'Not found.');
+	const status = undoneBy(
+		w.tx,
+		changes.map((c) => c.id)
+	);
+	const undone = changes.filter((c) => status.get(c.id) !== null);
+	if ('batchId' in parsed.data) {
+		if (undone.length === 0) return fail('conflict', 'That batch is not undone.');
+	} else if (undone.length < changes.length) {
+		return fail('conflict', 'That change is not undone.');
+	}
+	const originalOf = new Map(undone.map((c) => [status.get(c.id)!.changeId, c.id]));
+	const reverters = resolve(w, { changeIds: [...originalOf.keys()] });
+	if (!reverters) return fail('not_found', 'Not found.');
+	const r = revert(
+		w,
+		reverters,
+		undoneBy(
+			w.tx,
+			reverters.map((c) => c.id)
+		),
+		false
+	);
+	if (!r.ok) return r;
+	return ok({ reverted: r.value.reverted.map((id) => originalOf.get(id)!) });
+}
+
 /** The label of an undo batch: the original batch's label quoted, or the change count. */
 export function undoLabel(input: unknown, originalLabel?: string): string {
 	const parsed = inputSchema.safeParse(input);
@@ -147,4 +196,13 @@ export function undoLabel(input: unknown, originalLabel?: string): string {
 	if ('batchId' in parsed.data) return `Undo "${originalLabel ?? ''}"`;
 	const n = new Set(parsed.data.changeIds).size;
 	return `Undo ${n} change${n === 1 ? '' : 's'}`;
+}
+
+/** The label of a redo batch: the original batch's label quoted, or the change count. */
+export function redoLabel(input: unknown, originalLabel?: string): string {
+	const parsed = inputSchema.safeParse(input);
+	if (!parsed.success) return 'Redo';
+	if ('batchId' in parsed.data) return `Redo "${originalLabel ?? ''}"`;
+	const n = new Set(parsed.data.changeIds).size;
+	return `Redo ${n} change${n === 1 ? '' : 's'}`;
 }

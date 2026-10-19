@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Clock from '@lucide/svelte/icons/clock';
+	import History from '@lucide/svelte/icons/history';
 	import LayoutTemplate from '@lucide/svelte/icons/layout-template';
 	import List from '@lucide/svelte/icons/list';
 	import LogOut from '@lucide/svelte/icons/log-out';
@@ -32,6 +33,12 @@
 		label: 'Setup',
 		icon: Settings
 	};
+	const history = {
+		route: '/(app)/history',
+		href: resolve('/(app)/history'),
+		label: 'History',
+		icon: History
+	};
 	const account = {
 		route: '/(app)/account',
 		href: resolve('/(app)/account'),
@@ -45,12 +52,13 @@
 		icon: Users
 	};
 
-	// Entries and Templates are PC screens: the rail lists them, the phone bar does not.
+	// Entries, Templates and History are PC screens: the rail lists them, the phone bar does not.
 	const rail = $derived([
 		today,
 		entries,
 		templates,
 		setup,
+		history,
 		account,
 		...(data.user.isAdmin ? [users] : [])
 	]);
