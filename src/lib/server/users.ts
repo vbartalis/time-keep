@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import type { DB } from './db/index';
-import { session, user, type User } from './db/schema';
+import { accessToken, session, user, type User } from './db/schema';
 import { newId } from './id';
 import {
 	dummyHash,
@@ -123,7 +123,10 @@ export function setDisabled(
 			.where(eq(user.id, userId))
 			.run();
 		if (changes === 0) return { ok: false, error: 'User not found.' };
-		if (disabled) tx.delete(session).where(eq(session.userId, userId)).run();
+		if (disabled) {
+			tx.delete(session).where(eq(session.userId, userId)).run();
+			tx.delete(accessToken).where(eq(accessToken.userId, userId)).run();
+		}
 		return { ok: true, value: undefined };
 	});
 }

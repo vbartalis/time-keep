@@ -4,12 +4,19 @@
  * own batch with a generated label; `core.batch` runs several as one batch.
  */
 import { and, eq } from 'drizzle-orm';
+import type { z } from 'zod';
 import type { DB } from '../db/index';
 import { batch } from '../db/schema';
 import { runBatch, type Actor } from './batch';
-import { listHistory } from './history';
+import {
+	getHistory,
+	getSchema as historyGetSchema,
+	listHistory,
+	listSchema as historyListSchema
+} from './history';
 import {
 	archive,
+	createSchema as referenceCreateSchema,
 	createActivity,
 	createCustomer,
 	createLocation,
@@ -18,7 +25,12 @@ import {
 	listCustomers,
 	listLocations,
 	listProjects,
+	idSchema,
+	listSchema as referenceListSchema,
+	projectListSchema,
+	projectSchema,
 	rename,
+	renameSchema,
 	unarchive,
 	type Kind,
 	type Named,
@@ -27,30 +39,43 @@ import {
 } from './reference';
 import {
 	createEntry,
+	createSchema as entryCreateSchema,
 	deleteEntry,
+	deleteSchema as entryDeleteSchema,
 	getEntry,
+	getSchema as entryGetSchema,
 	listEntries,
+	listSchema as entryListSchema,
+	startSchema,
 	startTimer,
+	stopSchema,
 	stopTimer,
 	updateEntry,
+	updateSchema as entryUpdateSchema,
 	type Entry,
 	type EntryItem
 } from './entries';
 import { nameSchema } from './names';
 import {
+	createSchema as templateCreateSchema,
 	createTemplate,
+	deleteSchema as templateDeleteSchema,
 	deleteTemplate,
 	entryFromTemplate,
+	fromEntrySchema,
+	fromTemplateSchema,
+	getSchema as templateGetSchema,
 	getTemplate,
 	listTemplates,
 	resolveFromTemplate,
 	templateFromEntry,
+	updateSchema as templateUpdateSchema,
 	updateTemplate,
 	type Template,
 	type TemplateItem
 } from './templates';
 import { fail, type Result } from './result';
-import { redo, redoLabel, undo, undoLabel } from './undo';
+import { inputSchema as undoSchema, redo, redoLabel, undo, undoLabel } from './undo';
 import { table, type Writer } from './write';
 
 export type { Actor } from './batch';
@@ -73,6 +98,83 @@ export type ProjectReference = Omit<
 	Reference<ProjectRow, ProjectListItem, { customerId: string; name: string }>,
 	'list'
 > & { list(input?: { includeArchived?: boolean; customerId?: string }): Result<ProjectListItem[]> };
+
+export { undoSchema };
+
+/** Every command a batch can hold (undo and redo are separate). */
+export const COMMANDS = [
+	'customers.create',
+	'customers.rename',
+	'customers.archive',
+	'customers.unarchive',
+	'projects.create',
+	'projects.rename',
+	'projects.archive',
+	'projects.unarchive',
+	'activities.create',
+	'activities.rename',
+	'activities.archive',
+	'activities.unarchive',
+	'locations.create',
+	'locations.rename',
+	'locations.archive',
+	'locations.unarchive',
+	'entries.create',
+	'entries.update',
+	'entries.delete',
+	'entries.fromTemplate',
+	'timers.start',
+	'timers.stop',
+	'templates.create',
+	'templates.update',
+	'templates.delete',
+	'templates.fromEntry'
+] as const;
+
+export type CommandName = (typeof COMMANDS)[number];
+
+/** The schema each command parses its input with: the very objects the commands use. */
+export const commandSchemas: Record<CommandName, z.ZodType> = {
+	'customers.create': referenceCreateSchema,
+	'customers.rename': renameSchema,
+	'customers.archive': idSchema,
+	'customers.unarchive': idSchema,
+	'projects.create': projectSchema,
+	'projects.rename': renameSchema,
+	'projects.archive': idSchema,
+	'projects.unarchive': idSchema,
+	'activities.create': referenceCreateSchema,
+	'activities.rename': renameSchema,
+	'activities.archive': idSchema,
+	'activities.unarchive': idSchema,
+	'locations.create': referenceCreateSchema,
+	'locations.rename': renameSchema,
+	'locations.archive': idSchema,
+	'locations.unarchive': idSchema,
+	'entries.create': entryCreateSchema,
+	'entries.update': entryUpdateSchema,
+	'entries.delete': entryDeleteSchema,
+	'entries.fromTemplate': fromTemplateSchema,
+	'timers.start': startSchema,
+	'timers.stop': stopSchema,
+	'templates.create': templateCreateSchema,
+	'templates.update': templateUpdateSchema,
+	'templates.delete': templateDeleteSchema,
+	'templates.fromEntry': fromEntrySchema
+};
+
+/** The schema each read parses its input with. */
+export const readSchemas = {
+	customers: referenceListSchema,
+	projects: projectListSchema,
+	activities: referenceListSchema,
+	locations: referenceListSchema,
+	entries: entryListSchema,
+	entry: entryGetSchema,
+	template: templateGetSchema,
+	history: historyListSchema,
+	batch: historyGetSchema
+};
 
 export type UndoInput = { batchId: string } | { changeIds: string[] };
 
@@ -97,6 +199,8 @@ export type EntryCommands = {
 
 /** Commands that run inside whatever batch is open. */
 export type BatchCore = EntryCommands & {
+	/** The id of the open batch. */
+	readonly batchId: string;
 	customers: Omit<Reference<Named>, 'list'>;
 	projects: Omit<ProjectReference, 'list'>;
 	activities: Omit<Reference<Named>, 'list'>;
@@ -121,6 +225,7 @@ export type Core = {
 	};
 	history: {
 		list: (input?: { before?: string; limit?: number }) => ReturnType<typeof listHistory>;
+		get(input: unknown): ReturnType<typeof getHistory>;
 	};
 	undo: BatchCore['undo'];
 	redo: BatchCore['redo'];
@@ -320,7 +425,10 @@ export function openCore(
 			list: () => listTemplates(db, userId),
 			get: (input) => getTemplate(db, userId, input)
 		},
-		history: { list: (input) => listHistory(db, userId, input) },
+		history: {
+			list: (input) => listHistory(db, userId, input),
+			get: (input) => getHistory(db, userId, input)
+		},
 		undo: own.undo,
 		redo: own.redo,
 		batch: (label, fn) => {
@@ -335,7 +443,7 @@ export function openCore(
 				userId,
 				actor,
 				trimmed,
-				(w) => fn(commands(db, userId, (_label, run) => run(w), clock)),
+				(w) => fn({ ...commands(db, userId, (_label, run) => run(w), clock), batchId: w.batchId }),
 				clock()
 			);
 		}

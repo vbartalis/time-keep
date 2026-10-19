@@ -100,10 +100,13 @@ type Stamp = Pick<UndoneBy, 'batchId' | 'createdAt'>;
 export const newer = (a: Stamp, b: Stamp): boolean =>
 	a.createdAt !== b.createdAt ? a.createdAt > b.createdAt : a.batchId > b.batchId;
 
-const listSchema = z.object({
+export const listSchema = z.object({
 	before: z.string().min(1).optional(),
 	limit: z.number().int().min(1).max(200).optional()
 });
+
+/** The id of a history batch: what `getHistory` reads. */
+export const getSchema = z.object({ batchId: z.string().min(1) });
 
 const parse = (json: string | null): Row | null => (json === null ? null : JSON.parse(json));
 
@@ -136,7 +139,12 @@ export function listHistory(
 		.orderBy(desc(batch.createdAt), desc(batch.id))
 		.limit(limit)
 		.all();
-	if (batches.length === 0) return ok([]);
+	return ok(withChanges(db, batches));
+}
+
+/** The batches with their changes, in the order given; one read per table for all of them. */
+function withChanges(db: Handle, batches: (typeof batch.$inferSelect)[]): HistoryBatch[] {
+	if (batches.length === 0) return [];
 	const changes = db
 		.select()
 		.from(change)
@@ -175,18 +183,29 @@ export function listHistory(
 		if (prev === null) continue;
 		lastBy.set(c.batchId, by === null ? null : prev && !newer(by, prev) ? prev : by);
 	}
-	return ok(
-		batches.map((b) => {
-			const by = lastBy.get(b.id) ?? null;
-			return {
-				id: b.id,
-				actor: b.actor,
-				label: b.label,
-				createdAt: b.createdAt,
-				undone: by !== null,
-				undoneBy: by?.batchId ?? null,
-				changes: byBatch.get(b.id) ?? []
-			};
-		})
-	);
+	return batches.map((b) => {
+		const by = lastBy.get(b.id) ?? null;
+		return {
+			id: b.id,
+			actor: b.actor,
+			label: b.label,
+			createdAt: b.createdAt,
+			undone: by !== null,
+			undoneBy: by?.batchId ?? null,
+			changes: byBatch.get(b.id) ?? []
+		};
+	});
+}
+
+/** One of the user's batches with its changes, as `listHistory` builds it; another user's or unknown is not found. */
+export function getHistory(db: Handle, userId: string, input: unknown): Result<HistoryBatch> {
+	const parsed = getSchema.safeParse(input);
+	if (!parsed.success) return fromZod(parsed.error);
+	const row = db
+		.select()
+		.from(batch)
+		.where(and(eq(batch.id, parsed.data.batchId), eq(batch.userId, userId)))
+		.get();
+	if (!row) return fail('not_found', 'Not found.');
+	return ok(withChanges(db, [row])[0]);
 }

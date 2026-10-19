@@ -3,7 +3,7 @@ import { createTestDb } from '../testing/db';
 import { user } from '../db/schema';
 import { newId } from '../id';
 import { runBatch } from './batch';
-import { listHistory } from './history';
+import { getHistory, listHistory } from './history';
 import { createCustomer, rename } from './reference';
 import type { Result } from './result';
 import { undo } from './undo';
@@ -108,5 +108,59 @@ describe('listHistory', () => {
 		const [theirs] = val(listHistory(db, other));
 		expect(err(listHistory(db, userId, { before: theirs.id }))?.code).toBe('not_found');
 		expect(err(listHistory(db, userId, { before: 'nope' }))?.code).toBe('not_found');
+	});
+});
+
+describe('getHistory', () => {
+	it('answers the batch exactly as the list builds it', () => {
+		const { db, userId, val, tick } = setup();
+		const made = val(
+			runBatch(
+				db,
+				userId,
+				'ui',
+				'Two',
+				(w) => {
+					const a = createCustomer(w, { name: 'A' });
+					return a.ok ? createCustomer(w, { name: 'B' }) : a;
+				},
+				tick()
+			)
+		);
+		expect(made).toBeTruthy();
+		const [two] = val(listHistory(db, userId));
+		val(
+			runBatch(
+				db,
+				userId,
+				'ui',
+				'Undo one',
+				(w) => undo(w, { changeIds: [two.changes[0].id] }),
+				tick()
+			)
+		);
+		const listed = val(listHistory(db, userId)).find((b) => b.id === two.id);
+		expect(listed?.changes).toHaveLength(2);
+		expect(listed?.changes.map((c) => c.undone)).toEqual([true, false]);
+		expect(val(getHistory(db, userId, { batchId: two.id }))).toEqual(listed);
+	});
+
+	it('does not find unknown or another user’s batches', () => {
+		const { db, userId, other, val, mkCustomer } = setup();
+		mkCustomer('Theirs', other);
+		const [theirs] = val(listHistory(db, other));
+		expect(getHistory(db, userId, { batchId: theirs.id })).toMatchObject({
+			ok: false,
+			error: { code: 'not_found', message: 'Not found.' }
+		});
+		expect(getHistory(db, userId, { batchId: 'nope' })).toMatchObject({
+			ok: false,
+			error: { code: 'not_found' }
+		});
+	});
+
+	it('rejects input without a batch id', () => {
+		const { db, userId } = setup();
+		expect(getHistory(db, userId, {})).toMatchObject({ ok: false, error: { code: 'invalid' } });
 	});
 });

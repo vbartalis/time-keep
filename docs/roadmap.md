@@ -411,7 +411,7 @@ Split 2026-10-19 into two parts, worked in order:
   was not refreshed; on the PC the tables' reading order (Customers, Projects, Weeks,
   Days) differs from their placement.
 
-## 7. MCP server — next
+## 7. MCP server — done 2026-10-19
 
 The MCP server as a first-class client of the same API, behind authentication, for
 bulk entry, reorganising and rewording. One agent request is one batch.
@@ -419,7 +419,73 @@ bulk entry, reorganising and rewording. One agent request is one batch.
 Exit: an authenticated agent can do through the MCP server what the UI can, and no
 more, and a wrong agent change is undone in one step.
 
-## 8. Backup and restore
+Done 2026-10-19: `POST /mcp` serves stateless Streamable HTTP to an agent holding a
+user's access token, made and revoked on Account under Agent access; thirteen tools
+read the time data and change it through the core as actor `agent`, `change` running
+up to 1000 of the 26 batch commands (with refs between them) as one batch, shown on
+History with the Agent chip and undone there or through `undo` in one step. Spec
+`docs/superpowers/specs/2026-10-19-mcp-server-design.md`, plan
+`docs/superpowers/plans/2026-10-19-mcp-server.md`, decision 6 (agents sign in with
+bearer tokens over Streamable HTTP); a new contract doc `docs/mcp.md`; `docs/core.md`
+(the exported schemas, `history.get`, `BatchCore.batchId`), `docs/app.md` (the layout
+rows for `routes/mcp`, `server/mcp/`, `auth/tokens.ts` and `components/account/`, the
+Account screen, tokens under Accounts and sessions, the tests) and `DESIGN.md` (the
+token list, the shown-once token) extended; 583 unit tests and 132 browser tests (10
+of them new, phone and PC sizes, JavaScript off included; 130 pass and two are
+skipped, as in 6b), check and lint clean. `DESIGN.md` was edited directly rather than
+through impeccable's document step, so `.impeccable/design.json` is stale for the two
+new components, as in 6b. Calls made in the operator's place: every **(call)** in the
+spec, namely no OAuth, no account or token tools through the MCP, no copy-out, CSV or
+report tools, no token scopes, expiry or rate limit, tools as the whole surface (no
+resources, prompts, sampling, notifications or sessions), stateless Streamable HTTP
+with JSON responses and 405 for `GET` and `DELETE`, the official SDK as a runtime
+dependency, a foreign `Origin` refused with 403 and none allowed, the whole access
+token design (`tk_` and 32 base32 characters, only the SHA-256 stored, named 1–100
+characters unique per user, Agent access on Account with a shown-once token and a
+two-step revoke and no undo, one 401 for every bad token, `last_used_at` at most once
+a minute, disabling deleting tokens and a password change keeping them, no limit on
+their number, the admin's tokens acting on the admin's own data, no throttle), the core's
+schemas exported for the tools, snake_case tool names, `list_entries` capped at 999
+with `truncated` and no cursor, `list_history` as summaries with `get_batch` and the
+core's new `history.get` for the changes, one `change` tool rather than one per
+command with `undo` and `redo` their own, refs in id fields only, the result shapes,
+the rows' times (an entry's in its own zone's offset, every other instant in UTC) and
+dropped fields with history's `before` and `after` as stored (camelCase; the spec's "snake_case columns" line was wrong), and 1000 operations per
+call under the default 512 KB body limit, raising it left to phase 9; and, made
+during the build, the plan's "22 commands" read as the 26 it lists; an input the
+SDK's own schema rejects (a read's input, `change`'s envelope) answered as `isError`
+with the SDK's text and no `structuredContent`, while every core refusal keeps `{
+code, message, fields?, operation? }`; a refusal of the batch as a whole (the label,
+the batch-end running check) naming no `operation`; `undo` and `redo` answering the
+user's newest batch as their `batchId`, since the core's undo returns none; the global
+hook still validating and renewing a session cookie on `/mcp` responses, which
+authorises nothing; `as` names of letters, digits, `_` and `-`, 1–40 characters;
+`list_history` defaulting to 20 against the core's 50; Task 6's Account section
+shipping without tests of its own, pinned by the browser tests; and the token lines'
+hidden "Created" and "Last used" prefixes kept for screen readers, ending in a
+no-break space (Svelte trimmed the plain one, so they read "Last used2026-…"; fixed
+when the browser test found it). Deferred minors (the final branch review may add
+more): a weak `toBeTruthy` in the `history.get` test; the `commandSchemas` test
+exercises only `customers.create`; Task 1's code written before its tests (its RED
+verified by stashing); `tokens.ts` duplicates `users.ts`' `isUniqueViolation`; a
+`token_hash` unique violation would read as a duplicate name (negligible odds); no
+tests for the NFC half of a token name's key or `listTokens`' id tie-break; the token
+pattern written twice in `tokens.ts`; a missing blank line in `users.test.ts`; the
+server tests never close their client and server; `list_history`'s description reads
+awkwardly; `isoAt` assumes `±HH:MM` offsets (local mean time offsets carry seconds);
+`package-lock.json` lost dev flags and gained an orphan `find-up@5` on install; two
+types named `Refusal` (`change.ts`, `server.ts`); a ref'd result's id stored unchecked
+(no command returns a row without one today); activities, locations and templates
+commands not exercised through `change`; no undo test with both `batchId` and
+`changeIds`; `"$schema"` repeated 26 times in `change`'s description; a caught write
+failure or commit-time error after every operation also names no operation; no
+HTTP-path test of `now` and `last_used_at`; `hooks.server.ts` may set a cookie on
+`/mcp` responses; Revoke's confirm step accepts any id (a stale one shows nothing until
+confirmed); a refused create without JavaScript clears the typed name and shows its
+message at the section's head, not on the field; without JavaScript the focus does not
+move to Yes, revoke (as on the entry delete).
+
+## 8. Backup and restore — next
 
 Admin-only backup and restore, through the app.
 

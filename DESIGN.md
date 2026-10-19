@@ -481,6 +481,26 @@ are punched and never wrap; the text columns wrap, at least 7 rem wide, the
 description at least 12 rem. It never stacks: at any width it scrolls sideways inside
 its own box, so the phone shows the first columns and the rest are a swipe away.
 
+### Token list
+Account's Agent access, under its own section head below Change password, in the
+same ruled lines and 12 rem label column on the PC. Each token is a line on a
+hairline: its name in semibold in the label column, then the date it was made and its
+last use punched in 12 px faded ink ("Never used", unpunched, until then),
+and an outline Revoke at the right. On the phone the dates go under the name and
+Revoke stays at the right of both. The first press of Revoke turns the line into the
+question, as the delete confirm does: "Revoke "Laptop"?", a red "Yes, revoke", which
+takes the focus, and an outline Cancel; only the confirming button is red. None shows
+"No tokens yet." in faded ink on a hairline. The add line closes the section: Name in
+the label column, the field, and Create token, the section's one violet primary.
+
+### Shown-once token
+A token just made sits above the list on its own ruled line: its name as the label,
+the token punched (mono) in a read-only field that selects itself on focus, an
+outline Copy beside it once the script runs, and under it "Copy it now: it is not
+shown again." in medium 14 px ink; "Copied" follows in 14 px ink, announced politely.
+No card around it and no colour: the punched token is the mark. Without JavaScript there is no
+Copy button and the field is copied by hand. It is gone on the next load.
+
 ### Navigation
 - **PC:** the rack. Wordmark at the top, then Today, Entries, Copy-out (a sheet
   icon), Reports (a column chart icon), Templates, Setup, History, Account (and Users for an admin), items of 40 px with a 16 px line icon and

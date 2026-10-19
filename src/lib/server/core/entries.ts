@@ -214,7 +214,7 @@ const duration = z
 	.positive('Use a positive number of minutes.')
 	.max(2_628_000, 'Duration must be at most 5 years.');
 
-const createSchema = z.object({
+export const createSchema = z.object({
 	projectId: id,
 	activityId: id.nullable().optional(),
 	locationId: id.nullable().optional(),
@@ -227,7 +227,7 @@ const createSchema = z.object({
 	description: text(2000)
 });
 
-const updateSchema = z.object({
+export const updateSchema = z.object({
 	id,
 	expectedVersion: z.number().int().optional(),
 	projectId: id.optional(),
@@ -242,7 +242,7 @@ const updateSchema = z.object({
 	description: text(2000)
 });
 
-const startSchema = z.object({
+export const startSchema = z.object({
 	projectId: id,
 	activityId: id.nullable().optional(),
 	locationId: id.nullable().optional(),
@@ -252,16 +252,16 @@ const startSchema = z.object({
 	description: text(2000)
 });
 
-const stopSchema = z.object({
+export const stopSchema = z.object({
 	id,
 	expectedVersion: z.number().int().optional(),
 	end: z.string().optional(),
 	endTimeZone: z.string().optional()
 });
 
-const deleteSchema = z.object({ id, expectedVersion: z.number().int().optional() });
-const getSchema = z.object({ id });
-const listSchema = z.object({
+export const deleteSchema = z.object({ id, expectedVersion: z.number().int().optional() });
+export const getSchema = z.object({ id });
+export const listSchema = z.object({
 	from: z.string().optional(),
 	to: z.string().optional(),
 	projectId: id.optional(),

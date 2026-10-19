@@ -4,9 +4,11 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
+	import NewToken from '#lib/components/account/NewToken.svelte';
+	import TokenList from '#lib/components/account/TokenList.svelte';
 	import type { PageProps } from './$types';
 
-	let { form }: PageProps = $props();
+	let { data, form }: PageProps = $props();
 
 	// One ruled line per field: label column and field column on the PC.
 	const line =
@@ -17,7 +19,7 @@
 
 <h1 class="text-xl font-semibold tracking-[-0.01em]">Account</h1>
 
-<form method="POST" use:enhance class="flex w-full max-w-2xl flex-col">
+<form method="POST" action="?/password" use:enhance class="flex w-full max-w-2xl flex-col">
 	<h2 class="border-b border-foreground pb-1.5 text-sm printed">Change password</h2>
 	{#if form?.error}
 		<Alert variant="destructive" class="mt-3"
@@ -42,3 +44,30 @@
 		<Button type="submit" class="w-full sm:w-auto">Change password</Button>
 	</div>
 </form>
+
+<section aria-labelledby="agent-access-heading" class="flex w-full max-w-2xl flex-col">
+	<h2 id="agent-access-heading" class="border-b border-foreground pb-1.5 text-sm printed">
+		Agent access
+	</h2>
+	{#if form?.tokenError}
+		<Alert variant="destructive" class="mt-3"
+			><AlertDescription>{form.tokenError}</AlertDescription></Alert
+		>
+	{:else if form?.tokenMessage}
+		<Alert class="mt-3"><AlertDescription>{form.tokenMessage}</AlertDescription></Alert>
+	{/if}
+	{#if form?.token}
+		<NewToken token={form.token} name={form.tokenName ?? ''} />
+	{/if}
+	<TokenList tokens={data.tokens} confirming={form?.confirmRevoke ?? null} />
+	<form
+		method="POST"
+		action="?/createToken"
+		use:enhance
+		class="grid gap-2 border-b border-border py-3 lg:grid-cols-[12rem_minmax(0,1fr)_auto] lg:items-center lg:gap-x-4"
+	>
+		<Label for="token-name">Name</Label>
+		<Input id="token-name" name="name" required autocomplete="off" />
+		<Button type="submit" class="w-full sm:w-auto">Create token</Button>
+	</form>
+</section>

@@ -18,12 +18,15 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/server/auth/credentials.ts` | Username and password rules, argon2id hashing and verification. |
 | `src/lib/server/auth/sessions.ts` | Create, validate, renew and invalidate sessions; the session cookie. |
 | `src/lib/server/auth/throttle.ts` | In-memory sign-in throttle. |
+| `src/lib/server/auth/tokens.ts` | Agents' access tokens: create (shown once, only the hash stored), list, revoke, and `authenticateToken` for a `Bearer` header (decision 6). |
 | `src/lib/server/auth/bootstrap.ts` | Creates the first admin from the environment. |
 | `src/lib/server/users.ts` | User operations: create, list, authenticate, set password, change own password, disable and enable. Returns `Result` values instead of throwing for expected failures. |
 | `src/lib/server/guards.ts` | `requireUser` (redirect to `/login`) and `requireAdmin` (403). |
 | `src/lib/server/core/` | The only way to read and write the time data: batches, recorded changes, undo, history, reference data. Import only `core/index.ts`. See [core.md](core.md) and decision 4. |
 | `src/lib/server/id.ts` | Random base32 ids. |
+| `src/lib/server/mcp/` | The MCP server, a client of the core as actor `agent`: `http.ts` (the Origin check, the bearer token, one stateless exchange), `server.ts` (the 13 tools), `change.ts` (the `change` tool's operations and refs as one batch), `rows.ts` (rows as the agent reads them). See [mcp.md](mcp.md). |
 | `src/routes/login`, `logout` | Sign in and out. |
+| `src/routes/mcp` | `POST /mcp`, the MCP endpoint, outside the signed-in screens (see [mcp.md](mcp.md)). |
 | `src/routes/(app)/` | Signed-in screens: Today (`/`), `entries` and the entry edit screen (`entries/[id]`), `copy-out` and its CSV route (`copy-out/csv`), `reports`, `account`, `admin/users`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell: a left rail on the PC (Today, Entries, Copy-out, Reports, Templates, Setup, History, Account, Users for an admin), a top bar and bottom navigation on the phone (Today, Setup, Account, Users for an admin; Entries, Copy-out, Reports, Templates and History are PC screens). The current item follows the route; the entry edit screen keeps Entries current when its `back` starts with `/entries`, else Today. |
 | `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`, `edit.ts`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries search and bulk change (`entries.ts`: `readSearch`, `searchInput`, `searchFilters`, `searchPath`, `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`), the copy-out's rows and query (`copy-out.ts`: `outputRows`, `readCopyOut`, `copyOutQuery`, `monthRange`, `csvName`, `sheetFor`, and the pieces and options Reports shares: `outputPieces`, `readOptions`, `optionsQuery`), the reports' totals (`reports.ts`: `isoWeek`, `reportTotals`, `readReport`, `reportFor`, `reportQuery`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`). |
 | `src/lib/components/entries/` | The Entries screen's parts: the filter form (shared with Copy-out), the change form, the selectable table. |
@@ -32,6 +35,7 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/components/history/` | The History screen's parts: a batch's line with its changes (`BatchLine`), and the types its load returns. |
 | `src/lib/components/narrowing.svelte.ts` | Customer and project pickers that narrow each other with JavaScript, shared by the template form and the Entries filters. |
 | `src/lib/components/templates/` | The template form shared by the new and edit screens. |
+| `src/lib/components/account/` | The Account screen's Agent access parts: the token list with its revoke confirm (`TokenList`), the shown-once token with its Copy button (`NewToken`). |
 | `src/lib/components/setup/` | The Setup screen's parts: a rename-in-place row, the add lines, the Add project disclosure. |
 | `src/lib/components/today/` | The Today screen's parts: timers, template sheets, start a timer, today's entries, the ticking elapsed time. |
 | `src/lib/components/UndoStrip.svelte` | The undo strip every screen shows after an action; posts to `/undo`. |
@@ -351,6 +355,29 @@ confirmation: success redirects (303) to the page posted from (`historyPath`, it
 page with the core's message in a red-bordered alert above the list, the ticks kept
 and their batches open.
 
+### Account (`/account`)
+
+On the phone's bar and the PC's rail. Two sections, each a printed head on a card-ink
+rule over ruled lines: **Change password** (current, new, confirm; see Accounts and
+sessions) and **Agent access**, the user's tokens for agents (decision 6,
+[mcp.md](mcp.md)).
+
+**Agent access** lists the tokens newest first, each a line with its name, the date it
+was made and when it was last used (date and `HH:mm` in the request's zone, or "Never
+used"), and an outline Revoke button; none says "No tokens yet.". Under the list an
+add line (Name, **Create token**) posts `?/createToken`; the name is trimmed, 1–100
+characters ("Name must be 1–100 characters."), unique per user case-insensitively
+("You already have a token with that name."). The new token is shown once, above the
+list, in a read-only mono field labelled with its name that selects itself on focus,
+with a Copy button once the script runs ("Copied" after) and the line "Copy it now: it
+is not shown again."; the next load no longer has it. Revoke is two steps on the page:
+the first press posts `?/revokeToken` and re-renders the line with "Revoke
+"<name>"?", a red Yes, revoke (which takes the focus with JavaScript) and an outline
+Cancel back to `/account`; the confirm deletes the token and says "Token revoked.". An
+unknown id says "Token not found.". No undo: accounts are outside the history
+(decision 4). The posts work without JavaScript; a refusal shows as a red alert at the
+section's head.
+
 ### Time zones
 
 The request's zone is, in order: the form's hidden `timeZone` field, the `tz`
@@ -472,7 +499,21 @@ files.
   time across two days, decimal hours, Last month and This month keeping the options,
   only a running entry matching ("No entries match." and the running line, no tables),
   the rail's Reports after Copy-out and current (none on the phone's bar) and the
-  no-JavaScript Show with Split ticked.
+  no-JavaScript Show with Split ticked; `agent.test.ts` covers Agent access and `/mcp`
+  with a user of its own per test (`seedEmptyUser`): a token made and shown once
+  (gone on the next load, listed as "Never used") and a duplicate name refused, a
+  `change` call with that token through Playwright's request client (headers
+  `authorization`, `content-type` and `accept`) showing its customer on Setup and its
+  batch on History with the Agent chip, undone there in one step, and the token's
+  last-used time on Account; the signed-in session cookie alone answered 401; a
+  revoked token answered 401; and the no-JavaScript create and two-step revoke.
+- The MCP server's unit tests: `auth/tokens.test.ts` (made, hashed, found, revoked, a
+  disabled user's refused and deleted, `last_used_at`), `mcp/http.test.ts` (the
+  Origin check, 401 alike for every bad token, no session cookie, a body that is not
+  JSON), `mcp/server.test.ts`
+  (every tool through the SDK's client over an in-memory transport, on the real core),
+  `mcp/change.test.ts` (operations, refs and refusals as one batch) and
+  `mcp/rows.test.ts` (the rows' times and dropped fields).
 - `npm test` runs both.
 
 Chromium needs system libraries and fonts. The devcontainer image installs them, so
@@ -503,6 +544,13 @@ Decision 3 is the rule; these are the details.
   flag is set at creation and has no edit path. Admins create users, set passwords and
   disable or enable anyone except themselves. Users are never deleted. Setting a
   password or disabling an unknown id returns "User not found."
+- Agents sign in with access tokens, not sessions (decision 6): `tk_` and 32 base32
+  characters (20 random bytes), only the SHA-256 stored in `access_token`, made and
+  revoked by the user on Account, sent as `Authorization: Bearer` to `/mcp` only.
+  `last_used_at` is written at most once a minute. Disabling a user deletes their
+  tokens, as it deletes their sessions; enabling does not bring them back. A password
+  change, by the user or an admin, leaves tokens alone. A session cookie never opens
+  `/mcp` and a token never opens a screen.
 
 ## Image
 

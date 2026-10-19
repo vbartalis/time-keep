@@ -55,12 +55,15 @@ registerRules('project', [
 	}
 ]);
 
-const createSchema = z.object({ name: nameSchema });
-const projectSchema = z.object({ customerId: z.string().min(1), name: nameSchema });
-const idSchema = z.object({ id: z.string().min(1), expectedVersion: z.number().int().optional() });
-const renameSchema = idSchema.extend({ name: nameSchema });
-const listSchema = z.object({ includeArchived: z.boolean().optional() });
-const projectListSchema = listSchema.extend({ customerId: z.string().min(1).optional() });
+export const createSchema = z.object({ name: nameSchema });
+export const projectSchema = z.object({ customerId: z.string().min(1), name: nameSchema });
+export const idSchema = z.object({
+	id: z.string().min(1),
+	expectedVersion: z.number().int().optional()
+});
+export const renameSchema = idSchema.extend({ name: nameSchema });
+export const listSchema = z.object({ includeArchived: z.boolean().optional() });
+export const projectListSchema = listSchema.extend({ customerId: z.string().min(1).optional() });
 
 function duplicate(kind: Kind): Result<never> {
 	const message = `${ARTICLE[kind]} with this name already exists.`;

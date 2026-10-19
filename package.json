@@ -63,6 +63,7 @@
 		"#lib/*": "./src/lib/*"
 	},
 	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.32.1",
 		"@node-rs/argon2": "^2.2.2",
 		"better-sqlite3": "^13.0.2",
 		"zod": "^4.6.7"

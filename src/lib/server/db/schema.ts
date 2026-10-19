@@ -30,6 +30,25 @@ export const session = sqliteTable(
 	(t) => [index('session_user_id_idx').on(t.userId)]
 );
 
+export const accessToken = sqliteTable(
+	'access_token',
+	{
+		id: text('id').primaryKey(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		name: text('name').notNull(),
+		nameKey: text('name_key').notNull(),
+		tokenHash: text('token_hash').notNull().unique(),
+		createdAt: integer('created_at').notNull(),
+		lastUsedAt: integer('last_used_at')
+	},
+	(t) => [
+		index('access_token_user_id_idx').on(t.userId),
+		uniqueIndex('access_token_user_id_name_key_unq').on(t.userId, t.nameKey)
+	]
+);
+
 export const batch = sqliteTable(
 	'batch',
 	{
@@ -169,6 +188,7 @@ export const template = sqliteTable(
 
 export type User = typeof user.$inferSelect;
 export type Session = typeof session.$inferSelect;
+export type AccessToken = typeof accessToken.$inferSelect;
 export type Batch = typeof batch.$inferSelect;
 export type Change = typeof change.$inferSelect;
 export type Customer = typeof customer.$inferSelect;

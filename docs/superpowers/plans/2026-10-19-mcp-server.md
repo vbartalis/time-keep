@@ -15,7 +15,7 @@
 - Every write goes through the core (`openCore(db, userId, 'agent')`); the MCP imports only `core/index.ts` (the guard test in `core/guard.test.ts` must stay green unedited).
 - One `change`, `undo` or `redo` call is exactly one batch, or none when it changed nothing or failed. A failure stores nothing.
 - `change`: `label` 1–200 characters after trim (the core's own check); `operations` 1–1000; `as` names unique in a call; refs only in the id fields `id`, `customerId`, `projectId`, `activityId`, `locationId`, `entryId`, `templateId`, written `{ "ref": "<name>" }`.
-- Commands accepted by `change` (exactly these 22): `customers.create|rename|archive|unarchive`, `projects.create|rename|archive|unarchive`, `activities.create|rename|archive|unarchive`, `locations.create|rename|archive|unarchive`, `entries.create|update|delete|fromTemplate`, `timers.start|stop`, `templates.create|update|delete|fromEntry`. No undo/redo inside `change`.
+- Commands accepted by `change` (exactly these 26): `customers.create|rename|archive|unarchive`, `projects.create|rename|archive|unarchive`, `activities.create|rename|archive|unarchive`, `locations.create|rename|archive|unarchive`, `entries.create|update|delete|fromTemplate`, `timers.start|stop`, `templates.create|update|delete|fromEntry`. No undo/redo inside `change`.
 - Tool names (exactly 13): `list_customers`, `list_projects`, `list_activities`, `list_locations`, `list_entries`, `get_entry`, `list_templates`, `get_template`, `list_history`, `get_batch`, `change`, `undo`, `redo`. Reads carry `readOnlyHint: true`; `change`, `undo`, `redo` carry `destructiveHint: true`.
 - `list_entries`: `limit` 1–999, default 500; answers `truncated: true` when more matched. `list_history`: `limit` 1–200, default 20.
 - Rows for the agent: `userId`/`user_id` and `nameKey`/`name_key` dropped; an entry's `startAt`/`endAt` as ISO 8601 with its own zone's offset, seconds always (`2026-10-19T09:00:00+02:00`, UTC as `+00:00`); every other instant on a live row or batch as `new Date(ms).toISOString()`. History `before`/`after` stay as stored otherwise.
@@ -47,7 +47,7 @@
 
 **Interfaces:**
 - Produces (from `core/index.ts`):
-  - `type CommandName` — the 22 names in Global Constraints, as a string union; `COMMANDS: readonly CommandName[]` in that order.
+  - `type CommandName` — the 26 names in Global Constraints, as a string union; `COMMANDS: readonly CommandName[]` in that order.
   - `commandSchemas: Record<CommandName, z.ZodType>` — the zod schema each command already parses its input with (e.g. `'customers.rename'` → reference's `renameSchema`, `'projects.create'` → `projectSchema`, `'entries.fromTemplate'` → `fromTemplateSchema`, `'templates.fromEntry'` → `fromEntrySchema`). The same objects, exported, not copies.
   - `readSchemas: { customers, projects, activities, locations, entries, entry, template, history, batch }` — reference `listSchema` (×3), `projectListSchema`, entries `listSchema`, entries `getSchema`, templates `getSchema`, history `listSchema`, and the new history `getSchema` below.
   - `undoSchema` — undo's `inputSchema`.
@@ -56,7 +56,7 @@
 
 - [ ] **Step 1: Failing tests:**
   - `history.test.ts`: `history.get({ batchId })` deep-equals `history.list().value.find(b => b.id === batchId)` for a batch of two changes, one of them undone (so `undone` / `undoneBy` per change match); another user's batch id and `'nope'` → `{ ok: false, error: { code: 'not_found' } }`; `{}` → `invalid`.
-  - `core.test.ts`: inside `core.batch('L', (c) => { seen = c.batchId; return c.customers.create({ name: 'A' }); })`, `seen` equals `core.history.list({ limit: 1 }).value[0].id`; `Object.keys(commandSchemas).sort()` equals the 22 names sorted; `COMMANDS.length === 22`; `commandSchemas['customers.create'].safeParse({ name: ' ' }).success === false`.
+  - `core.test.ts`: inside `core.batch('L', (c) => { seen = c.batchId; return c.customers.create({ name: 'A' }); })`, `seen` equals `core.history.list({ limit: 1 }).value[0].id`; `Object.keys(commandSchemas).sort()` equals the 26 names sorted; `COMMANDS.length === 26`; `commandSchemas['customers.create'].safeParse({ name: ' ' }).success === false`.
 - [ ] **Step 2: Run** `npx vitest run src/lib/server/core` — FAIL.
 - [ ] **Step 3: Implement.** `getHistory(db, userId, input)` in `history.ts` shares the change-building code with `listHistory` (extract it; do not duplicate it). `batchId` comes from the open `Writer` (add a public readonly field if it is private) when `core.batch` builds its `BatchCore`.
 - [ ] **Step 4: Run** `npm run check && npm run lint && npx vitest run` — PASS, every earlier test unedited.

@@ -19,6 +19,7 @@ core.customers | projects | activities | locations
 core.entries.create / .update / .delete / .list / .get
 core.timers.start / .stop
 core.history.list({ before?, limit? })
+core.history.get({ batchId })
 core.undo({ batchId } | { changeIds })
 core.redo({ batchId } | { changeIds })
 core.batch(label, (c) => result)
@@ -27,6 +28,15 @@ core.batch(label, (c) => result)
 Everything is synchronous (better-sqlite3 transactions are). Every command takes
 `input: unknown` and validates it with zod, so a form, a test and an agent hit the
 same checks. Another user's ids are `not_found`, never `forbidden`.
+
+### Schemas
+
+The zod schemas the commands and reads parse with are exported from `core/index.ts`
+(the same objects, not copies), so a caller can describe the input without
+duplicating it: `COMMANDS` and `CommandName` list the 26 commands a batch can hold,
+`commandSchemas` maps each to its schema, `readSchemas` maps each read
+(`customers`, `projects`, `activities`, `locations`, `entries`, `entry`, `template`,
+`history`, `batch`), and `undoSchema` is the one of `undo` and `redo`.
 
 ## Results
 
@@ -50,7 +60,7 @@ A batch is the unit of history and undo: one transaction, one `batch` row (`id`,
   `batch`), and returns a result. A failed command that `fn` returns, a rule
   violation, or any failed write rolls the whole batch back and the result is that
   failure. Calling the outer core inside `fn` throws (it would commit a second batch);
-  use the `BatchCore` passed in.
+  use the `BatchCore` passed in. `BatchCore.batchId` is the id of the open batch.
 - A refusal thrown inside a command (`Writer.refuse`, as for a timer that started
   later or a start in the future) is recorded like a failed write, so the batch rolls
   back even if `fn` catches it and returns ok. Inside `core.batch` the commands of the
@@ -140,6 +150,8 @@ Undo is per user. An unknown batch or change, or another user's, is `not_found`.
 with its changes. `limit` defaults to 50, maximum 200; `before` is a batch id to page
 from. Each batch and change says whether it is undone and by which batch. History rows
 are never updated or deleted, and there is no command to delete them.
+`history.get({ batchId })` returns one batch, built exactly as in the list; an unknown
+or another user's id is `not_found`.
 
 ## Reference data
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { batch, change, user } from '../db/schema';
 import { newId } from '../id';
 import { createTestDb } from '../testing/db';
-import { openCore, type Result } from './index';
+import { COMMANDS, commandSchemas, openCore, type Result } from './index';
 
 function setup() {
 	const db = createTestDb();
@@ -331,5 +331,42 @@ describe('templates', () => {
 		val(core.entries.fromTemplate(input));
 		const r = core.entries.fromTemplate(input);
 		expect(r.ok && r.warnings.map((w) => w.code)).toEqual(['overlap']);
+	});
+});
+
+describe('exposed to callers', () => {
+	it('gives core.batch the id of its batch', () => {
+		const { core, val } = setup();
+		let seen = '';
+		val(
+			core.batch('L', (c) => {
+				seen = c.batchId;
+				return c.customers.create({ name: 'A' });
+			})
+		);
+		expect(seen).toBe(val(core.history.list({ limit: 1 }))[0].id);
+	});
+
+	it('names every command with the schema it parses by', () => {
+		const names = ['customers', 'projects', 'activities', 'locations'].flatMap((k) =>
+			['create', 'rename', 'archive', 'unarchive'].map((v) => `${k}.${v}`)
+		);
+		const expected = [
+			...names,
+			'entries.create',
+			'entries.update',
+			'entries.delete',
+			'entries.fromTemplate',
+			'timers.start',
+			'timers.stop',
+			'templates.create',
+			'templates.update',
+			'templates.delete',
+			'templates.fromEntry'
+		];
+		expect(COMMANDS).toHaveLength(26);
+		expect([...COMMANDS]).toEqual(expected);
+		expect(Object.keys(commandSchemas).sort()).toEqual([...expected].sort());
+		expect(commandSchemas['customers.create'].safeParse({ name: ' ' }).success).toBe(false);
 	});
 });

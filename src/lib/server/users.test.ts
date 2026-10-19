@@ -8,9 +8,10 @@ vi.mock('./auth/credentials', async () => {
 
 import { verifyPassword } from './auth/credentials';
 import { createTestDb } from './testing/db';
-import { session, user } from './db/schema';
+import { accessToken, session, user } from './db/schema';
 import type { DB } from './db/index';
 import { createSession } from './auth/sessions';
+import { createToken } from './auth/tokens';
 import { SignInThrottle } from './auth/throttle';
 import {
 	authenticate,
@@ -201,6 +202,14 @@ describe('passwords', () => {
 		const r = await changeOwnPassword(db, u.id, PW, 'brand-new-password', 'x');
 		expect(r.ok).toBe(true);
 	});
+
+	it('password changes leave access tokens alone', async () => {
+		const u = await make('rae');
+		createToken(db, u.id, 'Laptop');
+		await changeOwnPassword(db, u.id, PW, 'brand-new-password', 'x');
+		await setPassword(db, u.id, 'another-new-password');
+		expect(db.select().from(accessToken).where(eq(accessToken.userId, u.id)).all()).toHaveLength(1);
+	});
 });
 
 describe('setDisabled', () => {
@@ -223,5 +232,19 @@ describe('setDisabled', () => {
 		expect(setDisabled(db, a.id, b.id, false).ok).toBe(true);
 		expect(row().disabledAt).toBeNull();
 		expect(listUsers(db).find((u) => u.id === b.id)?.disabled).toBe(false);
+	});
+	it('deletes the user tokens on disable and does not restore them on enable', async () => {
+		const a = await make('ned', true);
+		const b = await make('oli');
+		const c = await make('pat');
+		createToken(db, b.id, 'Laptop');
+		createToken(db, c.id, 'Laptop');
+		const tokensOf = (id: string) =>
+			db.select().from(accessToken).where(eq(accessToken.userId, id)).all();
+		expect(setDisabled(db, a.id, b.id, true).ok).toBe(true);
+		expect(tokensOf(b.id)).toHaveLength(0);
+		expect(tokensOf(c.id)).toHaveLength(1);
+		expect(setDisabled(db, a.id, b.id, false).ok).toBe(true);
+		expect(tokensOf(b.id)).toHaveLength(0);
 	});
 });

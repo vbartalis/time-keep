@@ -138,15 +138,15 @@ const fields = {
 	reference: text(200),
 	description: text(2000)
 };
-const createSchema = z.object({ name: nameSchema, ...fields });
-const updateSchema = z.object({
+export const createSchema = z.object({ name: nameSchema, ...fields });
+export const updateSchema = z.object({
 	id,
 	expectedVersion: z.number().int().optional(),
 	name: nameSchema.optional(),
 	...fields
 });
-const deleteSchema = z.object({ id, expectedVersion: z.number().int().optional() });
-const getSchema = z.object({ id });
+export const deleteSchema = z.object({ id, expectedVersion: z.number().int().optional() });
+export const getSchema = z.object({ id });
 
 const COLUMNS = Object.keys(fields) as (keyof typeof fields)[];
 
@@ -265,7 +265,7 @@ export function listTemplates(db: Handle, userId: string): Result<TemplateItem[]
 	return ok(selectItems(db, userId).sort((a, b) => collator.compare(a.name, b.name)));
 }
 
-const fromTemplateSchema = z.object({
+export const fromTemplateSchema = z.object({
 	templateId: id,
 	date: z
 		.string()
@@ -421,7 +421,7 @@ export function entryFromTemplate(w: Writer, input: unknown): Result<Entry> {
 	return resolved.ok ? createEntry(w, resolved.value) : resolved;
 }
 
-const fromEntrySchema = z.object({ entryId: id, name: z.unknown() });
+export const fromEntrySchema = z.object({ entryId: id, name: z.unknown() });
 
 /**
  * Saves an entry as a template: its references, texts and start zone, its start as a

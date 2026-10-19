@@ -13,7 +13,7 @@ import './templates';
 import { fail, fromZod, ok, type Result } from './result';
 import { rowJson, SHAPES, table, type Entity, type Row, type Writer } from './write';
 
-const inputSchema = z.union([
+export const inputSchema = z.union([
 	z.object({ batchId: z.string().min(1) }).strict(),
 	z.object({ changeIds: z.array(z.string().min(1)).min(1).max(1000) }).strict()
 ]);
