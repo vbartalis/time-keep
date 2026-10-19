@@ -2,6 +2,7 @@
 	import { afterNavigate, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import ChartColumn from '@lucide/svelte/icons/chart-column';
 	import Clock from '@lucide/svelte/icons/clock';
 	import History from '@lucide/svelte/icons/history';
 	import LayoutTemplate from '@lucide/svelte/icons/layout-template';
@@ -27,6 +28,12 @@
 		href: resolve('/(app)/copy-out'),
 		label: 'Copy-out',
 		icon: Sheet
+	};
+	const reports = {
+		route: '/(app)/reports',
+		href: resolve('/(app)/reports'),
+		label: 'Reports',
+		icon: ChartColumn
 	};
 	const templates = {
 		route: '/(app)/templates',
@@ -59,11 +66,12 @@
 		icon: Users
 	};
 
-	// Entries, Copy-out, Templates and History are PC screens: the rail lists them, the phone bar does not.
+	// Entries, Copy-out, Reports, Templates and History are PC screens: the rail lists them, the phone bar does not.
 	const rail = $derived([
 		today,
 		entries,
 		copyOut,
+		reports,
 		templates,
 		setup,
 		history,

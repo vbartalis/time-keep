@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { COLUMN_HEADS, COLUMNS, type Column, type DurationFormat } from '#lib/output.js';
+	import OutputOptions from './OutputOptions.svelte';
 
 	let {
 		columns,
@@ -11,11 +12,6 @@
 		options: { round: boolean; split: boolean; duration: DurationFormat };
 		columnsError: string | null;
 	} = $props();
-
-	const durations: { value: DurationFormat; label: string }[] = [
-		{ value: 'hm', label: 'h:mm' },
-		{ value: 'decimal', label: 'Decimal hours' }
-	];
 
 	const legend = 'mb-2 text-sm leading-none font-semibold';
 	const row = 'flex flex-wrap gap-x-5 gap-y-0';
@@ -48,35 +44,4 @@
 	{/if}
 </fieldset>
 
-<fieldset class="min-w-0">
-	<legend class={legend}>Options</legend>
-	<div class="{row} items-center">
-		<label class={choice}>
-			<input type="checkbox" name="round" value="1" checked={options.round} class={box} />
-			Round to 5 minutes
-		</label>
-		<label class={choice}>
-			<input type="checkbox" name="split" value="1" checked={options.split} class={box} />
-			Split at midnight
-		</label>
-		<div
-			role="radiogroup"
-			aria-labelledby="copy-duration"
-			class="flex flex-wrap items-center gap-x-5"
-		>
-			<span id="copy-duration" class="text-sm">Duration as</span>
-			{#each durations as d (d.value)}
-				<label class={choice}>
-					<input
-						type="radio"
-						name="duration"
-						value={d.value}
-						checked={options.duration === d.value}
-						class={box}
-					/>
-					{d.label}
-				</label>
-			{/each}
-		</div>
-	</div>
-</fieldset>
+<OutputOptions {options} />

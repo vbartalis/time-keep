@@ -24,10 +24,11 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/server/core/` | The only way to read and write the time data: batches, recorded changes, undo, history, reference data. Import only `core/index.ts`. See [core.md](core.md) and decision 4. |
 | `src/lib/server/id.ts` | Random base32 ids. |
 | `src/routes/login`, `logout` | Sign in and out. |
-| `src/routes/(app)/` | Signed-in screens: Today (`/`), `entries` and the entry edit screen (`entries/[id]`), `copy-out` and its CSV route (`copy-out/csv`), `account`, `admin/users`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell: a left rail on the PC (Today, Entries, Copy-out, Templates, Setup, History, Account, Users for an admin), a top bar and bottom navigation on the phone (Today, Setup, Account, Users for an admin; Entries, Copy-out, Templates and History are PC screens). The current item follows the route; the entry edit screen keeps Entries current when its `back` starts with `/entries`, else Today. |
-| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`, `edit.ts`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries search and bulk change (`entries.ts`: `readSearch`, `searchInput`, `searchFilters`, `searchPath`, `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`), the copy-out's rows and query (`copy-out.ts`: `outputRows`, `readCopyOut`, `copyOutQuery`, `monthRange`, `csvName`, `sheetFor`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`). |
+| `src/routes/(app)/` | Signed-in screens: Today (`/`), `entries` and the entry edit screen (`entries/[id]`), `copy-out` and its CSV route (`copy-out/csv`), `reports`, `account`, `admin/users`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell: a left rail on the PC (Today, Entries, Copy-out, Reports, Templates, Setup, History, Account, Users for an admin), a top bar and bottom navigation on the phone (Today, Setup, Account, Users for an admin; Entries, Copy-out, Reports, Templates and History are PC screens). The current item follows the route; the entry edit screen keeps Entries current when its `back` starts with `/entries`, else Today. |
+| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`, `edit.ts`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries search and bulk change (`entries.ts`: `readSearch`, `searchInput`, `searchFilters`, `searchPath`, `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`), the copy-out's rows and query (`copy-out.ts`: `outputRows`, `readCopyOut`, `copyOutQuery`, `monthRange`, `csvName`, `sheetFor`, and the pieces and options Reports shares: `outputPieces`, `readOptions`, `optionsQuery`), the reports' totals (`reports.ts`: `isoWeek`, `reportTotals`, `readReport`, `reportFor`, `reportQuery`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`). |
 | `src/lib/components/entries/` | The Entries screen's parts: the filter form (shared with Copy-out), the change form, the selectable table. |
-| `src/lib/components/copy-out/` | The Copy-out screen's parts: the column and option pickers (`OutputFields`), the Copy button and its status (`CopyRows`), the sheet table (`SheetTable`). |
+| `src/lib/components/copy-out/` | The Copy-out screen's parts: the column and option pickers (`OutputFields`), the option pickers alone (`OutputOptions`, shared with Reports), the Copy button and its status (`CopyRows`), the sheet table (`SheetTable`). |
+| `src/lib/components/reports/` | The Reports screen's part: one totals table (`TotalsTable`, a titled section of label and duration rows with a Total row). |
 | `src/lib/components/history/` | The History screen's parts: a batch's line with its changes (`BatchLine`), and the types its load returns. |
 | `src/lib/components/narrowing.svelte.ts` | Customer and project pickers that narrow each other with JavaScript, shared by the template form and the Entries filters. |
 | `src/lib/components/templates/` | The template form shared by the new and edit screens. |
@@ -51,7 +52,7 @@ Every screen action is one core call (one batch) through `openCore(getDb(), user
 as it gives them. Forms are plain posts that work without JavaScript; `use:enhance`
 enhances them. A successful action redirects (303) back to the screen it was posted
 from (Today, `/setup`, `/templates`, the Entries search, the History page), with the undo strip. No browser dialogs.
-Copy-out only reads: it has no actions.
+Copy-out and Reports only read: they have no actions.
 
 ### Today (`/`)
 
@@ -243,6 +244,39 @@ itself (signed out: 303 to `/login`) and reads only that user's entries. A query
 screen would refuse (a bad date, From after To, no column, a refused list) is a 400
 with the screen's message as plain text.
 
+### Reports (`/reports`)
+
+A PC screen (in the rail after Copy-out, not the phone's bar) that shows a month's
+entries as totals per day, week, customer and project, to check a month before copying
+it out; it stays usable at phone widths. It only reads: nothing rounded or split is
+stored, and the totals are computed on the way out.
+
+**The form** is Copy-out's without the columns: the Entries filter bar (`EntryFilters`,
+`readSearch`) with **This month** and **Last month** beside Clear, then the **Options**
+(`OutputOptions`: Round to 5 minutes, Split at midnight, Duration as `h:mm` or Decimal
+hours), a hidden `show=1` and Show as the one primary button. `readReport` reads the
+query with `readSearch` and `readOptions` (the reading Copy-out shares, defaults
+rounded, unsplit, `h:mm`); `reportQuery` writes it back for the month links.
+
+**The totals.** `reportFor` asks `entries.list` for the entries that started in the
+range, with no row limit, and `reportTotals` sums the pieces `outputPieces` gives (the
+same code that writes Copy-out's rows, so a day's total is the sum of the rows with
+that date): by the piece's date (Days, `2026-10-19 Mon`), by its ISO week (`isoWeek`,
+Monday first; Weeks, `W43 2026-10-19 – 2026-10-25`, the week's own Monday and
+Sunday), by customer id (Customers, by name) and by project id (Projects,
+`Customer › Project`, by customer then project). An entry rounding to nothing is a
+piece of `0:00` and its groups are listed. Running entries are left out and counted.
+Every table's Total is the same number.
+
+**The result** sits under a "Result" head with "<n> entries, <total>" ("1 entry"),
+then "1 running entry left out." / "<n> running entries left out." when any, then four
+tables (`TotalsTable`, each a region named by its title, rows of label and duration,
+a Total row at the foot; the heads are for screen readers only). On the PC two
+columns: Days on the left, Weeks, Customers and Projects stacked on the right; on the
+phone one column in the order Customers, Projects, Weeks, Days. None says "No entries
+match." with Clear (and the running line, when the only matches run). A date mistake
+shows as on Entries, with no result.
+
 ### Edit entry (`/entries/[id]`)
 
 Start and end as `datetime-local` in the entry's own zones (an empty end makes the
@@ -432,7 +466,13 @@ files.
   line per row), Download CSV (its name, byte-order mark and header, every value
   read back through a small CSV reader, the line break kept), the rail's current
   item, the CSV route signed out, for another user and with bad queries, and the
-  no-JavaScript Show, table and CSV link with no Copy button.
+  no-JavaScript Show, table and CSV link with no Copy button; `reports.test.ts` covers
+  Reports with a user of its own per test (`seedCopyOut`): the month's four tables with
+  their rows and every Total (`7:15`), Split at midnight moving the overnight entry's
+  time across two days, decimal hours, Last month and This month keeping the options,
+  only a running entry matching ("No entries match." and the running line, no tables),
+  the rail's Reports after Copy-out and current (none on the phone's bar) and the
+  no-JavaScript Show with Split ticked.
 - `npm test` runs both.
 
 Chromium needs system libraries and fonts. The devcontainer image installs them, so

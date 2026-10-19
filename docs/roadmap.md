@@ -295,7 +295,7 @@ Split 2026-10-19 into three parts, worked in order:
   selected full width, Redo selected beside the count); on the phone History is
   reachable only by its URL.
 
-## 6. Output — next
+## 6. Output — done 2026-10-19
 
 Reports (totals per day, week, customer and project), the month copy-out with columns
 chosen at output time, CSV, rounding to 5 minutes on output only, splitting at
@@ -369,10 +369,49 @@ Split 2026-10-19 into two parts, worked in order:
   fixed-offset zone, so an entry crossing the month's end and daylight-saving days
   are covered by unit tests only; the detector's rendered pass scanned saved pages,
   not the live one.
-- **6b. Reports — next.** Totals per day, week, customer and project, over the same
-  filters and the same output rules.
+- **6b. Reports — done 2026-10-19.** A Reports screen (`/reports`, in the PC rail after
+  Copy-out) shows the entries the Entries filters find as totals per day, week,
+  customer and project, rounded to 5 minutes and split at midnight when asked, as
+  `h:mm` or decimal hours, with "<n> entries, <total>" and the running entries left
+  out with their line; the four tables' Totals are one number and every total is the
+  sum of the Copy-out rows it covers. Nothing is stored. Spec
+  `docs/superpowers/specs/2026-10-19-reports-design.md`, plan
+  `docs/superpowers/plans/2026-10-19-reports.md`; `docs/app.md` (the Reports screen,
+  the navigation, the layout rows for `screens/reports.ts`, `components/reports/` and
+  `OutputOptions`, the browser tests) and `DESIGN.md` (the totals tables, the
+  two-column result, the navigation's items) extended; 524 unit tests and 122 browser
+  tests (12 of them new, phone and PC sizes, JavaScript off included; Copy runs and the
+  right column's stacking is asserted on the PC only, so 120 pass and two are skipped), check and lint clean. Calls made in the
+  operator's place: every **(call)** in the spec, namely no charts, no totals per
+  activity or location, no copy button or CSV for the reports, no budgets, targets or
+  overtime, days with no time not listed as zero rows, a week the range cuts counting
+  only the days in the range with the whole week as its label, the pieces split out of
+  6a's `outputRows` into `outputPieces` (the copy-out output unchanged), an entry
+  rounding to nothing kept as a `0:00` piece with its groups listed, an entry rounding
+  across the month's end counting on the day its Copy-out row says, durations summed
+  from minutes and written once in the chosen format, the labels (`2026-10-19 Mon`,
+  `W43 2026-10-19 – 2026-10-25`, the customer's name, `Customer › Project`) and
+  their orders, ISO week-year numbering (2026-12-31 and 2027-01-01 both `W53`),
+  customers and projects not nested, the count in entries rather than rows, the layout
+  (Days left and the rest stacked right on the PC; Customers, Projects, Weeks, Days on
+  the phone), "No entries match." with the running line under it when only running
+  entries matched, Reports in the rail after Copy-out with Lucide `chart-column` and
+  not in the phone's bar, and no decision record. Deferred minors (the final branch
+  review may add more): `OutputOptions` re-declares `OutputFields`' class strings; the
+  `optionsQuery` test asserts only show and round; `outputRows` recomputes
+  `localParts` though `piece.date` is stored; the project order compares the combined
+  `Customer › Project` label; the tie-break in the tally duplicates the plain helper;
+  the `reportFor` test asserts entries and customers, not minutes; the running line is
+  written twice on the page; the table heads are h2 inside the h2 Result section; the
+  tables have no caption; hover on non-interactive rows, as `SheetTable`; the `NONE`
+  constant restates the `Report` shape. Added by the final branch review (the running
+  line and `NONE` since fixed): the Weeks table is asserted in the browser by its Total
+  and row count only; the rail test branches on the project inside one test; DESIGN.md
+  was edited directly rather than through impeccable's document step, so its sidecar
+  was not refreshed; on the PC the tables' reading order (Customers, Projects, Weeks,
+  Days) differs from their placement.
 
-## 7. MCP server
+## 7. MCP server — next
 
 The MCP server as a first-class client of the same API, behind authentication, for
 bulk entry, reorganising and rewording. One agent request is one batch.

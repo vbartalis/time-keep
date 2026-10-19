@@ -32,10 +32,22 @@ function endText(at: number, zone: string, rowDate: string): string {
 	return `${end.date} ${end.time}`;
 }
 
-/** Entries as output rows, in their order; rounding and splitting happen here, on the way out. */
-export function outputRows(entries: EntryItem[], options: CopyOutOptions): Sheet {
-	const rows: OutputRow[] = [];
-	let minutes = 0;
+/** One day's (or the whole entry's) share of an entry, rounded or cut: `date` is its start in `startZone`. */
+export type Piece = {
+	entry: EntryItem;
+	date: string;
+	from: number;
+	to: number;
+	endZone: string;
+	minutes: number;
+};
+
+/** Entries as pieces, in their order; rounding and splitting happen here. `running` counts entries with no end. */
+export function outputPieces(
+	entries: EntryItem[],
+	options: Pick<CopyOutOptions, 'round' | 'split'>
+): { pieces: Piece[]; running: number } {
+	const pieces: Piece[] = [];
 	let running = 0;
 
 	for (const entry of entries) {
@@ -47,43 +59,68 @@ export function outputRows(entries: EntryItem[], options: CopyOutOptions): Sheet
 		const start = adjust(entry.startAt, options.round);
 		const end = Math.max(start, adjust(entry.endAt, options.round));
 
-		const pieces: { from: number; to: number; endZone: string }[] = [];
+		const cuts: { from: number; to: number; endZone: string }[] = [];
 		if (options.split) {
 			let from = start;
 			let boundary = startOfDay(nextDate(localParts(from, zone).date), zone);
 			while (boundary < end) {
-				pieces.push({ from, to: boundary, endZone: zone });
+				cuts.push({ from, to: boundary, endZone: zone });
 				from = boundary;
 				boundary = startOfDay(nextDate(localParts(from, zone).date), zone);
 			}
-			pieces.push({ from, to: end, endZone: zone });
+			cuts.push({ from, to: end, endZone: zone });
 		} else {
-			pieces.push({ from: start, to: end, endZone: entry.endZone ?? zone });
+			cuts.push({ from: start, to: end, endZone: entry.endZone ?? zone });
 		}
 
-		for (const piece of pieces) {
-			const pieceMinutes = (piece.to - piece.from) / MINUTE;
-			const begin = localParts(piece.from, zone);
-			minutes += pieceMinutes;
-			rows.push({
-				date: begin.date,
-				start: begin.time,
-				end: endText(piece.to, piece.endZone, begin.date),
-				duration: formatDuration(pieceMinutes, options.duration),
-				customer: safeText(entry.customerName),
-				project: safeText(entry.projectName),
-				activity: safeText(entry.activityName ?? ''),
-				location: safeText(entry.locationName ?? ''),
-				reference: safeText(entry.reference ?? ''),
-				description: safeText(entry.description ?? '')
+		for (const cut of cuts) {
+			pieces.push({
+				entry,
+				date: localParts(cut.from, zone).date,
+				...cut,
+				minutes: (cut.to - cut.from) / MINUTE
 			});
 		}
 	}
+	return { pieces, running };
+}
+
+/** Entries as output rows, in their order. */
+export function outputRows(entries: EntryItem[], options: CopyOutOptions): Sheet {
+	const { pieces, running } = outputPieces(entries, options);
+	let minutes = 0;
+	const rows = pieces.map((piece) => {
+		const { entry } = piece;
+		const begin = localParts(piece.from, entry.startZone);
+		minutes += piece.minutes;
+		return {
+			date: begin.date,
+			start: begin.time,
+			end: endText(piece.to, piece.endZone, begin.date),
+			duration: formatDuration(piece.minutes, options.duration),
+			customer: safeText(entry.customerName),
+			project: safeText(entry.projectName),
+			activity: safeText(entry.activityName ?? ''),
+			location: safeText(entry.locationName ?? ''),
+			reference: safeText(entry.reference ?? ''),
+			description: safeText(entry.description ?? '')
+		};
+	});
 	return { rows, minutes, running };
 }
 
 /** What the Copy-out screen shows: the search, the columns to write and how to write them. */
 export type CopyOut = { search: Search; columns: Column[]; options: CopyOutOptions };
+
+/** The switches a query string asks for; with `show` they are what was sent, without it the defaults. */
+export function readOptions(params: URLSearchParams): CopyOutOptions {
+	const shown = params.has('show');
+	return {
+		round: shown ? params.get('round') === '1' : true,
+		split: shown && params.get('split') === '1',
+		duration: params.get('duration') === 'decimal' ? 'decimal' : 'hm'
+	};
+}
 
 /**
  * The copy-out a query string asks for. The form sends a hidden `show=1`; with it the
@@ -98,31 +135,32 @@ export function readCopyOut(
 	const shown = params.has('show');
 	const sent = new Set(params.getAll('col'));
 	const columns = shown ? COLUMNS.filter((column) => sent.has(column)) : [...COLUMNS];
-	const options: CopyOutOptions = {
-		round: shown ? params.get('round') === '1' : true,
-		split: shown && params.get('split') === '1',
-		duration: params.get('duration') === 'decimal' ? 'decimal' : 'hm'
-	};
 	return {
-		copyOut: { search, columns, options },
+		copyOut: { search, columns, options: readOptions(params) },
 		error,
 		columnsError: shown && columns.length === 0 ? 'Choose at least one column.' : null
 	};
 }
 
-/** The full query string (no `?`) that reads back as `copyOut`. */
-export function copyOutQuery(copyOut: CopyOut): string {
-	const { search, columns, options } = copyOut;
+/** `show=1`, the search and the switches as a query; no columns. */
+export function optionsQuery(search: Search, options: CopyOutOptions): URLSearchParams {
 	const query = new URLSearchParams({ show: '1', from: search.from, to: search.to });
 	if (search.customerId !== '') query.set('customerId', search.customerId);
 	if (search.projectId !== '') query.set('projectId', search.projectId);
 	if (search.activity !== 'any') query.set('activity', search.activity);
 	if (search.location !== 'any') query.set('location', search.location);
 	if (search.text !== '') query.set('text', search.text);
-	for (const column of columns) query.append('col', column);
 	if (options.round) query.set('round', '1');
 	if (options.split) query.set('split', '1');
 	if (options.duration === 'decimal') query.set('duration', 'decimal');
+	return query;
+}
+
+/** The full query string (no `?`) that reads back as `copyOut`. */
+export function copyOutQuery(copyOut: CopyOut): string {
+	const { search, columns, options } = copyOut;
+	const query = optionsQuery(search, options);
+	for (const column of columns) query.append('col', column);
 	return query.toString();
 }
 

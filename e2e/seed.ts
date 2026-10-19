@@ -312,6 +312,25 @@ export async function seedCopyOut(prefix: string, zone: string) {
 	};
 }
 
+/** One half-hour entry on each of this month's first `days` days, for a long Days table. */
+export function seedDays(userId: string, zone: string, days: number) {
+	const core = asUi(userId);
+	const first = dayOf(dateIn(zone), 1);
+	const customer = value(core.customers.create({ name: 'Daily' })).id;
+	const project = value(core.projects.create({ customerId: customer, name: 'Every day' })).id;
+	for (let i = 0; i < days; i++) {
+		value(
+			core.entries.create({
+				projectId: project,
+				start: `${nextDays(first, i)}T09:00`,
+				end: `${nextDays(first, i)}T09:30`,
+				timeZone: zone,
+				description: `Day ${i + 1}`
+			})
+		);
+	}
+}
+
 export type CopyOutUser = Awaited<ReturnType<typeof seedCopyOut>>;
 
 /** Starts a timer for `userId` at `start` (`HH:mm` today in `zone`), the way another device would. */

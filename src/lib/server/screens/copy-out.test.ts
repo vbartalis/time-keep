@@ -7,11 +7,15 @@ import {
 	copyOutQuery,
 	csvName,
 	monthRange,
+	optionsQuery,
+	outputPieces,
 	outputRows,
 	readCopyOut,
+	readOptions,
 	sheetFor,
 	type CopyOutOptions
 } from './copy-out';
+import { formatDuration } from '#lib/output.js';
 import type { Search } from './entries';
 
 const BUD = 'Europe/Budapest';
@@ -129,6 +133,76 @@ describe('splitting', () => {
 	it('dates the second row across a month end', () => {
 		const rows = one(entry('2026-10-31T22:00:00+01:00', '2026-11-01T02:00:00+01:00'), split);
 		expect(rows.map((r) => r.date)).toEqual(['2026-10-31', '2026-11-01']);
+	});
+});
+
+describe('outputPieces', () => {
+	const night = entry('2026-10-07T22:00:00+02:00', '2026-10-08T02:00:00+02:00');
+	it('gives one piece unsplit', () => {
+		const { pieces } = outputPieces([night], { round: true, split: false });
+		expect(pieces.map((p) => [p.date, p.minutes])).toEqual([['2026-10-07', 240]]);
+	});
+	it('gives a piece a day split', () => {
+		const { pieces } = outputPieces([night], { round: true, split: true });
+		expect(pieces.map((p) => [p.date, p.minutes])).toEqual([
+			['2026-10-07', 120],
+			['2026-10-08', 120]
+		]);
+	});
+	it('counts a running entry, with no piece', () => {
+		expect(outputPieces([entry('2026-10-07T09:00:00+02:00', null)], base)).toEqual({
+			pieces: [],
+			running: 1
+		});
+	});
+	it('agrees with the rows', () => {
+		const list = [
+			night,
+			entry('2026-10-07T09:02:30+02:00', '2026-10-07T10:27:29+02:00'),
+			entry('2026-10-07T09:01:00+02:00', '2026-10-07T09:02:00+02:00'),
+			entry('2026-10-24T22:00:00+02:00', '2026-10-26T01:00:00+01:00')
+		];
+		for (const round of [true, false]) {
+			for (const split of [true, false]) {
+				const { pieces } = outputPieces(list, { round, split });
+				const sheet = outputRows(list, { round, split, duration: 'hm' });
+				expect(pieces.map((p) => [p.date, formatDuration(p.minutes, 'hm')])).toEqual(
+					sheet.rows.map((r) => [r.date, r.duration])
+				);
+				expect(pieces.reduce((sum, p) => sum + p.minutes, 0)).toBe(sheet.minutes);
+			}
+		}
+	});
+});
+
+describe('readOptions', () => {
+	it('defaults without show', () => {
+		expect(readOptions(new URLSearchParams(''))).toEqual({
+			round: true,
+			split: false,
+			duration: 'hm'
+		});
+	});
+	it('reads what was sent with show', () => {
+		expect(readOptions(new URLSearchParams('show=1&split=1&duration=decimal'))).toEqual({
+			round: false,
+			split: true,
+			duration: 'decimal'
+		});
+	});
+});
+
+describe('optionsQuery', () => {
+	it('has no columns', () => {
+		const { search } = readCopyOut(
+			new URLSearchParams(''),
+			BUD,
+			at('2026-10-15T12:00:00Z')
+		).copyOut;
+		const query = optionsQuery(search, base);
+		expect(query.has('col')).toBe(false);
+		expect(query.get('show')).toBe('1');
+		expect(query.get('round')).toBe('1');
 	});
 });
 
