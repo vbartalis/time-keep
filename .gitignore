@@ -20,6 +20,9 @@ node_modules/
 # Git Bash crash dumps (Windows host)
 *.stackdump
 
+# Linux core dumps (Chromium under Playwright), root only so core.ts stays tracked
+/core.[0-9]*
+
 # App data and build output
 data/
 build/
