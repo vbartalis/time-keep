@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<!-- The time card in its rack: rack ink ground, a card-stock card, one heavy card-ink
+	     rule, two hairlines and the violet punch. Everything sits inside the central 80%
+	     circle, so the same drawing serves the maskable icon. -->
+	<rect width="512" height="512" fill="#172338" />
+	<rect x="136" y="106" width="240" height="300" rx="14" fill="#e7f2fa" />
+	<rect x="168" y="146" width="176" height="18" fill="#172338" />
+	<rect x="168" y="204" width="176" height="6" fill="#9fb6c9" />
+	<rect x="168" y="244" width="176" height="6" fill="#9fb6c9" />
+	<circle cx="256" cy="336" r="34" fill="#72359d" />
+</svg>

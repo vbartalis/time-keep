@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { afterNavigate, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Clock from '@lucide/svelte/icons/clock';
@@ -23,6 +24,32 @@
 				]
 			: [])
 	]);
+
+	/**
+	 * The device's zone: remembered in the `tz` cookie (read by the server when a form
+	 * has none) and written into every hidden `timeZone` field. When the cookie was
+	 * missing or stale, the screen reloads (unless a flash is showing) so its times use the device's zone.
+	 */
+	function fillZone() {
+		let zone: string | undefined;
+		try {
+			zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		} catch {
+			return;
+		}
+		if (!zone) return;
+		const value = encodeURIComponent(zone);
+		const stale = !document.cookie.split('; ').includes(`tz=${value}`);
+		document.cookie = `tz=${value}; path=/; max-age=31536000; samesite=lax`;
+		for (const input of document.querySelectorAll<HTMLInputElement>('input[name="timeZone"]')) {
+			// The default value, so a form reset keeps it.
+			input.defaultValue = zone;
+		}
+		// Reloading now would consume a showing flash; the cookie applies on the next load.
+		if (stale && !page.data.flash) void invalidateAll();
+	}
+
+	afterNavigate(fillZone);
 
 	// Compared by route id: resolve() gives relative paths while rendering on the server.
 	const current = (route: string) => page.route.id === route;

@@ -319,6 +319,19 @@ Firm, flat and quiet until pressed.
 Card-face fill, 4 px corners, 1 px border, 15 px text. Errors use a red border and
 red text.
 
+### Undo strip
+A message line under the screen title after every successful action: card-face fill,
+1 px hairline border, 4 px corners. "Done:" in semibold, the action's label, any
+warnings below it in red, and an outline Undo button on the right. It stays until
+the next load; nothing auto-dismisses.
+
+### Template sheet
+A ruled row per template (56 px, name over customer › project and punched times, a
+printed Timer or Log mark, violet only for Timer) that opens in place into its form:
+the template's filled fields as a two-column list, then ruled form lines and one
+primary button. Only one sheet is open at a time. Works as a native disclosure
+without JavaScript.
+
 ### Navigation
 - **PC:** the rack. Wordmark at the top, items of 40 px with a 16 px line icon and
   15 px text, the signed-in user and Sign out at the foot. Hover fills with

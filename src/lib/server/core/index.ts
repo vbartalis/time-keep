@@ -334,3 +334,5 @@ export function openCore(
 		}
 	};
 }
+
+export { isTimeZone, localParts, nextDate, parseTime, previousDate } from './time';

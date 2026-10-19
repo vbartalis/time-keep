@@ -1,0 +1,20 @@
+{
+	"name": "time-keep",
+	"short_name": "time-keep",
+	"description": "A personal time tracker dressed as a punch-clock time card.",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"theme_color": "#172338",
+	"background_color": "#e7f2fa",
+	"icons": [
+		{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+		{ "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+		{
+			"src": "/icons/icon-maskable-512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "maskable"
+		}
+	]
+}
