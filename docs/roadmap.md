@@ -146,6 +146,21 @@ template with only the blanks typed, fix today's entries.
 Exit: on a phone, a new entry from a template is a tap and a typed description, timers
 start and stop, and today's entries can be corrected.
 
+Done 2026-10-19: Today with running timers, templates, starting a timer and today's
+entries; the entry edit screen with a two-step delete; one-tap undo through a flash
+strip that survives the redirect; core warnings on the strip and the row; installable
+from a manifest and icons, no service worker (spec
+`docs/superpowers/specs/2026-10-18-phone-design.md`; the screens in `docs/app.md`, their
+components in `DESIGN.md`; no new decision record). Calls made in the operator's place:
+the spec's marked calls; no undo on the edit screen, since every write there returns to
+Today and its strip; a stale save keeps refusing without JavaScript until a reload; the
+iOS status bar left opaque rather than drawn under; and the icon mark. Checked by 20
+browser tests at phone and PC sizes, JavaScript off included, with check, lint and 363
+unit tests; impeccable's detector found nothing. Deferred: native date and time pickers
+show 12-hour on an en-US phone; the browser tests run in a fixed-offset zone, so DST is
+covered by unit tests only. Still open from 3, carried to 5: the default alert's violet
+border and the unchecked checkbox's grey in dark mode.
+
 ## 5. PC — next
 
 Dense work: managing customers, projects, activities and locations (archiving
