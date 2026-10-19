@@ -15,11 +15,12 @@ export const PASSWORD = 'phone-password-1';
 
 /**
  * A fixed-offset zone where it is about noon now, so the seeded morning entries are
- * today and in the past whenever the suite runs. `Etc/GMT-2` is UTC+2.
+ * today and in the past whenever the suite runs. `Etc/GMT-2` is UTC+2. Never the
+ * zero-offset zone, which Chromium shows under another name: at 12:xx UTC it is
+ * `Etc/GMT-1` (about 13:00, still after the morning entries).
  */
 export function noonZone(now = new Date()): string {
-	const offset = 12 - now.getUTCHours();
-	if (offset === 0) return 'Etc/GMT';
+	const offset = 12 - now.getUTCHours() || 1;
 	return offset > 0 ? `Etc/GMT-${offset}` : `Etc/GMT+${-offset}`;
 }
 
@@ -103,4 +104,32 @@ export const seedEmptyUser = (prefix: string) => newUser(prefix);
 /** Changes an entry's description the way another device would. */
 export function editElsewhere(userId: string, entryId: string, description: string) {
 	value(openCore(database(), userId, 'ui').entries.update({ id: entryId, description }));
+}
+
+const asUi = (userId: string) => openCore(database(), userId, 'ui');
+
+/** A customer, created for `userId` straight through the core. */
+export const seedCustomer = (userId: string, name: string) =>
+	value(asUi(userId).customers.create({ name })).id;
+
+/** A project under `customerId`. */
+export const seedProject = (userId: string, customerId: string, name: string) =>
+	value(asUi(userId).projects.create({ customerId, name })).id;
+
+/** A template on a customer and project, with a start and an end. */
+export const seedTemplate = (
+	userId: string,
+	input: { name: string; customerId: string; projectId: string; description?: string }
+) => value(asUi(userId).templates.create({ ...input, startTime: '09:00', endTime: '09:30' })).id;
+
+export type Kind = 'customers' | 'projects' | 'activities' | 'locations';
+
+/** Renames a row the way another device would, which bumps its version. */
+export function renameElsewhere(userId: string, kind: Kind, id: string, name: string) {
+	value(asUi(userId)[kind].rename({ id, name }));
+}
+
+/** Archives a row the way another device would. */
+export function archiveElsewhere(userId: string, kind: Kind, id: string) {
+	value(asUi(userId)[kind].archive({ id }));
 }

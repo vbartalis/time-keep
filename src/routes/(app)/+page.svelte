@@ -5,7 +5,7 @@
 	import Templates from '#lib/components/today/Templates.svelte';
 	import Timers from '#lib/components/today/Timers.svelte';
 	import TodayEntries from '#lib/components/today/TodayEntries.svelte';
-	import UndoStrip from '#lib/components/today/UndoStrip.svelte';
+	import UndoStrip from '#lib/components/UndoStrip.svelte';
 	import type { ActionFailure } from '#lib/components/today/types.js';
 	import type { PageProps } from './$types';
 
@@ -39,10 +39,7 @@
 </div>
 
 <!-- A refused action replaces the strip: the screen shows the failure, not an older success. -->
-<UndoStrip
-	flash={failure ? null : data.flash}
-	error={failure?.action === 'undo' ? failure.error : null}
-/>
+<UndoStrip flash={failure ? null : data.flash} back="/" />
 
 <div class="grid gap-10 xl:grid-cols-[minmax(0,1fr)_19rem]">
 	<div class="flex flex-col gap-10">

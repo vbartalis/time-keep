@@ -155,6 +155,34 @@ test('deletes an entry after a confirm, and undoes the delete', async ({ page })
 	await expect(entryRow(page, 'Filed the receipts')).toContainText('07:30');
 });
 
+/** Opens the template disclosure on an entry's edit screen and posts a name. */
+async function saveAsTemplate(page: Page, name: string) {
+	await page.goto(`/entries/${user.entries.toEdit}`);
+	await page.locator('summary', { hasText: 'Save as template' }).click();
+	await page.getByLabel('Name', { exact: true }).fill(name);
+	await page.getByRole('button', { name: 'Save template' }).click();
+}
+
+test('saves an entry as a template; a duplicate name is refused beside the field', async ({
+	page
+}) => {
+	await signIn(page, user.username);
+	await saveAsTemplate(page, 'Standup');
+	const name = page.getByLabel('Name', { exact: true });
+	await expect(page.getByText('Save as template')).toBeVisible();
+	await expect(name).toHaveValue('Standup');
+	await expect(name).toBeFocused();
+	await expect(name).toHaveAttribute('aria-invalid', 'true');
+	await expect(page.locator('#name-error')).toContainText('already');
+
+	await name.fill(`Inbox ${test.info().project.name}`);
+	await page.getByRole('button', { name: 'Save template' }).click();
+	await expect(page).toHaveURL(/\/templates$/);
+	await expect(strip(page)).toContainText(
+		'Done: Save entry as template "Inbox ' + test.info().project.name + '".'
+	);
+});
+
 test('an overlapping entry shows its warning', async ({ page }) => {
 	await signIn(page, user.username);
 	await logFromTemplate(page, 'Support call', 'Called about the outage');
@@ -170,9 +198,18 @@ test('a user without projects sees where to set them up', async ({ page }, testI
 
 	await expect(section(page, 'Timers')).toContainText('No timer running.');
 	await expect(section(page, 'Templates')).toContainText('Templates are set up on the PC.');
+	await expect(
+		section(page, 'Templates').getByRole('link', { name: 'Create a template' })
+	).toHaveAttribute('href', '/templates/new');
+	await expect(
+		section(page, 'Templates').getByRole('link', { name: 'Edit templates' })
+	).toHaveAttribute('href', '/templates');
 	await expect(section(page, 'Start a timer')).toContainText(
 		'Customers and projects are set up on the PC.'
 	);
+	await expect(
+		section(page, 'Start a timer').getByRole('link', { name: 'Set up customers and projects' })
+	).toHaveAttribute('href', '/setup');
 	await expect(section(page, 'Start a timer').getByRole('button')).toHaveCount(0);
 	await expect(section(page, 'Today’s entries')).toContainText('Nothing logged today.');
 });
@@ -205,5 +242,14 @@ test.describe('without JavaScript', () => {
 		// The layout's script writes the zone cookie; without JavaScript it never ran.
 		const cookies = await page.context().cookies();
 		expect(cookies.map((c) => c.name)).not.toContain('tz');
+	});
+
+	test('a refused template save reopens the disclosure with the name', async ({ page }) => {
+		await signIn(page, user.username, false);
+		await saveAsTemplate(page, 'Standup');
+		const name = page.getByLabel('Name', { exact: true });
+		await expect(name).toBeVisible();
+		await expect(name).toHaveValue('Standup');
+		await expect(page.locator('#name-error')).toContainText('already');
 	});
 });

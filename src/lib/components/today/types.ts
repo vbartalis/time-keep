@@ -57,11 +57,13 @@ export type Flash = {
 	batchId: string | null;
 	warnings: FlashWarning[];
 	undone?: boolean;
+	/** A refused undo: shown in red beside the batch's Undo button. */
+	error?: string;
 };
 
 /** A failed action, returned by `fail(400, …)`. */
 export type ActionFailure = {
-	action: 'stop' | 'start' | 'fromTemplate' | 'undo';
+	action: 'stop' | 'start' | 'fromTemplate';
 	error: string;
 	fields: Record<string, string>;
 	/** The entry the failed stop was for, or the template of a failed sheet. */
@@ -71,7 +73,7 @@ export type ActionFailure = {
 
 /** A refused save or delete on the edit screen. */
 export type EditFailure = {
-	action: 'save' | 'delete';
+	action: 'save' | 'delete' | 'saveAsTemplate';
 	error: string;
 	fields: Record<string, string>;
 	/** The entry changed elsewhere since the form was filled: the screen offers a reload. */

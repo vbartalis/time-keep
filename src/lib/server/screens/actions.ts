@@ -18,10 +18,10 @@ export const text = (form: FormData, name: string): string => {
 	return typeof value === 'string' ? value : '';
 };
 
-/** On success: the flash for the batch just written, and back to Today. */
-export function done(core: Core, cookies: Cookies, result: Result<unknown>): never {
+/** On success: the flash for the batch just written, and back to the screen it came from. */
+export function done(core: Core, cookies: Cookies, result: Result<unknown>, back = '/'): never {
 	setFlash(cookies, flashAfter(core, result.ok ? result.warnings : []));
-	redirect(303, '/');
+	redirect(303, back);
 }
 
 /** A whole number when the text is one; else the text, for the core to refuse. */

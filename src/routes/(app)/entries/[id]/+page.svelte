@@ -23,6 +23,8 @@
 			(confirming && form && 'version' in form ? form.version : undefined) ??
 			String(entry.version)
 	);
+	const templateFailure = $derived(failure?.action === 'saveAsTemplate' ? failure : null);
+	const nameError = $derived(templateFailure?.fields.name);
 	const value = (name: string, fallback: string | null) => typed?.[name] ?? fallback ?? '';
 
 	const here = $derived(resolve('/(app)/entries/[id]', { id: entry.id }));
@@ -33,6 +35,7 @@
 	);
 
 	let editForm = $state<HTMLFormElement | null>(null);
+	let templateName = $state<HTMLInputElement | null>(null);
 	let confirmButton = $state<HTMLButtonElement | null>(null);
 
 	// After a refused save, take the user to the first field the core refused.
@@ -40,6 +43,11 @@
 		if (saveFailure && Object.keys(fields).length > 0) {
 			editForm?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
 		}
+	});
+	// A refused template save reopens the disclosure (by attribute, so it works without
+	// JavaScript); with JavaScript the field also takes the focus, as `autofocus` only acts on load.
+	$effect(() => {
+		if (templateFailure) templateName?.focus();
 	});
 	// The confirm step replaces the delete button; keep the focus on it.
 	$effect(() => {
@@ -200,6 +208,38 @@
 			<Button href={resolve('/(app)')} variant="outline" class="flex-1 sm:flex-none">Cancel</Button>
 		</div>
 	</form>
+</section>
+
+<section aria-labelledby="template-heading" class="pt-4">
+	<SectionHead id="template-heading" title="Template" />
+	<details open={templateFailure !== null} class="group/template pt-3">
+		<summary
+			class="flex h-11 w-fit cursor-pointer list-none items-center gap-2 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden"
+			>Save as template</summary
+		>
+		<form method="POST" action="?/saveAsTemplate" use:enhance class="flex flex-col pt-1">
+			<div class={line}>
+				<Label for="template-name">Name</Label>
+				<Input
+					bind:ref={templateName}
+					id="template-name"
+					name="name"
+					required
+					autocomplete="off"
+					autofocus={templateFailure !== null}
+					value={templateFailure?.values?.name ?? ''}
+					aria-invalid={nameError ? 'true' : undefined}
+					aria-describedby={nameError ? 'name-error' : undefined}
+				/>
+				{#if nameError}
+					<p id="name-error" class="text-sm text-irregular lg:col-start-2">{nameError}</p>
+				{/if}
+			</div>
+			<div class="pt-4 lg:pl-[11rem]">
+				<Button type="submit" variant="outline" class="w-full sm:w-auto">Save template</Button>
+			</div>
+		</form>
+	</details>
 </section>
 
 <section aria-labelledby="delete-heading" class="pt-4">

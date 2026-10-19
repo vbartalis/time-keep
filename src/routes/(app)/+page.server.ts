@@ -1,4 +1,4 @@
-import { fail, redirect, type Cookies } from '@sveltejs/kit';
+import { fail, type Cookies } from '@sveltejs/kit';
 import type { ActionFailure } from '#lib/components/today/types.js';
 import { openCore, type EntryItem } from '#lib/server/core/index.js';
 import { getDb } from '#lib/server/db/index.js';
@@ -12,7 +12,7 @@ import {
 	startInput,
 	text
 } from '#lib/server/screens/actions.js';
-import { setFlash, takeFlash } from '#lib/server/screens/flash.js';
+import { takeFlash } from '#lib/server/screens/flash.js';
 import {
 	earlierDate,
 	formatDate,
@@ -169,14 +169,5 @@ export const actions: Actions = {
 			});
 		}
 		done(core, cookies, r);
-	},
-
-	undo: async ({ request, locals, cookies }) => {
-		const form = await request.formData();
-		const { core } = open(locals, cookies, form, Date.now());
-		const r = core.undo({ batchId: text(form, 'batchId') });
-		if (!r.ok) return refuse({ action: 'undo', ...formFailure(r.error, []) });
-		setFlash(cookies, { label: 'Undone', batchId: null, warnings: r.warnings, undone: true });
-		redirect(303, '/');
 	}
 };

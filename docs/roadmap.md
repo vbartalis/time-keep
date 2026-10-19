@@ -161,7 +161,7 @@ show 12-hour on an en-US phone; the browser tests run in a fixed-offset zone, so
 covered by unit tests only. Still open from 3, carried to 5: the default alert's violet
 border and the unchecked checkbox's grey in dark mode.
 
-## 5. PC — next
+## 5. PC — in progress
 
 Dense work: managing customers, projects, activities and locations (archiving
 included) and templates (deleted, undoably), finding entries and editing them in bulk, seeing history and
@@ -169,6 +169,40 @@ undoing any batch.
 
 Exit: a month can be reorganised from the PC alone, and any change made there is
 undone in one step from the history.
+
+Split 2026-10-19 into three parts, worked in order:
+
+- **5a. Setup — done 2026-10-19.** Customers › projects, activities, locations and templates
+  managed on the PC, archiving included, each change undone from its strip; save an
+  entry as a template. Spec `docs/superpowers/specs/2026-10-19-setup-design.md`, plan
+  `docs/superpowers/plans/2026-10-19-setup.md`; `docs/app.md` (Setup, Templates, Save
+  as template, the shared `/undo` route, the flash `error`, the navigation) and
+  `DESIGN.md` (setup list, in-place rename, template form, the strip's error state)
+  extended; 391 unit tests and 44 browser tests (24 of them new, phone and PC sizes,
+  JavaScript off included), check and lint clean. impeccable's detector ran over the
+  18 changed .svelte and .css files with its regex rules, and over the rendered
+  `/setup` (with `?archived=1`), `/templates` and `/templates/new` at 390 and 1440 px
+  with its element rules, and found nothing. Calls made in the operator's place:
+  every **(call)** in the spec, among them the split of phase 5 into 5a, 5b and 5c, a
+  successful action returning to the screen it came from, one shared `/undo` route, a
+  refused undo shown in red in the strip with Undo kept, archiving a customer leaving
+  its projects as they are, and the PC-only Templates item; and, made during the
+  build, the layout's zone script filling only hidden `timeZone` fields, and the
+  template form's label column following the entry edit screen (10 rem) rather than
+  DESIGN.md's 12 rem. A save or rename that changes nothing stores no batch and shows
+  no strip. Deferred minors: `safeBack` accepts tab, CR and LF; no unit test for the
+  `/undo` route; the `Flash` type still under `components/today`; the global checkbox
+  rule has no default size; in-page links use violet text; the archived view's empty
+  states ("No active projects.", "No customers yet." when all are archived); a second
+  identical refusal on Setup does not refocus the field; a message for a field not
+  shown appears above the form rather than under it (also on the entry edit screen);
+  the picker blanks read "Any customer/project" against "None"; the browser tests
+  assert that a message shows rather than its text, and a few use implementation-detail
+  selectors.
+- **5b. Finding and bulk editing entries — next.** Entries found by range, customer, project,
+  activity, location and text, and edited or deleted many at a time as one batch.
+- **5c. History.** Every batch listed with its changes, and any batch or chosen
+  changes undone and redone.
 
 ## 6. Output
 

@@ -32,6 +32,14 @@ describe('flash', () => {
 		expect(jar.flash).toBeUndefined();
 		expect(takeFlash(cookies)).toBeNull();
 	});
+	it('round trips an error and caps it', () => {
+		const { cookies } = fakeCookies();
+		const flash: Flash = { label: '', batchId: 'b1', warnings: [], error: 'Nope' };
+		setFlash(cookies, flash);
+		expect(takeFlash(cookies)).toEqual(flash);
+		setFlash(cookies, { ...flash, error: 'x'.repeat(500) });
+		expect(takeFlash(cookies)?.error).toHaveLength(200);
+	});
 	it('round trips the undone mark', () => {
 		const { cookies } = fakeCookies();
 		const flash: Flash = { label: 'Undone', batchId: null, warnings: [], undone: true };
@@ -90,5 +98,11 @@ describe('flashAfter', () => {
 	it('falls back to a plain label without a batch', () => {
 		const core = { history: { list: () => ({ ok: true, value: [] }) } } as never;
 		expect(flashAfter(core, [])).toEqual({ label: 'Done', batchId: null, warnings: [] });
+	});
+
+	it('caps the batch id', () => {
+		const { cookies, jar } = fakeCookies();
+		setFlash(cookies, { label: 'x', batchId: 'b'.repeat(5000), warnings: [] });
+		expect(JSON.parse(jar.flash).batchId).toHaveLength(200);
 	});
 });

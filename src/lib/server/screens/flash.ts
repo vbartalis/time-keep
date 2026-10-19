@@ -14,7 +14,8 @@ const flashSchema = z.object({
 	warnings: z.array(
 		z.object({ code: z.string(), message: z.string(), subject: z.string().optional() })
 	),
-	undone: z.boolean().optional()
+	undone: z.boolean().optional(),
+	error: z.string().optional()
 }) satisfies z.ZodType<Flash>;
 
 export type { Flash };
@@ -25,6 +26,8 @@ export function setFlash(cookies: Cookies, flash: Flash): void {
 	const capped: Flash = {
 		...flash,
 		label: cap(flash.label),
+		batchId: flash.batchId === null ? null : cap(flash.batchId),
+		...(flash.error === undefined ? {} : { error: cap(flash.error) }),
 		warnings: flash.warnings.slice(0, MAX_WARNINGS).map((w) => ({
 			code: cap(w.code),
 			message: cap(w.message),

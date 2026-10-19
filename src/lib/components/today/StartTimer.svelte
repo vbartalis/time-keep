@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
@@ -19,6 +20,11 @@
 	{#if projects.length === 0}
 		<p class="border-b border-border px-3 py-3 text-sm text-muted-foreground">
 			Customers and projects are set up on the PC.
+			<a
+				href={resolve('/(app)/setup')}
+				class="rounded-sm font-medium text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
+				>Set up customers and projects</a
+			>
 		</p>
 	{:else}
 		<form method="POST" action="?/start" use:enhance={clearOnDone} class="flex flex-col">

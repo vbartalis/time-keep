@@ -1,12 +1,19 @@
 import { fail } from '@sveltejs/kit';
+import { openCore } from '#lib/server/core/index.js';
 import { getDb } from '#lib/server/db/index.js';
 import { requireAdmin } from '#lib/server/guards.js';
+import { formatDate } from '#lib/server/screens/today.js';
+import { ZONE_COOKIE, zoneFor } from '#lib/server/screens/zone.js';
 import { createUser, listUsers, setDisabled, setPassword } from '#lib/server/users.js';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = ({ locals }) => {
+export const load: PageServerLoad = ({ locals, cookies }) => {
 	const actor = requireAdmin(locals);
-	return { users: listUsers(getDb()), actorId: actor.id };
+	const now = Date.now();
+	const core = openCore(getDb(), actor.id, 'ui', () => now);
+	const { zone } = zoneFor(core, { cookie: cookies.get(ZONE_COOKIE) }, now);
+	const users = listUsers(getDb()).map((u) => ({ ...u, createdAt: formatDate(u.createdAt, zone) }));
+	return { users, actorId: actor.id };
 };
 
 export const actions: Actions = {

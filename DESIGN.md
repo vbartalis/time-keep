@@ -319,11 +319,47 @@ Firm, flat and quiet until pressed.
 Card-face fill, 4 px corners, 1 px border, 15 px text. Errors use a red border and
 red text.
 
+### In-page links
+Text links inside a page (Reload, Show archived, a template name, a pointer to Setup)
+are card ink, underlined, with the focus ring; never violet. Violet stays with the
+primary action and focus (the Ribbon Rule).
+
 ### Undo strip
 A message line under the screen title after every successful action: card-face fill,
 1 px hairline border, 4 px corners. "Done:" in semibold, the action's label, any
 warnings below it in red, and an outline Undo button on the right. It stays until
-the next load; nothing auto-dismisses.
+the next load; nothing auto-dismisses. One strip serves every screen (Today, Setup,
+Templates). After a refused undo it is the error state: a red border at 60 % and the
+core's message in red in place of "Done:", announced as an alert, with the Undo
+button kept so the press can be tried again.
+
+### Setup list
+Customers and projects as one ruled list under a section head. A customer is a line
+of 44 px (36 px on the PC) in semibold, a card-ink rule above each customer after
+the first; its projects sit beneath indented 16 px (24 px from 640 px) on a hairline
+at the left, each on its own hairline-divided line in regular weight, or "No active
+projects." in faded ink. Archived and spent rows, and projects of an archived
+customer, are struck through in faded ink with an Archived chip. Each line ends in
+outline buttons (Rename, Archive or Unarchive; a customer also Add project). Activities
+and locations are the same lines without the indent, in a second column from 1280 px.
+An add line closes each region: a field and an outline Add button.
+
+### In-place rename
+A line's name is a native disclosure: closed it shows the name and an outline Rename
+button; opened it takes the whole line as a field, Save (primary) and Cancel, and
+focuses the field. Only one is open at a time. A refused rename reopens it with the
+posted name, the field red and focused, the core's message beneath in red; a stale
+row shows its message with an ink underlined Reload link instead. It needs no
+JavaScript.
+
+### Template form
+The ruled form of the template screens (new and edit): a label column of 10 rem (the
+entry edit screen's, not the 12 rem of the other forms) beside the field on the PC,
+stacked on the phone; name, customer, project, activity, location, times, duration,
+time zone with its hint, reference and description, one primary Save and an outline
+Cancel. Archived current choices read "(archived)". Messages sit beneath their
+fields in red; a stale save shows a red-bordered message strip with a Reload button
+above the form, and Delete is a separate section with a two-step confirm.
 
 ### Template sheet
 A ruled row per template (56 px, name over customer › project and punched times, a

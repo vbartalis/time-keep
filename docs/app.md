@@ -24,9 +24,13 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/server/core/` | The only way to read and write the time data: batches, recorded changes, undo, history, reference data. Import only `core/index.ts`. See [core.md](core.md) and decision 4. |
 | `src/lib/server/id.ts` | Random base32 ids. |
 | `src/routes/login`, `logout` | Sign in and out. |
-| `src/routes/(app)/` | Signed-in screens: Today (`/`), the entry edit screen (`entries/[id]`), `account`, `admin/users` (see Screens). The layout requires a user and draws the shell: a left rail on the PC, a top bar and bottom navigation on the phone. |
-| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`, `edit.ts`), the flash cookie and undo lookup (`flash.ts`). |
-| `src/lib/components/today/` | The Today screen's parts: timers, template sheets, start a timer, today's entries, the undo strip, the ticking elapsed time. |
+| `src/routes/(app)/` | Signed-in screens: Today (`/`), the entry edit screen (`entries/[id]`), `account`, `admin/users`, `setup`, and `templates`, `templates/new`, `templates/[id]` (see Screens). The layout requires a user and draws the shell: a left rail on the PC (Today, Templates, Setup, Account, Users for an admin), a top bar and bottom navigation on the phone (Today, Setup, Account, Users for an admin; Templates is a PC screen). |
+| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`, `edit.ts`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`). |
+| `src/lib/components/templates/` | The template form shared by the new and edit screens. |
+| `src/lib/components/setup/` | The Setup screen's parts: a rename-in-place row, the add lines, the Add project disclosure. |
+| `src/lib/components/today/` | The Today screen's parts: timers, template sheets, start a timer, today's entries, the ticking elapsed time. |
+| `src/lib/components/UndoStrip.svelte` | The undo strip every screen shows after an action; posts to `/undo`. |
+| `src/routes/(app)/undo/` | The shared `/undo` route: `core.undo`, then back to the screen it came from. |
 | `src/lib/format.ts` | Formatting shared by server and browser: elapsed time, template times, warning text. |
 | `src/routes/layout.css` | Design tokens as Tailwind theme values, light and dark (see DESIGN.md). |
 | `src/lib/components/ui/` | shadcn-svelte components, copied in and restyled (decision 2). |
@@ -40,7 +44,8 @@ Hook types come from `@sveltejs/kit/hooks`.
 Every screen action is one core call (one batch) through `openCore(getDb(), user.id,
 'ui')`; no rule is enforced in a screen, the core's refusals and warnings are shown
 as it gives them. Forms are plain posts that work without JavaScript; `use:enhance`
-enhances them. A successful action redirects (303) back to Today. No browser dialogs.
+enhances them. A successful action redirects (303) back to the screen it was posted
+from (Today, `/setup`, `/templates`), with the undo strip. No browser dialogs.
 
 ### Today (`/`)
 
@@ -64,12 +69,61 @@ In thumb order, one column on the phone (the PC adds a side column):
    the edit screen.
 
 Empty states have no dead buttons: Timers says "No timer running.", Start a timer
-says "Customers and projects are set up on the PC." when there are no projects, and
-Templates says "Templates are set up on the PC." when there are none. A refused
+says "Customers and projects are set up on the PC." with a "Set up customers and
+projects" link to `/setup` when there are no projects, and Templates says "Templates
+are set up on the PC." with a "Create a template" link to `/templates/new` when there
+are none; the Templates head always links "Edit templates" to `/templates`. A refused
 action re-renders the form it came from with the core's field messages beside the
 fields; a message that belongs to no shown field is shown under the fields (the
 template sheet, the edit form) or beside the action; the template sheet and the edit
 form focus the first refused field.
+
+### Setup (`/setup`)
+
+Customers and projects, activities and locations on one screen (a second column for
+activities and locations from 1280 px). Customers are heavy lines with their projects
+indented on hairlines beneath; each line has Rename and Archive (Unarchive when
+archived), a customer also Add project. Rename opens in place (a `<details>` with the
+name, Save and Cancel; one open at a time) and sends `rename` with the row's
+`expectedVersion` (a rename to the same name stores no batch and returns without a strip). Archive and Unarchive are one press, undone from the strip. Each
+region ends with an add line (Add project opens one under its customer). Archived rows
+are hidden unless the "Show archived" link (`?archived=1`) is on, and then show struck
+through with an `Archived` badge; an archived customer lists all its projects, an
+active one with none active says "No active projects.". Every action is one core call
+(`create`, `rename`, `archive`, `unarchive`, with `kind` customer, project, activity
+or location) and returns to `/setup` (or `/setup?archived=1`, as posted) with the
+strip. A refusal re-renders the form that was posted, open, with the posted name and
+the core's message beside the field, focused; a stale version shows the message with a
+Reload link on that row; any other refusal (unarchiving a project under an archived
+customer) shows on the row. `setupTree` (`screens/setup.ts`) shapes the tree from the
+core's lists read with archived rows included.
+
+### Templates (`/templates`, `/templates/new`, `/templates/[id]`)
+
+`/templates` is a ruled table sorted by name: name (a link to its edit screen),
+customer › project, activity, location, times (punched) and a printed Timer or Log
+mark as on Today; the phone keeps name, times and mark (customer › project under the
+name) and the narrower PC widths drop activity and location. "New template" is the one
+primary button; with no templates the page says "No templates yet." beside the same
+button. The undo strip shows after a save or delete.
+
+`/templates/new` and `/templates/[id]` share one ruled form: name, customer, project,
+activity, location, start time, end time, duration in minutes, time zone (a text field
+with the browser's zones as a `<datalist>` filled by script; blank means the device's
+zone at use), reference, description. The pickers list active rows plus the template's
+current archived ones marked "(archived)". With JavaScript, choosing a project sets its
+customer and choosing a customer lists only its projects; without it both are sent as
+chosen. `templateInput` (`screens/templates.ts`) shapes the post for the core: the name
+as posted, every other field trimmed with blank sent as `null` (which clears it on an
+update), and a project with no customer sent with the project's customer. Save sends
+`templates.create`, or `templates.update` with every field and the form's
+`expectedVersion`, and returns to `/templates` with the strip. Refusals re-render the
+form with the posted values and the core's messages beside the fields (a message for
+no shown field goes under the form), focusing the first refused field; a stale version
+shows the message with a Reload link; a save that changed nothing returns without a strip. Delete asks on the page ("Yes, delete it" /
+"Keep it"), then sends `templates.delete` with the version; a template deleted
+elsewhere says so with a link back to the list, and a missing one is a 404. The shell's
+Templates item stays current on both sub-routes.
 
 ### Edit entry (`/entries/[id]`)
 
@@ -84,6 +138,13 @@ delete it" / "Keep it"), then sends `entries.delete` with the version. A missing
 another user's entry is a 404; a save or delete on an entry deleted since the page
 loaded says "This entry was deleted elsewhere." with a link back to Today.
 
+A "Save as template" disclosure under the form (a name field and an outline Save
+template button) sends `templates.fromEntry({ entryId, name })`. On success it goes to
+`/templates` with the strip, so the new template is in view. A refusal (a duplicate
+name) re-renders the disclosure open, by attribute so it also works without
+JavaScript, with the posted name and the message beside the field, which takes the
+focus.
+
 ### Time zones
 
 The request's zone is, in order: the form's hidden `timeZone` field, the `tz`
@@ -97,11 +158,17 @@ and says when it is only the default. Times are shown in each entry's own zone, 
 ### Done and undo
 
 After a successful action the server stores a flash in a short-lived `httpOnly`
-cookie (`flash`, 60 seconds, capped in size) and redirects; Today reads and clears
-it. The strip says "Done: <batch label>." with an Undo button for that batch, the
+cookie (`flash`, 60 seconds, capped in size) and redirects; the screen it lands on reads
+and clears it. The strip says "Done: <batch label>." with an Undo button for that batch, the
 user's newest batch right after the action (`flashAfter`), so it is the right batch
-across the redirect. Undo calls `core.undo({ batchId })` and the strip says
-"Undone.". The strip lasts until the next load. The core's warnings for the action
+across the redirect. The strip (`UndoStrip`, shared by every screen) posts to the
+one `/undo` route with the batch and a `back` path (checked by `safeBack`: a path on
+this site, else Today); undo calls `core.undo({ batchId })`, and the redirect back
+shows "Undone.". A refused undo (for example of "Create customer" once a project
+was added under it) sets the flash's `error` to the core's message instead: the strip
+is then an alert showing that message in red, with the same Undo button kept, so the
+refusal is seen on the screen the user was on. A GET of `/undo` redirects to Today.
+The strip lasts until the next load. The core's warnings for the action
 (`overlap`: "Overlaps another entry", `long`: "Longer than 24 hours") show in the
 strip and as a red mark on that entry's row, for that response only; the core does
 not store them.
@@ -165,8 +232,10 @@ files.
   (so the two never share timers or entries), with customers, projects, templates and
   this morning's entries. The browser runs in a fixed-offset zone where it is about
   noon (`noonZone`), so the seeded times are today and in the past whenever the suite
-  runs. `phone.test.ts` covers Today, the edit screen, undo and the no-JavaScript
-  posts.
+  runs. `phone.test.ts` covers Today, the edit screen, Save as template, undo and the
+  no-JavaScript posts; `setup.test.ts` covers Setup (create, rename, duplicates,
+  archive and unarchive, a refused undo, a stale rename), Templates (create, edit,
+  delete and undo, an archived project, a stale save) and their no-JavaScript posts.
 - `npm test` runs both.
 
 Chromium needs system libraries and fonts. The devcontainer image installs them, so

@@ -176,6 +176,27 @@
 		background-color: color-mix(in oklch, var(--primary) 28%, transparent);
 		color: inherit;
 	}
+	/* Unchecked checkboxes keep the ink stroke in both themes. */
+	input[type='checkbox'] {
+		appearance: none;
+		display: inline-grid;
+		place-content: center;
+		border: 1px solid var(--input);
+		background-color: var(--card);
+	}
+	input[type='checkbox']:checked {
+		border-color: var(--primary);
+		background-color: var(--primary);
+	}
+	input[type='checkbox']:checked::after {
+		content: '';
+		width: 0.65em;
+		height: 0.35em;
+		margin-top: -0.1em;
+		border: solid var(--primary-foreground);
+		border-width: 0 0 2px 2px;
+		transform: rotate(-45deg);
+	}
 	a {
 		text-underline-offset: 0.2em;
 	}

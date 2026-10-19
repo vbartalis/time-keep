@@ -16,8 +16,6 @@
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
-
-	const day = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 </script>
 
 <svelte:head><title>Users</title></svelte:head>
@@ -103,7 +101,7 @@
 							</div>
 						</TableCell>
 						<TableCell class="punch text-xs max-lg:px-0 max-lg:py-1 max-lg:text-right"
-							>{day(u.createdAt)}</TableCell
+							>{u.createdAt}</TableCell
 						>
 						<TableCell class="max-lg:col-span-2 max-lg:px-0 max-lg:py-1 max-lg:whitespace-normal">
 							<div class="flex flex-col gap-2 sm:flex-row sm:items-center">

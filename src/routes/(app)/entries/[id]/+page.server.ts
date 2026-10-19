@@ -128,6 +128,22 @@ export const actions: Actions = {
 		done(c, cookies, r);
 	},
 
+	saveAsTemplate: async ({ request, locals, params, cookies }) => {
+		const form = await request.formData();
+		const c = core(locals);
+		const name = text(form, 'name');
+		const r = c.templates.fromEntry({ entryId: params.id, name });
+		if (r.ok) done(c, cookies, r, '/templates');
+		if (r.error.code === 'not_found') return gone('saveAsTemplate');
+		const failure: EditFailure = {
+			action: 'saveAsTemplate',
+			conflict: false,
+			...formFailure(r.error, ['name']),
+			values: { name }
+		};
+		return fail(400, failure);
+	},
+
 	delete: async ({ request, locals, params, cookies }) => {
 		const form = await request.formData();
 		// The first press only asks; the confirm button sends `confirm`.
