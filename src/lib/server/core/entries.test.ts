@@ -534,3 +534,107 @@ describe('reading entries', () => {
 		expect(err(getEntry(db, userId, {}))).toMatchObject({ code: 'invalid' });
 	});
 });
+
+describe('list filters', () => {
+	const NOW = Date.UTC(2026, 9, 18, 12);
+	function seeded() {
+		const s = setup();
+		const { run, val, project, create } = s;
+		const activity = val(run((w) => createActivity(w, { name: 'Dev' })));
+		const location = val(run((w) => createLocation(w, { name: 'Home' })));
+		const withBoth = val(
+			create({
+				start: '2026-10-18T08:00Z',
+				durationMinutes: 60,
+				activityId: activity.id,
+				locationId: location.id
+			})
+		);
+		const bare = val(create({ start: '2026-10-18T10:00Z', durationMinutes: 60 }));
+		const mk = (input: Record<string, unknown>, projectId = s.p.id) =>
+			val(
+				run((w) => createEntry(w, { projectId, timeZone: 'UTC', durationMinutes: 30, ...input }))
+			);
+		return { ...s, activity, location, withBoth, bare, mk, project };
+	}
+	const ids = (r: Result<EntryItem[]>) => (r.ok ? r.value.map((e) => e.id) : r.error);
+
+	it('filters by activity and location, null meaning none', () => {
+		const { db, userId, activity, location, withBoth, bare } = seeded();
+		expect(ids(listEntries(db, userId, { activityId: activity.id }, NOW))).toEqual([withBoth.id]);
+		expect(ids(listEntries(db, userId, { activityId: null }, NOW))).toEqual([bare.id]);
+		expect(ids(listEntries(db, userId, { locationId: location.id }, NOW))).toEqual([withBoth.id]);
+		expect(ids(listEntries(db, userId, { locationId: null }, NOW))).toEqual([bare.id]);
+	});
+
+	it('finds text in description, project name and customer name, ignoring case', () => {
+		const { db, userId, mk, project } = seeded();
+		const desc = mk({ start: '2026-10-18T11:00Z', description: 'Called ÜGYFÉL' });
+		const pc = project('CompB – ProjC', 'Zed');
+		const onProject = mk({ start: '2026-10-18T12:00Z' }, pc.id);
+		const ac = project('Other', 'Acme Corp');
+		const onCustomer = mk({ start: '2026-10-18T13:00Z' }, ac.id);
+		const ref = mk({ start: '2026-10-18T14:00Z', reference: 'INV-77' });
+		expect(ids(listEntries(db, userId, { text: 'ügyfél' }, NOW))).toEqual([desc.id]);
+		expect(ids(listEntries(db, userId, { text: 'compb' }, NOW))).toEqual([onProject.id]);
+		expect(ids(listEntries(db, userId, { text: 'acme corp' }, NOW))).toEqual([onCustomer.id]);
+		expect(ids(listEntries(db, userId, { text: 'inv-7' }, NOW))).toEqual([ref.id]);
+		expect(ids(listEntries(db, userId, { text: '  ügyfél ' }, NOW))).toEqual([desc.id]);
+	});
+
+	it('matches text literally, without LIKE wildcards', () => {
+		const { db, userId, mk } = seeded();
+		mk({ start: '2026-10-18T11:00Z', description: '500 units' });
+		mk({ start: '2026-10-18T12:00Z', description: 'axb' });
+		const pct = mk({ start: '2026-10-18T13:00Z', description: 'raised 50% fee' });
+		const under = mk({ start: '2026-10-18T14:00Z', description: 'a_b' });
+		expect(ids(listEntries(db, userId, { text: '50%' }, NOW))).toEqual([pct.id]);
+		expect(ids(listEntries(db, userId, { text: 'a_b' }, NOW))).toEqual([under.id]);
+	});
+
+	it('refuses bad text, limit and order', () => {
+		const { db, userId } = seeded();
+		for (const input of [
+			{ text: '' },
+			{ text: 'x'.repeat(201) },
+			{ limit: 0 },
+			{ limit: 1001 },
+			{ limit: 1.5 },
+			{ order: 'up' }
+		]) {
+			expect(err(listEntries(db, userId, input, NOW))).toMatchObject({ code: 'invalid' });
+		}
+	});
+
+	it('startedIn leaves out an entry that began before the range', () => {
+		const { db, userId, mk } = seeded();
+		const early = mk({ start: '2026-10-17T23:00Z', durationMinutes: 120 });
+		const range = { from: '2026-10-18T00:00:00Z', to: '2026-10-19T00:00:00Z' };
+		expect(ids(listEntries(db, userId, range, NOW))).toContain(early.id);
+		const r = listEntries(db, userId, { ...range, startedIn: true }, NOW);
+		expect(ids(r)).not.toContain(early.id);
+		expect(r.ok && r.value).toHaveLength(2);
+		const upTo = listEntries(db, userId, { to: '2026-10-18T09:00:00Z', startedIn: true }, NOW);
+		expect(upTo.ok && upTo.value.map((e) => e.startAt < Date.UTC(2026, 9, 18, 9))).not.toContain(
+			false
+		);
+	});
+
+	it('orders ascending and limits after the order and text filter', () => {
+		const { db, userId, withBoth, bare, mk } = seeded();
+		const last = mk({ start: '2026-10-18T11:00Z' });
+		expect(ids(listEntries(db, userId, { order: 'asc' }, NOW))).toEqual([
+			withBoth.id,
+			bare.id,
+			last.id
+		]);
+		expect(ids(listEntries(db, userId, { order: 'asc', limit: 2 }, NOW))).toEqual([
+			withBoth.id,
+			bare.id
+		]);
+		expect(ids(listEntries(db, userId, { limit: 1 }, NOW))).toEqual([last.id]);
+		expect(ids(listEntries(db, userId, { text: 'web', order: 'asc', limit: 1 }, NOW))).toEqual([
+			withBoth.id
+		]);
+	});
+});

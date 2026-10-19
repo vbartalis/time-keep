@@ -133,3 +133,165 @@ export function renameElsewhere(userId: string, kind: Kind, id: string, name: st
 export function archiveElsewhere(userId: string, kind: Kind, id: string) {
 	value(asUi(userId)[kind].archive({ id }));
 }
+
+/** Day `day` of `today`'s month, as `YYYY-MM-DD`. */
+const dayOf = (today: string, day: number) => `${today.slice(0, 8)}${String(day).padStart(2, '0')}`;
+
+/**
+ * A user with five finished entries across this month (in `zone`) and one last month,
+ * with activities, locations, references and descriptions to find them by:
+ *
+ * | day | in–out      | project                | activity    | location | ref   | description                |
+ * | 02  | 09:00–10:30 | Acme › Website         | Development | Office   | T-101 | Fixed the login form       |
+ * | 03  | 09:00–11:00 | Acme › Website         | Meeting     | Home     |       | Planned the release        |
+ * | 06  | 13:00–15:00 | Acme › Operations      |             | Office   |       | Filed the receipts         |
+ * | 09  | 08:00–09:00 | Northwind › Mobile app | Development |          | M-7   | Built the login screen     |
+ * | 13  | 10:00–12:00 | Northwind › Mobile app |             | Home     |       | Reviewed the crash reports |
+ */
+export async function seedMonth(prefix: string, zone: string) {
+	const user = await newUser(prefix);
+	const core = asUi(user.id);
+	const today = dateIn(zone);
+	const month = today.slice(0, 7);
+
+	const acme = value(core.customers.create({ name: 'Acme' })).id;
+	const north = value(core.customers.create({ name: 'Northwind' })).id;
+	const website = value(core.projects.create({ customerId: acme, name: 'Website' })).id;
+	const operations = value(core.projects.create({ customerId: acme, name: 'Operations' })).id;
+	const mobile = value(core.projects.create({ customerId: north, name: 'Mobile app' })).id;
+	const development = value(core.activities.create({ name: 'Development' })).id;
+	const meeting = value(core.activities.create({ name: 'Meeting' })).id;
+	const office = value(core.locations.create({ name: 'Office' })).id;
+	const home = value(core.locations.create({ name: 'Home' })).id;
+
+	const entry = (
+		date: string,
+		start: string,
+		end: string,
+		input: {
+			projectId: string;
+			activityId?: string;
+			locationId?: string;
+			reference?: string;
+			description: string;
+		}
+	) =>
+		value(
+			core.entries.create({
+				...input,
+				start: `${date}T${start}`,
+				end: `${date}T${end}`,
+				timeZone: zone
+			})
+		).id;
+
+	const firstOfLast = new Date(
+		Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 2, 1)
+	);
+	entry(firstOfLast.toISOString().slice(0, 10), '09:00', '10:00', {
+		projectId: website,
+		description: 'Fixed the login form last month'
+	});
+
+	return {
+		...user,
+		today,
+		month,
+		/** A day of this month, `YYYY-MM-DD`. */
+		day: (n: number) => dayOf(today, n),
+		projects: { website, operations, mobile },
+		activities: { development, meeting },
+		locations: { office, home },
+		entries: {
+			login: entry(dayOf(today, 2), '09:00', '10:30', {
+				projectId: website,
+				activityId: development,
+				locationId: office,
+				reference: 'T-101',
+				description: 'Fixed the login form'
+			}),
+			release: entry(dayOf(today, 3), '09:00', '11:00', {
+				projectId: website,
+				activityId: meeting,
+				locationId: home,
+				description: 'Planned the release'
+			}),
+			receipts: entry(dayOf(today, 6), '13:00', '15:00', {
+				projectId: operations,
+				locationId: office,
+				description: 'Filed the receipts'
+			}),
+			screen: entry(dayOf(today, 9), '08:00', '09:00', {
+				projectId: mobile,
+				activityId: development,
+				reference: 'M-7',
+				description: 'Built the login screen'
+			}),
+			crashes: entry(dayOf(today, 13), '10:00', '12:00', {
+				projectId: mobile,
+				locationId: home,
+				description: 'Reviewed the crash reports'
+			})
+		}
+	};
+}
+
+export type Month = Awaited<ReturnType<typeof seedMonth>>;
+
+/** Starts a timer for `userId` at `start` (`HH:mm` today in `zone`), the way another device would. */
+export function startElsewhere(
+	userId: string,
+	projectId: string,
+	zone: string,
+	start: string,
+	description: string
+) {
+	return value(
+		asUi(userId).timers.start({
+			projectId,
+			start: `${dateIn(zone)}T${start}`,
+			timeZone: zone,
+			description
+		})
+	).id;
+}
+
+/** Deletes an entry the way another device would. */
+export function deleteElsewhere(userId: string, entryId: string) {
+	value(asUi(userId).entries.delete({ id: entryId }));
+}
+
+/**
+ * `count` five-minute entries from the first of this month, on a customer and project
+ * of their own, written as one batch.
+ */
+export function seedMany(userId: string, zone: string, count: number) {
+	const core = asUi(userId);
+	const first = dayOf(dateIn(zone), 1);
+	return value(
+		core.batch(`Seed ${count} entries`, (c) => {
+			const customer = c.customers.create({ name: 'Bulk' });
+			if (!customer.ok) return customer;
+			const project = c.projects.create({ customerId: customer.value.id, name: 'Bulk load' });
+			if (!project.ok) return project;
+			for (let i = 0; i < count; i++) {
+				const minutes = i * 5;
+				const day = Math.floor(minutes / 1440);
+				const hh = String(Math.floor((minutes % 1440) / 60)).padStart(2, '0');
+				const mm = String(minutes % 60).padStart(2, '0');
+				const r = c.entries.create({
+					projectId: project.value.id,
+					start: `${nextDays(first, day)}T${hh}:${mm}`,
+					durationMinutes: 4,
+					timeZone: zone,
+					description: `Bulk ${i + 1}`
+				});
+				if (!r.ok) return r;
+			}
+			return project;
+		})
+	).id;
+}
+
+const nextDays = (date: string, n: number) =>
+	new Date(Date.parse(`${date}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);

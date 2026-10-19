@@ -3,6 +3,7 @@ import type { EditFailure } from '#lib/components/today/types.js';
 import { openCore, type CoreError, type Result } from '#lib/server/core/index.js';
 import { getDb } from '#lib/server/db/index.js';
 import { requireUser } from '#lib/server/guards.js';
+import { safeBack } from '#lib/server/screens/back.js';
 import {
 	done,
 	formFailure,
@@ -29,7 +30,7 @@ const SHOWN = [
 const core = (locals: App.Locals, now = Date.now()) =>
 	openCore(getDb(), requireUser(locals).id, 'ui', () => now);
 
-export const load: PageServerLoad = ({ locals, params }) => {
+export const load: PageServerLoad = ({ locals, params, url }) => {
 	const c = core(locals);
 	const r = c.entries.get({ id: params.id });
 	if (!r.ok) error(404, 'Entry not found');
@@ -46,6 +47,7 @@ export const load: PageServerLoad = ({ locals, params }) => {
 		withCurrent(active, all, id).map((o) => ({ id: o.id, name: archived(o.name, o.archived) }));
 
 	return {
+		back: safeBack(url.searchParams.get('back')),
 		entry: {
 			id: e.id,
 			version: e.version,
@@ -76,11 +78,12 @@ export const load: PageServerLoad = ({ locals, params }) => {
 };
 
 /** The refusal for an entry that no longer exists. */
-const gone = (action: EditFailure['action']) => {
+const gone = (action: EditFailure['action'], back: string) => {
 	const failure: EditFailure = {
 		action,
 		conflict: false,
 		gone: true,
+		back,
 		error: 'This entry was deleted elsewhere.',
 		fields: {}
 	};
@@ -95,6 +98,7 @@ function refuse(
 	action: EditFailure['action'],
 	err: CoreError,
 	shown: readonly string[],
+	back: string,
 	opts: { stale?: boolean; values?: Record<string, string> } = {}
 ) {
 	const { values } = opts;
@@ -103,6 +107,7 @@ function refuse(
 	const conflict = err.code === 'conflict' && opts.stale === true;
 	const failure: EditFailure = {
 		action,
+		back,
 		conflict,
 		...(conflict ? { error: err.message, fields: {} } : formFailure(err, shown)),
 		...(values ? { values } : {})
@@ -114,29 +119,32 @@ export const actions: Actions = {
 	save: async ({ request, locals, params, cookies }) => {
 		const form = await request.formData();
 		const c = core(locals);
+		const back = safeBack(text(form, 'back'));
 		const values = postedValues(form, SHOWN);
 		const current = c.entries.get({ id: params.id });
 		if (!current.ok) {
 			return current.error.code === 'not_found'
-				? gone('save')
-				: refuse('save', current.error, [], { values });
+				? gone('save', back)
+				: refuse('save', current.error, [], back, { values });
 		}
 		const r = c.entries.update(editInput(form, params.id, current.value));
-		if (!r.ok) return refuse('save', r.error, SHOWN, { stale: stale(form, current), values });
+		if (!r.ok) return refuse('save', r.error, SHOWN, back, { stale: stale(form, current), values });
 		// Nothing changed: no batch was stored, so there is nothing to show or undo.
-		if (r.value.version === current.value.version) redirect(303, '/');
-		done(c, cookies, r);
+		if (r.value.version === current.value.version) redirect(303, back);
+		done(c, cookies, r, back);
 	},
 
 	saveAsTemplate: async ({ request, locals, params, cookies }) => {
 		const form = await request.formData();
 		const c = core(locals);
+		const back = safeBack(text(form, 'back'));
 		const name = text(form, 'name');
 		const r = c.templates.fromEntry({ entryId: params.id, name });
 		if (r.ok) done(c, cookies, r, '/templates');
-		if (r.error.code === 'not_found') return gone('saveAsTemplate');
+		if (r.error.code === 'not_found') return gone('saveAsTemplate', back);
 		const failure: EditFailure = {
 			action: 'saveAsTemplate',
+			back,
 			conflict: false,
 			...formFailure(r.error, ['name']),
 			values: { name }
@@ -146,9 +154,10 @@ export const actions: Actions = {
 
 	delete: async ({ request, locals, params, cookies }) => {
 		const form = await request.formData();
+		const back = safeBack(text(form, 'back'));
 		// The first press only asks; the confirm button sends `confirm`.
 		if (text(form, 'confirm') !== 'yes') {
-			return { action: 'delete' as const, confirm: true, version: text(form, 'version') };
+			return { action: 'delete' as const, confirm: true, back, version: text(form, 'version') };
 		}
 		const c = core(locals);
 		const version = text(form, 'version');
@@ -157,12 +166,12 @@ export const actions: Actions = {
 			id: params.id,
 			expectedVersion: wholeNumber(version)
 		});
-		if (!r.ok && !current.ok && current.error.code === 'not_found') return gone('delete');
+		if (!r.ok && !current.ok && current.error.code === 'not_found') return gone('delete', back);
 		if (!r.ok)
-			return refuse('delete', r.error, [], {
+			return refuse('delete', r.error, [], back, {
 				stale: stale(form, current),
 				values: postedValues(form, [])
 			});
-		done(c, cookies, r);
+		done(c, cookies, r, back);
 	}
 };

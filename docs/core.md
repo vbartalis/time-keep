@@ -196,10 +196,17 @@ before the command (the input's project for a create; the new project for an edi
 that moves the entry).
 
 **Reads.** `entries.get({ id })` and `entries.list({ from?, to?, projectId?,
-customerId?, running? })` return entries with `projectName`, `customerId`,
-`customerName`, `activityName` and `locationName`, newest start first. `from` and `to`
-are instants with an offset; the list holds entries whose interval touches
-`[from, to)`, a running one reaching the core's clock. Lists are an instant
+customerId?, running?, activityId?, locationId?, text?, startedIn?, order?, limit? })`
+return entries with `projectName`, `customerId`, `customerName`, `activityName` and
+`locationName`, newest start first unless `order` is `'asc'` (oldest first, then id).
+`from` and `to` are instants with an offset; the list holds entries whose interval
+touches `[from, to)`, a running one reaching the core's clock, or, with
+`startedIn: true`, entries that start in it (`from <= start < to`). `activityId` and
+`locationId` take an id, or `null` for entries without one. `text` (trimmed, 1-200
+characters) matches entries whose reference, description, project name or customer name
+contains it, literally and Unicode case-insensitively (NFC, then lowercased; not
+SQLite's ASCII-only `LIKE`), and `limit` (an integer, 1-1000, unbounded without it)
+applies after every filter. Lists are an instant
 primitive: grouping by local day (`start_zone`) is the reports' job.
 
 ## Timers

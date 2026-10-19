@@ -6,6 +6,7 @@
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import { line, selectClass } from '#lib/components/today/field.js';
+	import { narrowing } from '#lib/components/narrowing.svelte.js';
 	import type { EditFailure, ProjectGroup } from '#lib/components/today/types.js';
 
 	type Option = { id: string; name: string };
@@ -35,39 +36,19 @@
 	const typed = $derived(saveFailure?.values);
 	const value = (name: string) => typed?.[name] ?? initial[name] ?? '';
 
-	// The pickers follow each other once the script runs; without it both are sent as
-	// chosen and the core refuses a mismatch.
-	let enhanced = $state(false);
+	// Without JavaScript a mismatched customer and project are sent, and the core refuses it.
+	const pick = narrowing(
+		() => choices.projects,
+		() => ({ customerId: value('customerId'), projectId: value('projectId') })
+	);
 	let zones = $state<string[]>([]);
-	// Started with the values, not in an effect: without JavaScript nothing else sets them.
-	let customerId = $state(value('customerId'));
-	let projectId = $state(value('projectId'));
-	$effect.pre(() => {
-		customerId = value('customerId');
-		projectId = value('projectId');
-	});
 	onMount(() => {
-		enhanced = true;
 		try {
 			zones = Intl.supportedValuesOf('timeZone');
 		} catch {
 			zones = [];
 		}
 	});
-
-	const shownProjects = $derived(
-		enhanced && customerId !== ''
-			? choices.projects.filter((g) => g.customerId === customerId)
-			: choices.projects
-	);
-	function pickProject() {
-		const group = choices.projects.find((g) => g.projects.some((p) => p.id === projectId));
-		if (group) customerId = group.customerId;
-	}
-	function pickCustomer() {
-		const group = choices.projects.find((g) => g.projects.some((p) => p.id === projectId));
-		if (customerId !== '' && group && group.customerId !== customerId) projectId = '';
-	}
 
 	let form = $state<HTMLFormElement | null>(null);
 	// After a refused save, take the user to the first field the core refused.
@@ -110,8 +91,8 @@
 			id="tpl-customer"
 			name="customerId"
 			class={selectClass}
-			bind:value={customerId}
-			onchange={pickCustomer}
+			bind:value={pick.customerId}
+			onchange={pick.pickCustomer}
 			aria-invalid={fields.customerId ? 'true' : undefined}
 			aria-describedby={fields.customerId ? 'customerId-error' : undefined}
 		>
@@ -129,13 +110,13 @@
 			id="tpl-project"
 			name="projectId"
 			class={selectClass}
-			bind:value={projectId}
-			onchange={pickProject}
+			bind:value={pick.projectId}
+			onchange={pick.pickProject}
 			aria-invalid={fields.projectId ? 'true' : undefined}
 			aria-describedby={fields.projectId ? 'projectId-error' : undefined}
 		>
 			<option value="">Any project</option>
-			{#each shownProjects as group (group.customerId)}
+			{#each pick.projects as group (group.customerId)}
 				<optgroup label={group.customerName}>
 					{#each group.projects as p (p.id)}
 						<option value={p.id}>{p.name}</option>

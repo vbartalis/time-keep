@@ -24,8 +24,10 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/server/core/` | The only way to read and write the time data: batches, recorded changes, undo, history, reference data. Import only `core/index.ts`. See [core.md](core.md) and decision 4. |
 | `src/lib/server/id.ts` | Random base32 ids. |
 | `src/routes/login`, `logout` | Sign in and out. |
-| `src/routes/(app)/` | Signed-in screens: Today (`/`), the entry edit screen (`entries/[id]`), `account`, `admin/users`, `setup`, and `templates`, `templates/new`, `templates/[id]` (see Screens). The layout requires a user and draws the shell: a left rail on the PC (Today, Templates, Setup, Account, Users for an admin), a top bar and bottom navigation on the phone (Today, Setup, Account, Users for an admin; Templates is a PC screen). |
-| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`, `edit.ts`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`). |
+| `src/routes/(app)/` | Signed-in screens: Today (`/`), `entries` and the entry edit screen (`entries/[id]`), `account`, `admin/users`, `setup`, and `templates`, `templates/new`, `templates/[id]` (see Screens). The layout requires a user and draws the shell: a left rail on the PC (Today, Entries, Templates, Setup, Account, Users for an admin), a top bar and bottom navigation on the phone (Today, Setup, Account, Users for an admin; Entries and Templates are PC screens). The current item follows the route; the entry edit screen keeps Entries current when its `back` starts with `/entries`, else Today. |
+| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`, `edit.ts`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries search and bulk change (`entries.ts`: `readSearch`, `searchInput`, `searchPath`, `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`). |
+| `src/lib/components/entries/` | The Entries screen's parts: the filter form, the change form, the selectable table. |
+| `src/lib/components/narrowing.svelte.ts` | Customer and project pickers that narrow each other with JavaScript, shared by the template form and the Entries filters. |
 | `src/lib/components/templates/` | The template form shared by the new and edit screens. |
 | `src/lib/components/setup/` | The Setup screen's parts: a rename-in-place row, the add lines, the Add project disclosure. |
 | `src/lib/components/today/` | The Today screen's parts: timers, template sheets, start a timer, today's entries, the ticking elapsed time. |
@@ -45,7 +47,7 @@ Every screen action is one core call (one batch) through `openCore(getDb(), user
 'ui')`; no rule is enforced in a screen, the core's refusals and warnings are shown
 as it gives them. Forms are plain posts that work without JavaScript; `use:enhance`
 enhances them. A successful action redirects (303) back to the screen it was posted
-from (Today, `/setup`, `/templates`), with the undo strip. No browser dialogs.
+from (Today, `/setup`, `/templates`, the Entries search), with the undo strip. No browser dialogs.
 
 ### Today (`/`)
 
@@ -125,18 +127,78 @@ shows the message with a Reload link; a save that changed nothing returns withou
 elsewhere says so with a link back to the list, and a missing one is a 404. The shell's
 Templates item stays current on both sub-routes.
 
+### Entries (`/entries`)
+
+A PC screen (in the rail, not the phone's bar) for finding entries and changing or
+deleting many at once; it stays usable at phone widths.
+
+**Filters** are a `GET` form, so a search is a URL. From and To are dates, inclusive,
+read as days in the request's zone; `readSearch` (`screens/entries.ts`) defaults to
+the current month when neither is in the query, leaves a side unbound when its field
+is submitted blank, and refuses a malformed date ("Use dates like 2026-10-01.") or
+From after To ("From must not be after To.") with the message by the fields and no
+list. Customer and Project list every row, archived included and marked
+"(archived)", projects grouped by customer, "Any" first; with JavaScript a customer
+narrows the projects (`narrowing.svelte.ts`). Activity and Location offer "Any",
+"None", then every row. Text matches reference, description, project or customer
+name as the core does. `searchInput` asks `entries.list` for entries that started
+in the range (`startedIn`), oldest first, at most 501; "Clear" returns to the month.
+
+**The list** is a ruled table of at most 500 rows: a checkbox, date (a link to the
+edit screen with `back` set to the search), in, out (or Running), hours, customer ›
+project, activity, location, reference, description, each time in the entry's own
+zone. The narrower PC widths drop activity and location; the phone stacks each row.
+Above it, "<n> entries, <h:mm>" ("1 entry, h:mm"), running entries counted to now;
+a 501st entry adds "Showing the first 500 entries; narrow the filters."; none says
+"No entries match." with Clear. A head checkbox selects all shown with JavaScript;
+without it a "Select all" link reloads the search with `&all=1`, every row checked.
+
+**Change selected** and **Delete selected** are one `POST` form with the table: each
+checked row posts `id` and its loaded `version.<id>` (`selection`; a repeated id is
+taken once). The change form sets, each left as it is unless set: Project ("Keep" or
+an active project), Activity and Location ("Keep", "None" or an active row),
+Reference (blank keeps it; "Clear the reference"), and a literal, case-sensitive Find
+and Replace with in the description, taken as typed (a Find of only spaces is blank;
+a description left empty becomes none). `bulkUpdates` reads each selected entry as it
+is now and builds one `entries.update` per entry the form would change, only the
+changed fields, with the posted `expectedVersion`, oldest start first; "Apply to
+selected" sends them as one `core.batch` labelled `Edit <n> entries` (`Edit 1 entry`,
+`n` counting the updates). Nothing selected says "Select at least one entry.";
+nothing to change stores no batch and says "Nothing to change.". Delete selected asks
+on the page ("Delete <n> entries?", "Delete 1 entry?"; "Yes, delete them" in red /
+"Keep them"), then sends one batch of `entries.delete` with each version, labelled
+`Delete <n> entries`. Both redirect to the search they were posted from with the
+strip, and undo returns there.
+
+**Refusals** re-render the search with the selection and the posted values kept. One
+refused entry refuses the whole batch (`runBulk` tracks the input in flight, so a
+rule thrown inside the batch is also traced to its entry); the message names the
+entry ("2026-10-07 09:00, CompA › ProjC: <the core's message>", in the entry's start
+zone), and a Reload link to the search shows only when that entry's posted version is
+stale. An entry deleted elsewhere since the list loaded cannot be named: when the form
+would set a field on it the core's "Not found." shows alone, with no Reload; when it
+would not (a Find its text no longer has), it is skipped. Field messages show beside
+the change form's fields.
+
 ### Edit entry (`/entries/[id]`)
 
 Start and end as `datetime-local` in the entry's own zones (an empty end makes the
 entry running), project, activity and location (the active ones plus the entry's
 current one, marked archived when it is), reference, description. Save sends
 `entries.update` with the form's `expectedVersion`; a save that changed nothing
-stores no batch and goes back to Today without a strip. When the entry changed
+stores no batch and goes back without a strip. When the entry changed
 elsewhere since the form was loaded, the core's message shows with a Reload link
 that loads the entry as it is now. Delete asks first on the page itself ("Yes,
 delete it" / "Keep it"), then sends `entries.delete` with the version. A missing or
 another user's entry is a 404; a save or delete on an entry deleted since the page
-loaded says "This entry was deleted elsewhere." with a link back to Today.
+loaded says "This entry was deleted elsewhere." with a link back.
+
+The screen returns to where it was opened from: `back` in the query (checked by
+`safeBack`, else Today) is kept as a hidden field on Save and Delete, and Save,
+Delete, a save that changed nothing, Cancel and the deleted-elsewhere link all go
+there (that link reads "Back to Entries" when `back` starts with `/entries`, else
+"Back to Today"). The Entries list links its rows with `back` set to its search; Today links
+without it. Save as template still goes to `/templates`.
 
 A "Save as template" disclosure under the form (a name field and an outline Save
 template button) sends `templates.fromEntry({ entryId, name })`. On success it goes to
@@ -235,7 +297,13 @@ files.
   runs. `phone.test.ts` covers Today, the edit screen, Save as template, undo and the
   no-JavaScript posts; `setup.test.ts` covers Setup (create, rename, duplicates,
   archive and unarchive, a refused undo, a stale rename), Templates (create, edit,
-  delete and undo, an archived project, a stale save) and their no-JavaScript posts.
+  delete and undo, an archived project, a stale save) and their no-JavaScript posts;
+  `entries.test.ts` covers Entries with a user of its own per test (`seedMonth`:
+  five entries across the month and one last month): each filter and Clear, a bulk
+  change and a bulk delete with undo, an entry changed or deleted elsewhere, a
+  refusal naming its entry, opening an entry and coming back to the search, the
+  500-row cut (`seedMany`, one batch) and the no-JavaScript search, Select all and
+  apply.
 - `npm test` runs both.
 
 Chromium needs system libraries and fonts. The devcontainer image installs them, so

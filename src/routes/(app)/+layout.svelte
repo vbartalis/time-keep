@@ -4,6 +4,7 @@
 	import { page } from '$app/state';
 	import Clock from '@lucide/svelte/icons/clock';
 	import LayoutTemplate from '@lucide/svelte/icons/layout-template';
+	import List from '@lucide/svelte/icons/list';
 	import LogOut from '@lucide/svelte/icons/log-out';
 	import Settings from '@lucide/svelte/icons/settings';
 	import UserRound from '@lucide/svelte/icons/user-round';
@@ -13,6 +14,12 @@
 	let { data, children }: LayoutProps = $props();
 
 	const today = { route: '/(app)', href: resolve('/(app)'), label: 'Today', icon: Clock };
+	const entries = {
+		route: '/(app)/entries',
+		href: resolve('/(app)/entries'),
+		label: 'Entries',
+		icon: List
+	};
 	const templates = {
 		route: '/(app)/templates',
 		href: resolve('/(app)/templates'),
@@ -38,8 +45,15 @@
 		icon: Users
 	};
 
-	// Templates are a PC screen: the rail lists them, the phone bar does not.
-	const rail = $derived([today, templates, setup, account, ...(data.user.isAdmin ? [users] : [])]);
+	// Entries and Templates are PC screens: the rail lists them, the phone bar does not.
+	const rail = $derived([
+		today,
+		entries,
+		templates,
+		setup,
+		account,
+		...(data.user.isAdmin ? [users] : [])
+	]);
 	const bar = $derived([today, setup, account, ...(data.user.isAdmin ? [users] : [])]);
 
 	/**
@@ -72,8 +86,19 @@
 
 	// Compared by route id: resolve() gives relative paths while rendering on the server.
 	// A screen's own sub-routes keep it current, except Today, whose id prefixes them all.
-	const current = (route: string) =>
-		page.route.id === route || (route !== '/(app)' && !!page.route.id?.startsWith(`${route}/`));
+	// The entry edit screen belongs to Entries when opened from its list, else to Today.
+	const fromList = $derived(
+		page.route.id === '/(app)/entries/[id]' &&
+			!!page.url.searchParams.get('back')?.startsWith('/entries')
+	);
+	const current = (route: string) => {
+		if (page.route.id === '/(app)/entries/[id]') {
+			return route === (fromList ? '/(app)/entries' : '/(app)');
+		}
+		return (
+			page.route.id === route || (route !== '/(app)' && !!page.route.id?.startsWith(`${route}/`))
+		);
+	};
 </script>
 
 <div class="min-h-dvh lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">

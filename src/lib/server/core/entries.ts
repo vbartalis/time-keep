@@ -2,7 +2,7 @@
  * Entries: create, edit, delete and read. Commands take a Writer (inside runBatch) and
  * untrusted input; reads take any database handle.
  */
-import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, lt, ne, or } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, or } from 'drizzle-orm';
 import { z } from 'zod';
 import type { DB } from '../db/index';
 import { change } from '../db/schema';
@@ -266,7 +266,18 @@ const listSchema = z.object({
 	to: z.string().optional(),
 	projectId: id.optional(),
 	customerId: id.optional(),
-	running: z.boolean().optional()
+	running: z.boolean().optional(),
+	activityId: id.nullable().optional(),
+	locationId: id.nullable().optional(),
+	text: z
+		.string()
+		.trim()
+		.min(1, 'Use 1–200 characters.')
+		.max(200, 'Use 1–200 characters.')
+		.optional(),
+	startedIn: z.boolean().optional(),
+	order: z.enum(['asc', 'desc']).optional(),
+	limit: z.number().int().min(1).max(1000).optional()
 });
 
 /** Checks the given zones; the first unknown one is `invalid` on its field. */
@@ -494,8 +505,12 @@ export function deleteEntry(w: Writer, input: unknown): Result<Entry> {
 	return ok(w.remove('entry', loaded.value.id) as Entry);
 }
 
-/** Entries with their names, newest start first. */
-function selectItems(db: Handle, where: ReturnType<typeof and>): EntryItem[] {
+/** Entries with their names, newest start first unless `order` is `asc`. */
+function selectItems(
+	db: Handle,
+	where: ReturnType<typeof and>,
+	order: 'asc' | 'desc' = 'desc'
+): EntryItem[] {
 	const e = table('entry');
 	const p = table('project');
 	const c = table('customer');
@@ -516,7 +531,7 @@ function selectItems(db: Handle, where: ReturnType<typeof and>): EntryItem[] {
 		.leftJoin(a, eq(a.id, e.activityId))
 		.leftJoin(l, eq(l.id, e.locationId))
 		.where(where)
-		.orderBy(desc(e.startAt), desc(e.id))
+		.orderBy(...(order === 'asc' ? [asc(e.startAt), asc(e.id)] : [desc(e.startAt), desc(e.id)]))
 		.all()
 		.map(({ entry, ...names }) => ({ ...entry, ...names }));
 }
@@ -530,10 +545,15 @@ export function getEntry(db: Handle, userId: string, input: unknown): Result<Ent
 	return item ? ok(item) : fail('not_found', 'Not found.');
 }
 
+/** Text as the list compares it: NFC, then lowercased in English. */
+const fold = (s: string) => s.normalize('NFC').toLocaleLowerCase('en');
+
 /**
  * The user's entries whose interval touches `[from, to)` (instants with an offset; a
- * running entry reaches `now`), filtered by project, customer and running, newest start
- * first, each with its names.
+ * running entry reaches `now`; with `startedIn`, whose start lies in it), filtered by
+ * project, customer, activity, location (null: none), running and text (in the
+ * reference, description, project or customer name, case-insensitive and literal),
+ * newest start first unless `order` is `asc`, at most `limit`, each with its names.
  */
 export function listEntries(
 	db: Handle,
@@ -561,20 +581,44 @@ export function listEntries(
 	const reachesFrom =
 		from === undefined
 			? undefined
-			: now > from
-				? or(gt(e.endAt, from), isNull(e.endAt))
-				: gt(e.endAt, from);
-	return ok(
-		selectItems(
-			db,
-			and(
-				eq(e.userId, userId),
-				reachesFrom,
-				to === undefined ? undefined : lt(e.startAt, to),
-				data.projectId === undefined ? undefined : eq(e.projectId, data.projectId),
-				data.customerId === undefined ? undefined : eq(p.customerId, data.customerId),
-				data.running === undefined ? undefined : data.running ? isNull(e.endAt) : isNotNull(e.endAt)
-			)
-		)
+			: data.startedIn
+				? gte(e.startAt, from)
+				: now > from
+					? or(gt(e.endAt, from), isNull(e.endAt))
+					: gt(e.endAt, from);
+	const match = (v: string | null, needle: string) => v !== null && fold(v).includes(needle);
+	const needle = data.text === undefined ? undefined : fold(data.text);
+	const items = selectItems(
+		db,
+		and(
+			eq(e.userId, userId),
+			reachesFrom,
+			to === undefined ? undefined : lt(e.startAt, to),
+			data.projectId === undefined ? undefined : eq(e.projectId, data.projectId),
+			data.customerId === undefined ? undefined : eq(p.customerId, data.customerId),
+			data.running === undefined ? undefined : data.running ? isNull(e.endAt) : isNotNull(e.endAt),
+			data.activityId === undefined
+				? undefined
+				: data.activityId === null
+					? isNull(e.activityId)
+					: eq(e.activityId, data.activityId),
+			data.locationId === undefined
+				? undefined
+				: data.locationId === null
+					? isNull(e.locationId)
+					: eq(e.locationId, data.locationId)
+		),
+		data.order
 	);
+	const found =
+		needle === undefined
+			? items
+			: items.filter(
+					(i) =>
+						match(i.reference, needle) ||
+						match(i.description, needle) ||
+						match(i.projectName, needle) ||
+						match(i.customerName, needle)
+				);
+	return ok(data.limit === undefined ? found : found.slice(0, data.limit));
 }

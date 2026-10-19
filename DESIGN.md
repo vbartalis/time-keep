@@ -368,12 +368,60 @@ the template's filled fields as a two-column list, then ruled form lines and one
 primary button. Only one sheet is open at a time. Works as a native disclosure
 without JavaScript.
 
+### Filter bar
+The Entries screen's search, a `GET` form under a "Filters" section head, closed by
+a hairline. Labels sit over their fields in a grid: one column on the phone, two from
+640 px, four from 1280 px. From and To are punched date fields; Customer and Project
+(grouped by customer, narrowed by the customer with JavaScript), Activity and Location
+are native pickers that start with "Any" (Activity and Location then "None"), archived
+rows marked "(archived)"; Text spans two columns. An outline Search button (full width
+on the phone) and an ink underlined Clear link close it. A date mistake shows beneath
+the dates in red, announced as an alert, and no list is shown.
+
+### Selectable ruled table
+The ruled table with a 44 px checkbox column first. The head checkbox selects every
+row shown (indeterminate when some are) and exists only with JavaScript; without it an
+ink underlined "Select all" link in the section head reloads the search with every row
+checked. The section head ("Found") carries "<n> entries, <h:mm>" ("1 entry"), the
+hours punched. The date is an ink underlined, punched link to the entry; a running
+entry shows a printed violet "Running" and violet hours. Activity and location drop
+below 1280 px; below 1024 px each row stacks beside a 20 px checkbox: date, punched
+in–out and hours, then customer › project in semibold, then reference and description
+in faded ink. Warnings are red chips under customer › project. Over 500 rows a faded
+line says "Showing the first 500 entries; narrow the filters."; none shows "No entries
+match." in faded ink with a Clear link.
+
+### Change form
+Bulk change, under a "Change selected" section head that shows "<n> selected" on the
+right once the script runs. Ruled form lines with the template form's 10 rem label
+column: Project ("Keep" or an active project, grouped by customer), Activity and
+Location ("Keep", "None" or an active row), Reference (a field whose placeholder reads
+"Blank keeps it", with a "Clear the reference" checkbox beside it, beneath it on the
+phone) and Description (Find and Replace with side by side from 640 px, their labels
+in regular faded ink). Then one primary "Apply to selected" and an outline "Delete
+selected", lined up with the field column on the PC and sharing the width on the
+phone; with JavaScript both are disabled while nothing is selected. Field messages
+sit beneath their fields in red. A refusal is a red-bordered message under the form:
+the entry it came from ("2026-10-07 09:00, CompA › ProjC: ") then the core's message,
+with an ink underlined Reload link only when that entry was changed elsewhere. The
+selection and the posted values are kept.
+
+### Delete confirm
+The first press of Delete selected asks on the page, beneath the change form between
+hairlines: "Delete 2 entries?" ("Delete 1 entry?"), a red "Yes, delete them", which
+takes the focus, and an outline "Keep them" that returns to the search. Delete
+selected itself stays outline; only the confirming button is red.
+
 ### Navigation
-- **PC:** the rack. Wordmark at the top, items of 40 px with a 16 px line icon and
+- **PC:** the rack. Wordmark at the top, then Today, Entries, Templates, Setup,
+  Account (and Users for an admin), items of 40 px with a 16 px line icon and
   15 px text, the signed-in user and Sign out at the foot. Hover fills with
-  rack-ink-raised. The current item is filled with card stock and card-ink text.
+  rack-ink-raised. The current item is filled with card stock and card-ink text; an
+  entry opened from the Entries list keeps Entries current, from Today keeps Today.
 - **Phone:** a 56 px top bar with the wordmark and Sign out, and a fixed bottom bar
-  of equal 56 px items (20 px icon above 13 px text). The current item uses the same
+  (Today, Setup, Account and, for an admin, Users; the PC screens Entries and
+  Templates left out) of
+  equal 56 px items (20 px icon above 13 px text). The current item uses the same
   card-stock fill.
 
 ### Ruled Table (signature)

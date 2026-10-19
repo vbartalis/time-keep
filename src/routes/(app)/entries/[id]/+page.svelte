@@ -27,7 +27,13 @@
 	const nameError = $derived(templateFailure?.fields.name);
 	const value = (name: string, fallback: string | null) => typed?.[name] ?? fallback ?? '';
 
-	const here = $derived(resolve('/(app)/entries/[id]', { id: entry.id }));
+	// A refused or confirming form keeps `back` too: the posted URL has no query string.
+	const back = $derived(
+		failure?.back ?? (confirming && form && 'back' in form ? form.back : undefined) ?? data.back
+	);
+	const entryPath = $derived(resolve('/(app)/entries/[id]', { id: entry.id }));
+	const here = $derived(back === '/' ? entryPath : `${entryPath}?back=${encodeURIComponent(back)}`);
+	const backLabel = $derived(back.startsWith('/entries') ? 'Back to Entries' : 'Back to Today');
 	const zones = $derived(
 		entry.endZone && entry.endZone !== entry.startZone
 			? `Start in ${entry.startZone}, end in ${entry.endZone}.`
@@ -79,7 +85,7 @@
 	>
 		<p class="min-w-0 flex-1 text-pretty">{failure.error}</p>
 		{#if failure.gone}
-			<Button href={resolve('/(app)')} variant="outline">Back to Today</Button>
+			<Button href={back} variant="outline">{backLabel}</Button>
 		{:else if failure.conflict}
 			<!-- A full load, so the form takes the entry as it is now. -->
 			<Button href={here} variant="outline" data-sveltekit-reload>Reload</Button>
@@ -91,6 +97,7 @@
 	<SectionHead id="edit-heading" title="Entry" />
 	<form bind:this={editForm} method="POST" action="?/save" use:enhance class="flex flex-col">
 		<input type="hidden" name="version" value={version} />
+		<input type="hidden" name="back" value={back} />
 
 		<div class={line}>
 			<Label for="edit-start">Start</Label>
@@ -205,7 +212,7 @@
 
 		<div class="flex flex-wrap gap-3 pt-4 lg:pl-[11rem]">
 			<Button type="submit" class="flex-1 sm:flex-none">Save</Button>
-			<Button href={resolve('/(app)')} variant="outline" class="flex-1 sm:flex-none">Cancel</Button>
+			<Button href={back} variant="outline" class="flex-1 sm:flex-none">Cancel</Button>
 		</div>
 	</form>
 </section>
@@ -218,6 +225,7 @@
 			>Save as template</summary
 		>
 		<form method="POST" action="?/saveAsTemplate" use:enhance class="flex flex-col pt-1">
+			<input type="hidden" name="back" value={back} />
 			<div class={line}>
 				<Label for="template-name">Name</Label>
 				<Input
@@ -247,8 +255,11 @@
 	{#if confirming}
 		<form method="POST" action="?/delete" use:enhance class="flex flex-col gap-3 pt-3">
 			<input type="hidden" name="version" value={version} />
+			<input type="hidden" name="back" value={back} />
 			<input type="hidden" name="confirm" value="yes" />
-			<p class="text-sm text-pretty">Delete this entry? You can undo it from Today.</p>
+			<p class="text-sm text-pretty">
+				Delete this entry? You can undo it from {back.startsWith('/entries') ? 'Entries' : 'Today'}.
+			</p>
 			<div class="flex flex-wrap gap-3">
 				<Button
 					bind:ref={confirmButton}
@@ -262,6 +273,7 @@
 	{:else}
 		<form method="POST" action="?/delete" use:enhance class="pt-3">
 			<input type="hidden" name="version" value={version} />
+			<input type="hidden" name="back" value={back} />
 			<Button type="submit" variant="destructive" class="w-full sm:w-auto">Delete entry</Button>
 		</form>
 	{/if}

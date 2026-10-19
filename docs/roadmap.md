@@ -199,9 +199,57 @@ Split 2026-10-19 into three parts, worked in order:
   the picker blanks read "Any customer/project" against "None"; the browser tests
   assert that a message shows rather than its text, and a few use implementation-detail
   selectors.
-- **5b. Finding and bulk editing entries — next.** Entries found by range, customer, project,
-  activity, location and text, and edited or deleted many at a time as one batch.
-- **5c. History.** Every batch listed with its changes, and any batch or chosen
+- **5b. Finding and bulk editing entries — done 2026-10-19.** An Entries screen (`/entries`,
+  in the PC rail after Today) finds entries by range, customer, project, activity,
+  location and text and changes or deletes the selected ones as one batch, undone from
+  its strip; an entry opened from the list returns to the search. Spec
+  `docs/superpowers/specs/2026-10-19-entries-design.md`, plan
+  `docs/superpowers/plans/2026-10-19-entries.md`; `docs/core.md` (the list's new
+  inputs), `docs/app.md` (the Entries screen, `back` on the edit screen, the
+  navigation, the layout rows for `screens/entries.ts`, `components/entries/` and
+  `components/narrowing.svelte.ts`) and `DESIGN.md` (filter bar, selectable ruled
+  table, change form, delete confirm, the navigation's items) extended; 423 unit tests
+  and 64 browser tests (20 of them new, phone and PC sizes, JavaScript off included),
+  check and lint clean. impeccable's detector ran over the 7 changed .svelte files with
+  its regex rules, and over the rendered `/entries` (the month, `&all=1`, an empty
+  search, From after To) and an entry opened from it at 390 and 1440 px with its
+  element rules, and found nothing. Calls made in the operator's place: every
+  **(call)** in the spec, among them the list's new inputs (activity and location ids
+  or none, text over reference, description, project and customer names, `startedIn`,
+  `order`, `limit`), the search as a `GET` URL defaulting to the current month with a
+  blank date unbound, customer narrowing projects, a 500-row cut with no paging or
+  saved searches, a count and summed hours rather than totals, a version posted per
+  row, a "Select all" link (`&all=1`) without JavaScript, the change form above the
+  table with every field kept unless set, a literal Find and Replace taken as typed,
+  updates sent oldest start first and labelled by the entries they change, the delete
+  confirmed on the page, a refusal naming its entry, the edit screen returning to
+  `back`, Entries in the rail but not the phone's bar (current on an entry only when
+  opened from the list), no bulk time shifts or pattern rewording, and no decision
+  record; and, made during the build, the Reload link only when the refused entry's
+  posted version is stale, an unknown activity or location id listing nothing as the
+  existing filters do, the confirm's "Yes, delete them" red while Delete selected
+  stays outline, Cancel and the deleted-elsewhere link on the edit screen following
+  `back` too, a repeated posted id taken once, the selected entries read one by one to
+  build the change, and the singular copy ("Edit 1 entry", "Delete 1 entry?", "1
+  entry, h:mm"). An entry deleted elsewhere in the selection refuses with the core's
+  "Not found." alone (no entry named, no Reload) when the form would set a field on
+  it, and is skipped otherwise. Deferred minors: the `startedIn` test passes on an
+  empty list; no test that an unknown activity or location id lists nothing; core.md
+  not spelling out `startedIn` with only `to`; an awkward `orderBy` spread in
+  `entries.list`; `searchInput` throwing on invalid dates if ever called after a
+  `readSearch` error; `failedId` naming the last input if a batch-end check refuses;
+  no December-rollover test for the default month; an entry deleted elsewhere in a
+  selection shows "Not found." with no entry named and no Reload; no unit tests for
+  the refusal prefix, the stale rule or dedupe; no action-level test for `back` on the
+  edit screen; the loose `/entries` prefix check for the rail and labels; a refused
+  no-JavaScript save or delete on the edit screen loses `back`, so the rail shows
+  Today current; Review Focus 5's other half (exactly 500 matches show no message)
+  untested; ticking rows during the delete confirm does not change what is deleted;
+  `limit` applied in memory, so a search with both dates blank loads every entry; a
+  Customer or Project chosen before the page's script loads is reset on hydration, on
+  the Entries filters and the template form; DESIGN.md's Navigation bullet line
+  breaks; a `.last()` Clear link in the browser test.
+- **5c. History — next.** Every batch listed with its changes, and any batch or chosen
   changes undone and redone.
 
 ## 6. Output

@@ -1,7 +1,7 @@
 import { localParts, nextDate, parseTime } from '../core/index';
 
 /** The instant of local midnight on a date; the first valid hour if midnight is skipped. */
-function startOfDay(date: string, zone: string): number {
+export function startOfDay(date: string, zone: string): number {
 	for (const hour of ['00', '01', '02']) {
 		const p = parseTime(`${date}T${hour}:00`, zone);
 		if (p.ok) return p.at;

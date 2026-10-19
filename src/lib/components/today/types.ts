@@ -80,5 +80,7 @@ export type EditFailure = {
 	conflict: boolean;
 	/** The entry no longer exists (deleted elsewhere): the screen offers a way back to Today. */
 	gone?: boolean;
+	/** The search the entry was opened from, kept across a refusal (no-JS reloads lose the query). */
+	back?: string;
 	values?: Record<string, string>;
 };
