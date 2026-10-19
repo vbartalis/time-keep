@@ -1,8 +1,23 @@
 # Roadmap
 
 The order of the work that takes time-keep from nothing to replacing Kimai. Detail
-lives in the specs, plans and issues each phase links to; this page only says what
-comes next and why. The scope is [the vision](vision.md); this page adds no features.
+lives in the specs, plans and issues each item links to; this page only says what
+comes next and why. The scope is [the vision](vision.md); round 2 adds what the
+operator asked for on 2026-10-19 (the calendar and table views), and item 10 brings
+the vision up to date with it.
+
+The work runs in three rounds:
+
+1. **Round 1, the build (phases 1–8), done 2026-10-19.** The core, the screens, the
+   MCP server, backup and restore. The back end holds; the screens do not.
+2. **Round 2, usable (items 17 and 10–16).** The app redesigned and rebuilt, screen
+   by screen, until it is usable: the look, the theme and the way of working, measured
+   against Kimai and good calendar apps. It runs on the autopilot
+   ([autopilot.md](autopilot.md)).
+3. **Round 3, go-live (item 9).** Round 1's last phase, moved after round 2.
+
+Items keep their numbers across rounds, so specs and docs that name "phase 9" still
+point at go-live.
 
 ## The principle
 
@@ -11,9 +26,13 @@ screens and the MCP server both sit on the data model, the single write path and
 history; those are settled first, so nothing is later bent to fit a dependent that
 already holds it in place.
 
-**Nothing is used until the whole thing works.** Kimai stays in use until phase 9 is
+**Nothing is used until the whole thing works.** Kimai stays in use until go-live is
 done (operator, 2026-10-18: "cant use it until it is working"). There is no early
 release to live with; the order serves building, not adoption.
+
+**Usable before live.** Go-live waits for round 2. An app that passes its tests but
+does not do what the operator needs with a good interface is not done (operator,
+2026-10-19: "the goal is … an app that does what i need with good ui/ux").
 
 ## How an item is worked
 
@@ -26,13 +45,45 @@ release to live with; the order serves building, not adoption.
 - Anything found along the way is fixed in the current item when its exit needs it,
   or when it is small and inside the item's scope. Anything else becomes a new item
   here, placed before the first item that needs it, else at the end.
-- Screens are checked in a browser driven by automation, at phone and PC sizes, not
-  by the operator.
+- Screens are checked in a browser driven by automation, at phone and PC sizes.
 - When an item lands, it gets a done note: the date, the spec, the decisions it
   recorded, and any call made in the operator's place.
-- Phase 9 is the operator's: it is never started automatically.
+- Go-live (9) is the operator's: it is never started automatically.
+- Round 2 runs on the autopilot ([autopilot.md](autopilot.md)): each item is worked
+  by fresh unattended sessions following the `run-item` runbook, the operator
+  stand-in answers where the operator would be asked, and an item's exit is met by
+  the usability gate (a screen) or the stand-in's approval (a document). The done
+  note marks every call the stand-in made, with its source.
 
-## 1. Foundation — done 2026-10-18
+### In round 2, also
+
+- **impeccable carries every interface item**: its context and direction first, then
+  each screen shaped, built, critiqued and audited with it, and `DESIGN.md` recorded
+  from what shipped.
+- **Every screen is designed from references, not from the vision alone.** Item 10's
+  study is the reference; a spec names which Kimai or calendar-app behaviour each
+  screen follows or departs from, and why.
+- **Screens are built against realistic data**: a seeded month or more in the shapes
+  the operator actually logs, never an empty account.
+- **The exit is judged outside the builder.** The builder's tests still run, but an
+  item that changes a screen meets its exit only when the usability gate passes it:
+  the exit's tasks done as a user would, on a seeded month, at phone and PC sizes, in
+  light and dark. An item with nothing on screen meets its exit when the operator
+  stand-in approves its document.
+- Round 1's calls about the interface do not bind round 2. Its back-end calls stand
+  unless a round 2 spec names one it changes.
+
+## Round 1 — the build, done 2026-10-19
+
+What round 1 got wrong, for round 2 to avoid: the screens were designed from the
+vision's list of what Kimai lacks, without studying how Kimai, or any good time or
+calendar app, is actually used; the builder made every design call; and the screens
+were checked only by automation, against near-empty data. The result passes its tests
+and is not usable: there is no way to add an entry for an arbitrary time, no calendar
+or day-grouped list, timers live only on Today, the phone cannot reach past entries,
+and the punch-card look reads as dated and heavy.
+
+### 1. Foundation — done 2026-10-18
 
 The app exists, runs and deploys: the SvelteKit project per decisions 1 and 2, SQLite
 through Drizzle with migrations, the test setup, the app's own session login, the
@@ -57,7 +108,7 @@ the username after a failure (3); passwords not Unicode-normalised; the throttle
 memory only pruned on access; the image's health check without a start period and the
 proxy headers to confirm against Coolify (9).
 
-## 2. The core — done 2026-10-18
+### 2. The core — done 2026-10-18
 
 Everything the vision says about the data, enforced in one place, with no screens:
 customers › projects, activities, locations, entries, templates and timers, each
@@ -119,7 +170,7 @@ Phase 2 exit met 2026-10-18: every rule in the vision's entry, customers and pro
 templates, timers and history sections is enforced by the core and covered by tests,
 and any change or batch can be undone as one step.
 
-## 3. Design direction — done 2026-10-18
+### 3. Design direction — done 2026-10-18
 
 The look and feel, decided once before any screen is built, with impeccable: a
 direction chosen, in Tailwind tokens and shadcn-svelte per decision 2, and recorded.
@@ -138,7 +189,7 @@ Checked at 390 and 1440 px in light and dark; impeccable's detector found nothin
 its finish reviewer's seven fixes were all scored resolved. Deferred to 4 and 5: the
 default alert's violet border and the unchecked checkbox's grey in dark mode.
 
-## 4. Phone — done 2026-10-19
+### 4. Phone — done 2026-10-19
 
 Quick capture, in the installable web app: start and stop timers, log an entry from a
 template with only the blanks typed, fix today's entries.
@@ -161,7 +212,7 @@ show 12-hour on an en-US phone; the browser tests run in a fixed-offset zone, so
 covered by unit tests only. Still open from 3, carried to 5: the default alert's violet
 border and the unchecked checkbox's grey in dark mode.
 
-## 5. PC — done 2026-10-19
+### 5. PC — done 2026-10-19
 
 Dense work: managing customers, projects, activities and locations (archiving
 included) and templates (deleted, undoably), finding entries and editing them in bulk, seeing history and
@@ -295,7 +346,7 @@ Split 2026-10-19 into three parts, worked in order:
   selected full width, Redo selected beside the count); on the phone History is
   reachable only by its URL.
 
-## 6. Output — done 2026-10-19
+### 6. Output — done 2026-10-19
 
 Reports (totals per day, week, customer and project), the month copy-out with columns
 chosen at output time, CSV, rounding to 5 minutes on output only, splitting at
@@ -411,7 +462,7 @@ Split 2026-10-19 into two parts, worked in order:
   was not refreshed; on the PC the tables' reading order (Customers, Projects, Weeks,
   Days) differs from their placement.
 
-## 7. MCP server — done 2026-10-19
+### 7. MCP server — done 2026-10-19
 
 The MCP server as a first-class client of the same API, behind authentication, for
 bulk entry, reorganising and rewording. One agent request is one batch.
@@ -485,7 +536,7 @@ confirmed); a refused create without JavaScript clears the typed name and shows 
 message at the section's head, not on the field; without JavaScript the focus does not
 move to Yes, revoke (as on the entry delete).
 
-## 8. Backup and restore — done 2026-10-19
+### 8. Backup and restore — done 2026-10-19
 
 Admin-only backup and restore, through the app.
 
@@ -548,7 +599,121 @@ unchanged current data). Still deferred: the refusal browser test implies rather
 asserts that the admin is still signed in and nothing changed; the JS-off test's
 original run asserted only the before-restore section (now also the data).
 
-## 9. Go-live — the operator's
+## Round 2 — usable
+
+Items are worked in page order and keep their numbers, so 17 comes first. Each
+item's exit is met by the usability gate (screens) or the operator stand-in
+(documents); see "In round 2, also".
+
+### 17. Autopilot dry run — Today's placeholder panel
+
+Remove the "At the desk — not built yet" panel from Today, on phone and PC. A small
+real screen unit that proves the autopilot end to end before the round's real work.
+
+Exit: the usability gate passes Today with the panel gone and nothing else changed.
+
+### 10. Reference study
+
+How Kimai, Google Calendar, Samsung Calendar and a few dedicated time trackers
+(Toggl, Clockify, Timing or similar) handle what time-keep does: their views (day,
+week and month calendars, agenda lists, Kimai's timesheet table and weekly hours
+grid), creating and editing an entry, running and restarting timers, recents and
+favourites, navigation between dates, totals, filters, and the phone versus the
+desktop. The study may use Playwright's Chromium to look at Kimai's public demo and
+the references themselves, not only their docs (reading only: a public demo's sign-in
+is the one form submitted). Each finding is recorded with its source and a verdict
+for time-keep: follow, adapt, or reject. The operator's real entry shapes (three
+companies deep for support, two for development, start plus duration) are walked
+through each reference. The vision's two surfaces and fast-capture principle are
+revisited against the findings, and the vision is amended with the views the
+operator asked for (the calendar views and the table) and nothing else; anything
+more the study suggests for the charter goes to `docs/questions.md`.
+
+Exit: a reference document in `docs/`, and the amended vision, both approved by the
+operator stand-in.
+
+### 11. Design direction, round 2
+
+A new look and theme with impeccable, replacing decision 5's punch-clock time card:
+the direction, its tokens in Tailwind and shadcn-svelte, light and dark themes, type,
+density for the PC and touch sizes for the phone, and the shell: navigation on both
+surfaces and a timer bar always on screen. The operator stand-in chooses between
+rendered options, not descriptions. A decision record supersedes decision 5;
+`PRODUCT.md`, `DESIGN.md` and its sidecar are rewritten.
+
+Exit: the stand-in has chosen the direction from rendered options, and the usability
+gate passes the app shell in the new direction on phone and PC, in light and dark.
+
+### 12. The entry and the timer
+
+The two things used every day, built once and reached from everywhere:
+
+- **The entry form**, for creating and editing, opened in place over whatever view
+  the user is on: a date with start and end or duration, forgiving time input,
+  customer › project picked by typing, activity, location, reference and description,
+  and keyboard save. A new entry for any day and time is one action from every view.
+- **The timer bar**, always on screen: the running timers with their elapsed time,
+  stop in one tap, start from recents, favourites and templates, and restart of a
+  past entry.
+
+Undo stays one step after every save, stop and delete.
+
+Exit: the usability gate passes these tasks on phone and PC: an entry for any past
+time is made and corrected without leaving the current view, and a timer is started,
+stopped and restarted from any screen.
+
+### 13. Calendar views
+
+Day, week and month views of the user's entries, in the manner of a good phone
+calendar: entries as blocks on a time grid, the running timer shown live, a line at
+now, totals per day and week, moving between dates by swipe and by buttons, and a
+tap or drag on empty time opening the entry form at that time. On the PC, entries are
+moved and resized by dragging. Overlaps show as overlaps.
+
+Exit: the usability gate, on a seeded month, reads, creates and corrects a week of
+entries in the calendar on phone and PC.
+
+### 14. The timesheet table
+
+Kimai's table view, done better: entries newest first, grouped by day with daily
+totals, the columns that matter on each surface, a row opening the entry form, a row
+menu with restart, copy, edit and delete, filters folded into one control with
+relative date presets that are kept between visits, one search across customer,
+project, activity, location, reference and description, and bulk edit and delete
+appearing only once rows are ticked. Whether Kimai's weekly hours grid is built here
+is decided by item 10's study.
+
+Exit: the usability gate, on a seeded month, finds, reads and reorganises the month's
+entries from the table, on PC and phone.
+
+### 15. The rest of the screens
+
+Every remaining screen redone in the new direction and the patterns of 12–14: Setup
+(customers › projects, activities, locations), templates as part of favourites,
+History, Copy-out, Reports, Account and agent access, Users, Backup and the login.
+The phone's navigation reaches everything it needs. Leftovers from round 1 (the rail
+that stops at the screen's height) are gone.
+
+Exit: the usability gate passes every one of these screens on phone and PC, and none
+still uses round 1's look or patterns.
+
+### 16. Usability check
+
+The usability gate run over every task in the app, on a seeded month, on phone and
+PC: logging the day as it happens, correcting yesterday, reorganising the month and
+copying it out for Excel. Nothing is fixed in this item. What the gate fails becomes
+new round 2 items, numbered from the next free number and placed before this one (so
+before go-live), worked by the autopilot; this item then runs once more. If that
+second run still fails, the round stops as failed. Either way the round ends with a
+report for the operator in `docs/round-2-report.md`: what round 2 built, the calls
+made in the operator's place, and the open questions in `docs/questions.md`.
+
+Exit: the usability gate passes every task in the app on phone and PC, and
+`docs/round-2-report.md` is written.
+
+## Round 3 — go-live
+
+### 9. Go-live — the operator's
 
 The container deployed on Coolify at its domain, the Kimai import as an agent working
 through the MCP server, and the switch from Kimai.

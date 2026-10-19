@@ -18,6 +18,10 @@ the system libraries and fonts Chromium needs for the browser tests.
 `test:e2e`, `test`, and `db:generate`. Details, configuration and the test setup are in
 [`app.md`](app.md).
 
+## The autopilot
+
+Unattended runs of the roadmap, started from a tmux window: [`autopilot.md`](autopilot.md).
+
 ## First start
 
 After **Dev Containers: Reopen in Container** finishes (the build, then

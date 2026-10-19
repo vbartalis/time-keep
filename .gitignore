@@ -33,3 +33,6 @@ playwright-report/
 
 # impeccable: review captures (regenerated per review)
 .impeccable/review/
+
+# autopilot run state
+.autopilot/

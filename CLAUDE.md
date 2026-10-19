@@ -17,7 +17,9 @@ plugins extend capability, never process: impeccable for interface work, ECC for
 guards and practices that do not fight the spine (its hook profile is set in
 `.claude/settings.json`). Framework companions are added with the stack they serve.
 
-Gates are human decisions. Present the design, stop, and wait for a yes.
+Gates are human decisions. Present the design, stop, and wait for a yes. In an
+autopilot run the operator stand-in and the usability gate decide in the operator's
+place; see [docs/autopilot.md](docs/autopilot.md).
 
 ## Tooling
 
