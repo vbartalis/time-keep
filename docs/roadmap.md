@@ -138,7 +138,7 @@ Checked at 390 and 1440 px in light and dark; impeccable's detector found nothin
 its finish reviewer's seven fixes were all scored resolved. Deferred to 4 and 5: the
 default alert's violet border and the unchecked checkbox's grey in dark mode.
 
-## 4. Phone — next
+## 4. Phone — done 2026-10-19
 
 Quick capture, in the installable web app: start and stop timers, log an entry from a
 template with only the blanks typed, fix today's entries.
@@ -146,7 +146,7 @@ template with only the blanks typed, fix today's entries.
 Exit: on a phone, a new entry from a template is a tap and a typed description, timers
 start and stop, and today's entries can be corrected.
 
-## 5. PC
+## 5. PC — next
 
 Dense work: managing customers, projects, activities and locations (archiving
 included) and templates (deleted, undoably), finding entries and editing them in bulk, seeing history and
