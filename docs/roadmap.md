@@ -605,12 +605,31 @@ Items are worked in page order and keep their numbers, so 17 comes first. Each
 item's exit is met by the usability gate (screens) or the operator stand-in
 (documents); see "In round 2, also".
 
-### 17. Autopilot dry run — Today's placeholder panel
+### 17. Autopilot dry run — Today's placeholder panel — done 2026-10-19
 
 Remove the "At the desk — not built yet" panel from Today, on phone and PC. A small
 real screen unit that proves the autopilot end to end before the round's real work.
 
 Exit: the usability gate passes Today with the panel gone and nothing else changed.
+
+Done 2026-10-19: Today no longer shows the "At the desk" panel (its heading, its "Not
+built yet" badge and its four rows), on the phone or the PC; the PC keeps the
+two-column grid with the side track empty, so the main column keeps its width and
+position. Spec `docs/superpowers/specs/2026-10-19-today-placeholder-panel-design.md`,
+plan `docs/superpowers/plans/2026-10-19-today-placeholder-panel.md`; no decision
+record. `docs/app.md` (Today) updated; one new browser test (phone and PC sizes) in
+`e2e/phone.test.ts`. Calls made in the operator's place, the stand-in's: the PC keeps
+the two-column grid with the side track empty, not a single column filling or capped
+at the width (source: item 17's text and exit, plus the smaller-change rule;
+inferred); nothing takes the panel's place (item 17; grounded); nothing else on Today
+changes, the phone's bottom bar over the form left to the round 2 items that rebuild
+Today (item 17, "How an item is worked"; grounded). The builder's: a written design
+and plan despite the size, since every roadmap item is a project; `docs/app.md`
+updated in the same change; the now-unused `SectionHead` import dropped along with
+`Badge` (an unused import fails lint; both still used elsewhere); the `docs/app.md`
+line keeps the doc's term "PC" though the side track starts at 1280 px; the new test
+does not pin the PC's empty side track (the wrapper is unchanged; the gate checks it);
+`DESIGN.md`'s "Not built yet" chip example stays until item 11. No questions queued.
 
 ### 10. Reference study
 

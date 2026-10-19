@@ -62,7 +62,7 @@ Copy-out and Reports only read: they have no actions.
 
 ### Today (`/`)
 
-In thumb order, one column on the phone (the PC adds a side column):
+In thumb order, one column; on the PC it keeps the width of a two-column layout, the side track left empty:
 
 1. **Timers**: each running entry with its start, the elapsed time (ticking each
    second with JavaScript, the server's value without), customer › project,

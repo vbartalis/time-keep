@@ -64,6 +64,15 @@ test('logs from a template with only a description, and undoes it', async ({ pag
 	await expect(entryRow(page, 'Planned the sprint')).toHaveCount(0);
 });
 
+test('Today shows no placeholder panel, only its working sections', async ({ page }) => {
+	await signIn(page, user.username);
+
+	await expect(page.getByRole('heading', { name: 'At the desk' })).toHaveCount(0);
+	await expect(page.getByText('Not built yet')).toHaveCount(0);
+	for (const name of ['Timers', 'Templates', 'Start a timer', 'Today’s entries'])
+		await expect(section(page, name)).toBeVisible();
+});
+
 test('starts a timer, a second on the same project stops the first, stop undoes', async ({
 	page
 }) => {
