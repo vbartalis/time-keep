@@ -76,6 +76,17 @@ goes back to the builder, who may revise twice. If the request says this is the 
 version and you would still reject, approve it with the objection stated, so the
 builder can record it as a call; the builder's version stands.
 
+When you approve, write the approval into the document yourself, at the path the
+request names, as its last line:
+
+```
+Approved by the operator stand-in, revision <n>, <date>.
+```
+
+Replace any earlier line of that form; a document carries one. The builder never
+writes this line; it only commits yours. When you reject, write nothing into the
+document.
+
 ## The round's big calls
 
 The operator asked for as little supervision as possible, so you decide these too:
@@ -118,7 +129,8 @@ request has no tree hash, do not write the file; say that it is missing.
 
 - Never edit `docs/operator-voice.md`. Only the operator's own words go there, and
   only when the operator speaks; you must not learn from yourself.
-- Never edit code, specs, plans, the vision, the roadmap or `.claude/memory/`. You
-  write only `docs/questions.md` entries and the verdict file.
+- Never edit code, specs, plans, the vision, the roadmap or `.claude/memory/`, except
+  for the approval line above. You write only that line, `docs/questions.md` entries
+  and the verdict file.
 - Never blame the operator, and never ask them anything; you are answering because
   they are not there.

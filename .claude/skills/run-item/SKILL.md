@@ -145,9 +145,12 @@ stand-in; commit that file with the stage.
 Approval: on `reject`, revise, commit the revision as
 `docs: revise the <unit> <spec|plan|document> (revision <n>)` with `<n>` the next
 revision number, and ask again with that number. Revision 3 is final: the stand-in
-approves with its objection stated; record the objection as a call. After approval,
-add the approved line to the document and commit. A document carries one approved
-line: a new approval replaces the old line, never adds a second.
+approves with its objection stated; record the objection as a call. The approval
+request names the document's path: on approve, the stand-in writes the approved line
+into the document itself, replacing any earlier one. Never write, edit or reword an
+approval line yourself (the permission classifier refuses it as self-approval, and it
+would be); only commit the stand-in's, as
+`docs: record the stand-in's approval of the <unit> <spec|plan|document>`.
 
 ## 2. Brainstorm
 
@@ -182,7 +185,7 @@ human touchpoints, answered:
      ProjectZ, then move it to 9:30");
    - **Calls made in the operator's place**.
 2. Commit (`docs: add the <topic> spec`). Ask the stand-in to approve it (revision 1).
-   Approved → commit the approved line.
+   Approved → commit the line the stand-in wrote.
 
 ## D. Document unit
 
@@ -191,7 +194,7 @@ human touchpoints, answered:
 2. Write the done note on the branch (stage 8, step 1). Commit.
 3. Ask the stand-in to approve the document: approval only, no verdict request.
    Reject → revise, commit, ask again (revision 2, 3), as under Asking the stand-in.
-4. On approve: add the approved line (replacing any earlier one), add any objection or
+4. On approve: keep the approved line the stand-in wrote, add any objection or
    new call to the done note, run `npx prettier --write` on the changed files and
    `npm run lint`, and commit them with any `docs/questions.md` change. Then, as in
    stage 6 step 2: if `git merge-base --is-ancestor main HEAD` fails, merge `main` into
@@ -215,7 +218,7 @@ human touchpoints, answered:
 1. Invoke `superpowers:writing-plans` on the approved spec. Its execution question is
    not asked: execution is always subagent-driven.
 2. Commit (`docs: add the <topic> plan`). Ask the stand-in to approve it (revision 1).
-   Approved → commit the approved line.
+   Approved → commit the line the stand-in wrote.
 3. Make sure the tree is clean on the branch. Write outcome `continue` and end.
 
 ## 5. Build
