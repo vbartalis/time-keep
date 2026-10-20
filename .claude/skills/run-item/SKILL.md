@@ -29,6 +29,24 @@ in the operator's place. Never ask, never wait: decide, record the call, continu
   subagent-driven-development's `scripts/sdd-workspace <plan>` prints. Git-ignored; it
   survives between sessions on disk.
 
+## Waiting on agents
+
+A headless session ends when a turn ends. Subagents run in the background, so a turn
+that ends to wait for them kills them and leaves no outcome. So:
+
+- Every agent you dispatch (stand-in, gate, implementers, reviewers, researchers) is
+  told, as its last act, to write its full result to
+  `.autopilot/agents/<unit>-<short-name>.md` (git-ignored); name the path in the
+  dispatch.
+- Never end a turn while a dispatched agent has not written its file. Wait with a
+  blocking command, repeated as needed:
+  `timeout 590 bash -c 'until [ -f <file> ]; do sleep 20; done'`
+  (one call per file, or one `until` over all of them). Read the file when it exists;
+  a notification that arrives first changes nothing.
+- An agent whose file is missing after 60 minutes of waiting has failed: dispatch it
+  again once, then end the unit `failed`.
+- The only turn that may end is the one that writes the outcome.
+
 ## Forbidden, always
 
 - Forbidden in every session: docker, `git push`, `rm -rf`, sudo, ssh; deleting

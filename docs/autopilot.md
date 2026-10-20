@@ -64,6 +64,7 @@ Everything a run writes is under `.autopilot/`, which git ignores:
 | `outcome.json` | The last session's outcome: `status`, `unit`, `summary`. |
 | `verdicts/<unit>.json` | The gate's or the stand-in's verdict: pass, the tree judged, findings, screenshots. |
 | `screenshots/<unit>/` | The gate's screenshots, and the design screenshots under `design/`. |
+| `agents/<unit>-<name>.md` | Each dispatched agent's full result. The session waits for these files with a blocking command, because a headless session that ends its turn to wait kills its background agents. |
 
 The script also prints one line per session in its window. The branch's commits show
 where a session is.
