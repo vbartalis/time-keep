@@ -152,7 +152,8 @@
 		</div>
 	</div>
 	{@render children?.()}
-	<div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+	<!-- Clear stays out of the phone's "+" column. -->
+	<div class="flex flex-wrap items-center gap-x-4 gap-y-3 max-lg:pr-14">
 		<Button type="submit" variant={primary ? 'default' : 'outline'} class="flex-1 sm:flex-none"
 			>{submit}</Button
 		>

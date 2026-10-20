@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-20T02:17:58+00:00",
+  "generatedAt": "2026-10-20T12:00:00+00:00",
   "title": "Design System: time-keep",
   "extensions": {
     "colorMeta": {
@@ -449,17 +449,22 @@
       {
         "name": "sheet-up",
         "value": "0 -8px 24px rgb(0 0 0 / 0.12)",
-        "purpose": "The phone's More sheet."
+        "purpose": "The phone's sheets: More, the start sheet and the entry sheet."
       },
       {
         "name": "popover-down",
         "value": "0 8px 24px rgb(0 0 0 / 0.12)",
-        "purpose": "The PC timer bar's other-timers list."
+        "purpose": "The PC other-timers list, the start popover, the project picker's list and the entry dialog."
       },
       {
         "name": "strip-list-down",
         "value": "0 8px 24px rgb(0 0 0 / 0.25)",
         "purpose": "The phone strip's other-timers list."
+      },
+      {
+        "name": "scrim",
+        "value": "rgb(0 0 0 / 0.4)",
+        "purpose": "Background dimming under the entry dialog, the entry sheet and the phone start sheet (a backdrop, not a shadow)."
       }
     ],
     "motion": [
@@ -546,9 +551,41 @@
       "name": "Timer Strip (phone)",
       "kind": "custom",
       "refersTo": "timer-strip",
-      "description": "The phone's running timer under the top bar, in the strip's own tone.",
-      "html": "<section class=\"ds-strip\"><span class=\"ds-slive\"></span><span class=\"ds-scol\"><b><span class=\"ds-spdot\"></span>Website</b><small>Design · since 09:00</small></span><b class=\"ds-sfig\">1:24:07</b><button class=\"ds-sstop\"><span class=\"ds-ssq\"></span>Stop</button></section>",
-      "css": ".ds-strip{display:flex;align-items:center;gap:12px;height:64px;width:22rem;padding:0 16px;border-top:1px solid var(--sidebar-border,#333);background:var(--sidebar-strip,#1c1c1c);color:#fff;font-family:\"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif}.ds-slive{width:10px;height:10px;flex:none;border-radius:50%;background:var(--sidebar-ring,#3d8bfd);box-shadow:0 0 0 3px color-mix(in oklch,var(--sidebar-ring,#3d8bfd) 30%,transparent)}.ds-scol{display:flex;flex-direction:column;flex:1;min-width:0}.ds-scol b{display:flex;align-items:center;gap:8px;font-size:0.9375rem;font-weight:600}.ds-scol small{font-size:0.75rem;color:var(--sidebar-foreground,#c8c8c8)}.ds-spdot{width:8px;height:8px;border-radius:50%;background:var(--project-3,#8c3f9a)}.ds-sfig{font-size:1.0625rem;font-variant-numeric:tabular-nums}.ds-sstop{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 16px;border:1px solid rgb(255 255 255/0.2);border-radius:4px;background:var(--sidebar-primary,#1b1b1b);color:#fff;font:600 0.9375rem \"Public Sans Variable\",sans-serif;cursor:pointer;transition:background-color 150ms ease-out}.ds-sstop:hover{background:var(--sidebar-accent,#333)}.ds-sstop:focus-visible{outline:none;box-shadow:0 0 0 2px var(--sidebar-ring,#3d8bfd)}.ds-ssq{width:10px;height:10px;border-radius:2px;background:var(--primary,#0b63c9)}"
+      "description": "The phone's running timer under the top bar, in the strip's own tone: customer › project, elapsed, ▶ start list and a square Stop.",
+      "html": "<section class=\"ds-strip\"><span class=\"ds-slive\"></span><span class=\"ds-scol\"><b><span class=\"ds-spdot\"></span>Acme › Website</b><small>Design · since 09:00</small></span><b class=\"ds-sfig\">1:24:07</b><button class=\"ds-sstop\" aria-label=\"Start a timer\"><svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\" fill=\"currentColor\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z\"/></svg></button><button class=\"ds-sstop\" aria-label=\"Stop\"><span class=\"ds-ssq\"></span></button></section>",
+      "css": ".ds-strip{display:flex;align-items:center;gap:8px;height:64px;width:22rem;padding:0 16px;border-top:1px solid var(--sidebar-border,#333);background:var(--sidebar-strip,#1c1c1c);color:#fff;font-family:\"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif}.ds-slive{width:10px;height:10px;flex:none;border-radius:50%;background:var(--sidebar-ring,#3d8bfd);box-shadow:0 0 0 3px color-mix(in oklch,var(--sidebar-ring,#3d8bfd) 30%,transparent)}.ds-scol{display:flex;flex-direction:column;flex:1;min-width:0}.ds-scol b{display:flex;align-items:center;gap:8px;font-size:0.9375rem;font-weight:600}.ds-scol small{font-size:0.75rem;color:var(--sidebar-foreground,#c8c8c8)}.ds-spdot{width:8px;height:8px;border-radius:50%;background:var(--project-3,#8c3f9a)}.ds-sfig{font-size:1.0625rem;font-variant-numeric:tabular-nums}.ds-sstop{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:1px solid rgb(255 255 255/0.2);border-radius:4px;background:var(--sidebar-primary,#1b1b1b);color:#fff;font:600 0.9375rem \"Public Sans Variable\",sans-serif;cursor:pointer;transition:background-color 150ms ease-out}.ds-sstop:hover{background:var(--sidebar-accent,#333)}.ds-sstop:focus-visible{outline:none;box-shadow:0 0 0 2px var(--sidebar-ring,#3d8bfd)}.ds-ssq{width:10px;height:10px;border-radius:2px;background:var(--primary,#0b63c9)}"
+    },
+    {
+      "name": "Restart (row icon)",
+      "kind": "button",
+      "refersTo": "button-icon",
+      "description": "A finished entry's ▶ Restart: muted icon, no stroke, text colour and a fill on hover.",
+      "html": "<button class=\"ds-icon\" aria-label=\"Restart\"><svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\" fill=\"currentColor\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z\"/></svg></button>",
+      "css": ".ds-icon{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border:0;border-radius:4px;background:transparent;color:var(--muted-foreground,#5d636c);cursor:pointer;transition:color 150ms ease-out,background-color 150ms ease-out}.ds-icon:hover{color:var(--foreground,#1d2025);background:var(--accent,#eef0f3)}.ds-icon:focus-visible{outline:none;box-shadow:0 0 0 2px var(--ring,#0b63c9)}"
+    },
+    {
+      "name": "New entry (phone)",
+      "kind": "button",
+      "refersTo": "button-new-entry-phone",
+      "description": "The phone's round primary \"+\", fixed above the bottom bar; opens the entry form in place.",
+      "html": "<a class=\"ds-fab\" href=\"#\" aria-label=\"New entry\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/><path d=\"M12 5v14\"/></svg></a>",
+      "css": ".ds-fab{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:9999px;background:var(--primary,#0b63c9);color:var(--primary-foreground,#fff);transition:background-color 150ms ease-out}.ds-fab:hover{background:color-mix(in oklch,var(--primary,#0b63c9) 90%,transparent)}.ds-fab:focus-visible{outline:none;box-shadow:0 0 0 2px var(--background,#f7f7f8),0 0 0 4px var(--ring,#0b63c9)}"
+    },
+    {
+      "name": "Start list",
+      "kind": "custom",
+      "refersTo": "start-list-row",
+      "description": "The timer bar's ways to start: templates with their project dots, then Start on a project. A popover on the PC, a sheet on the phone.",
+      "html": "<div class=\"ds-sl\"><p class=\"ds-sl-h\">Start a timer</p><button class=\"ds-sl-row\"><span class=\"ds-sl-dot\" style=\"background:var(--project-1,#1a7f95)\"></span><b>Standup</b><small>CompX › ClientY</small></button><button class=\"ds-sl-row\"><span class=\"ds-sl-dot\" style=\"background:var(--project-2,#b8680f)\"></span><b>Ticket</b><small>CompX › Support</small></button><button class=\"ds-sl-row ds-sl-last\"><b>Start on a project…</b><small>opens the form</small></button></div>",
+      "css": ".ds-sl{width:24rem;padding:4px;border:1px solid var(--border,#e4e5e8);border-radius:4px;background:var(--popover,#fff);color:var(--popover-foreground,#1d2025);box-shadow:0 8px 24px rgb(0 0 0/0.12);font:400 0.875rem/1.45 \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif}.ds-sl-h{margin:0;padding:8px 12px 6px;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--muted-foreground,#5d636c)}.ds-sl-row{display:flex;align-items:center;gap:12px;width:100%;min-height:40px;padding:0 12px;border:0;border-radius:2px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;transition:background-color 150ms ease-out}.ds-sl-row:hover{background:var(--accent,#eef0f3)}.ds-sl-row:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--ring,#0b63c9)}.ds-sl-row b{flex:1;min-width:0;font-weight:600}.ds-sl-row small{font-size:0.75rem;color:var(--muted-foreground,#5d636c)}.ds-sl-dot{width:8px;height:8px;flex:none;border-radius:50%}.ds-sl-last{margin-top:4px;border-top:1px solid var(--border,#e4e5e8);border-radius:0}"
+    },
+    {
+      "name": "Entry dialog (PC)",
+      "kind": "card",
+      "refersTo": "entry-dialog",
+      "description": "The entry form opened in place: a 660 px dialog, left labels, a ruled foot with Cancel and Save.",
+      "html": "<div class=\"ds-dlg\"><div class=\"ds-dlg-head\"><h2>Edit entry</h2></div><div class=\"ds-dlg-body\"><label class=\"ds-dlg-line\"><span>Date</span><input value=\"2026-10-01\"></label><label class=\"ds-dlg-line\"><span>Reference</span><input value=\"T-4296\"></label><div class=\"ds-dlg-foot\"><button class=\"ds-dlg-del\">Delete</button><button class=\"ds-dlg-out\">Copy</button><span class=\"ds-dlg-sp\"></span><small>Ctrl+Enter</small><button class=\"ds-dlg-out\">Cancel</button><button class=\"ds-dlg-save\">Save</button></div></div></div>",
+      "css": ".ds-dlg{width:41.25rem;border-radius:6px;background:var(--card,#fff);color:var(--foreground,#1d2025);box-shadow:0 8px 24px rgb(0 0 0/0.12);font:400 0.875rem/1.45 \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif}.ds-dlg-head{padding:12px 20px;border-bottom:1px solid var(--border,#e4e5e8)}.ds-dlg-head h2{margin:0;font-size:1.0625rem;font-weight:700}.ds-dlg-body{display:flex;flex-direction:column;gap:16px;padding:20px 20px 20px}.ds-dlg-line{display:grid;grid-template-columns:8.5rem 1fr;align-items:center;gap:16px}.ds-dlg-line span{font-weight:600}.ds-dlg-line input{height:36px;padding:0 10px;border:1px solid var(--input,#c8cbd0);border-radius:4px;background:var(--card,#fff);color:inherit;font:inherit;font-variant-numeric:tabular-nums}.ds-dlg-line input:focus-visible{outline:none;border-color:var(--ring,#0b63c9);box-shadow:0 0 0 2px color-mix(in oklch,var(--ring,#0b63c9) 35%,transparent)}.ds-dlg-foot{display:flex;align-items:center;gap:8px;padding-top:16px;border-top:1px solid var(--border,#e4e5e8)}.ds-dlg-sp{flex:1}.ds-dlg-foot small{font-size:0.75rem;color:var(--muted-foreground,#5d636c)}.ds-dlg-foot button{height:36px;padding:0 12px;border-radius:4px;font:600 0.875rem \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background-color 150ms ease-out,border-color 150ms ease-out,color 150ms ease-out}.ds-dlg-out{border:1px solid var(--input,#c8cbd0);background:var(--card,#fff);color:var(--foreground,#1d2025)}.ds-dlg-out:hover{background:var(--accent,#eef0f3)}.ds-dlg-del{margin-right:8px;border:1px solid color-mix(in oklch,var(--destructive,#c4291c) 60%,transparent);background:var(--card,#fff);color:var(--destructive,#c4291c)}.ds-dlg-del:hover{background:var(--destructive,#c4291c);color:#fff}.ds-dlg-save{border:1px solid transparent;background:var(--primary,#0b63c9);color:var(--primary-foreground,#fff)}.ds-dlg-save:hover{background:color-mix(in oklch,#0b63c9,#1d2025 18%)}"
     },
     {
       "name": "Ruled Table",
@@ -574,7 +611,7 @@
       "One blue for running and primary; red only for irregular or destructive; neutral greys.",
       "Eight project colours, each with an edge, a tinted fill and a readable ink, assigned by creation order.",
       "Public Sans, tabular figures for every time, date and duration.",
-      "4 px corners, 1 px rules, no shadows except on floating sheets.",
+      "4 px corners (6 px on the entry dialog and sheet), 1 px rules, no shadows except on floating sheets, popovers and the dialog.",
       "150 ms ease-out colour changes on state only; the elapsed time ticks in place."
     ],
     "rules": [
@@ -590,7 +627,7 @@
       },
       {
         "name": "The Project Ink Rule",
-        "body": "A project is one colour, used identically wherever its time appears. Today the timer dot uses it; the table dot, calendar block edge and fill, and phone row bar take it as items 12–15 rebuild each screen. No other element borrows a project colour.",
+        "body": "A project is one colour, used identically wherever its time appears. Today the timer dot, the start list, Fill from and the project picker use it; the table dot, calendar block edge and fill, and phone row bar take it as items 12–15 rebuild each screen. No other element borrows a project colour.",
         "section": "colors"
       },
       {
@@ -605,12 +642,12 @@
       },
       {
         "name": "The Caps Are Heads Rule",
-        "body": "`caps` sets a column head, a section head (which is the heading itself, an h2 on a rule), a badge or a state label. Never a kicker above a heading.",
+        "body": "`caps` sets a column head, a section head (which is the heading itself, an h2 on a rule), a group head in a list, a badge or a state label. Never a kicker above a heading.",
         "section": "typography"
       },
       {
         "name": "The Floating Only Rule",
-        "body": "A surface at rest has no shadow. Only a sheet or popover that floats over the page casts one.",
+        "body": "A surface at rest has no shadow. Only a sheet, popover or dialog that floats over the page casts one.",
         "section": "elevation"
       }
     ],
@@ -621,12 +658,14 @@
       "**Do** carry a project's colour everywhere its time appears, from the creation-order palette, and nowhere else.",
       "**Do** set every time, date and duration in `figures`.",
       "**Do** keep 44 px targets on the phone and the navigation inside thumb reach.",
+      "**Do** open an entry's form in place: a dialog on the PC, a sheet on the phone, with Cancel and Save always on screen.",
+      "**Do** keep every control at a phone screen's right edge out of the \"+\"'s column.",
       "**Do** keep motion to 150 ms ease-out colour changes on state, removed under reduced motion."
     ],
     "donts": [
       "**Don't** use blue or red for decoration, headings or icons; red is never the running state.",
       "**Don't** store a project's colour or let anything but a project use the project palette.",
-      "**Don't** give a surface at rest a shadow; only floating sheets and popovers cast one.",
+      "**Don't** give a surface at rest a shadow; only floating sheets, popovers and dialogs cast one.",
       "**Don't** add text sizes beyond 12, 14, 15, 17 and 21 px on working screens.",
       "**Don't** set `caps` as a kicker or eyebrow above a heading.",
       "**Don't** build stat-tile dashboards or put a themed concept over the tool.",

@@ -35,4 +35,10 @@ describe('web app manifest', () => {
 		expect(href).toBeDefined();
 		expect(existsSync(join(root, 'static', href!))).toBe(true);
 	});
+
+	it('lets the phone keyboard shrink the page, so the sheet’s Save stays above it', () => {
+		const html = readFileSync(join(root, 'src/app.html'), 'utf8');
+		const viewport = /name="viewport"\s+content="([^"]+)"/.exec(html)?.[1] ?? '';
+		expect(viewport.split(/,\s*/)).toContain('interactive-widget=resizes-content');
+	});
 });

@@ -9,7 +9,6 @@ import {
 	fromTemplateInput,
 	groupProjects,
 	rows,
-	startInput,
 	text
 } from '#lib/server/screens/actions.js';
 import { takeFlash } from '#lib/server/screens/flash.js';
@@ -87,20 +86,6 @@ function open(locals: App.Locals, cookies: Cookies, form: FormData, now: number)
 const refuse = (failure: ActionFailure) => fail(400, failure);
 
 export const actions: Actions = {
-	start: async ({ request, locals, cookies }) => {
-		const form = await request.formData();
-		const { core, zone } = open(locals, cookies, form, Date.now());
-		const r = core.timers.start(startInput(form, zone));
-		if (!r.ok) {
-			return refuse({
-				action: 'start',
-				values: { projectId: text(form, 'projectId'), description: text(form, 'description') },
-				...formFailure(r.error, ['projectId', 'description'])
-			});
-		}
-		done(core, cookies, r);
-	},
-
 	fromTemplate: async ({ request, locals, cookies }) => {
 		const form = await request.formData();
 		const now = Date.now();

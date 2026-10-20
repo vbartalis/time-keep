@@ -3,7 +3,7 @@ import { openCore, type Result } from '../core/index';
 import { user } from '../db/schema';
 import { newId } from '../id';
 import { createTestDb } from '../testing/db';
-import { shellTimers } from './shell';
+import { shellTemplates, shellTimers } from './shell';
 
 const BUD = 'Europe/Budapest';
 /** 2026-10-20 12:00 in Budapest. */
@@ -70,5 +70,45 @@ describe('shellTimers', () => {
 		start(project('B').id, '2026-10-20T10:00');
 		val(core.timers.stop({ id: e.id }));
 		expect(shellTimers(core, NOW).map((t) => t.projectName)).toEqual(['B']);
+	});
+});
+
+describe('shellTemplates', () => {
+	it('lists by name, with colour, label and what each needs', () => {
+		const { core, val, project } = setup();
+		const a = project('A');
+		const b = project('B');
+		const customerId = a.customerId;
+		val(core.templates.create({ name: 'zeta', customerId, projectId: b.id }));
+		val(
+			core.templates.create({ name: 'Alpha', customerId, projectId: a.id, description: 'Daily' })
+		);
+		val(core.templates.create({ name: 'mid', description: '  ' }));
+		expect(shellTemplates(core)).toEqual([
+			{
+				id: expect.any(String),
+				name: 'Alpha',
+				colour: 1,
+				label: 'Acme › A',
+				hasProject: true,
+				hasDescription: true
+			},
+			{
+				id: expect.any(String),
+				name: 'mid',
+				colour: null,
+				label: null,
+				hasProject: false,
+				hasDescription: false
+			},
+			{
+				id: expect.any(String),
+				name: 'zeta',
+				colour: 2,
+				label: 'Acme › B',
+				hasProject: true,
+				hasDescription: false
+			}
+		]);
 	});
 });

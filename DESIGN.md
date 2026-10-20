@@ -197,6 +197,25 @@ components:
     textColor: "{colors.primary-foreground}"
     padding: "0 16px"
     height: "64px"
+  button-new-entry-phone:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.primary-foreground}"
+    rounded: "9999px"
+    size: "56px"
+  button-icon:
+    textColor: "{colors.muted-foreground}"
+    rounded: "{rounded.md}"
+    size: "44px"
+  entry-dialog:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.lg}"
+    width: "660px"
+  start-list-row:
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.sm}"
+    padding: "0 12px"
+    height: "44px"
   table-head:
     backgroundColor: "{colors.muted}"
     textColor: "{colors.muted-foreground}"
@@ -210,7 +229,9 @@ components:
 Every decision here was made in the operator's place (autopilot, 2026-10-20) and
 rests on decision 9 (`docs/decisions/009-the-ui-follows-kimais-structure-and-skin.md`)
 and the round 2 spec (`docs/superpowers/specs/2026-10-20-design-direction-design.md`).
-It describes the build on `feat/11-design-direction`. Where the build differs from the
+It describes the build on `feat/11-design-direction`, with what item 12
+(`feat/12-entry-and-timer`) added: the entry form opened in place, the timer bar's
+Start and start list, Restart, and "New entry". Where the build differs from the
 direction contract (`.impeccable/surfaces/src-routes-app-layout-svelte.md`), the
 build wins and the difference is noted. Light values are the frontmatter's plain keys;
 dark values carry `-dark`. Dark follows the device setting through
@@ -241,7 +262,7 @@ SaaS dashboard of stat tiles.
 - One blue for running and primary; red only for irregular or destructive; neutral greys.
 - Eight project colours, each with an edge, a tinted fill and a readable ink, assigned by creation order.
 - Public Sans, tabular figures for every time, date and duration.
-- 4 px corners, 1 px rules, no shadows except on floating sheets.
+- 4 px corners (6 px on the entry dialog and sheet), 1 px rules, no shadows except on floating sheets, popovers and the dialog.
 - 150 ms ease-out colour changes on state only; the elapsed time ticks in place.
 
 ## Colors
@@ -251,8 +272,9 @@ project colours as the only strong colour.
 
 ### Primary
 - **Kimai Blue** (`primary`; dark `primary-dark`): the running timer (live dot, its
-  ring, "Running" labels and running hours, exposed as `live`), the one primary button
-  per form, the focus ring, the current bottom-bar item, ticked checkboxes, the caret
+  ring, "Running" labels and running hours, exposed as `live`, and the live square in
+  every Stop), the one primary button per form, the shell's one primary action (the PC
+  header's New entry button and the phone's round "+"), the focus ring, the current bottom-bar item, ticked checkboxes, the caret
   and text selection. On the near-black rail it lifts to **Rail Blue** (`sidebar-ring`)
   for the current item's bar, the wordmark's ring mark and focus on the rail; the
   phone strip's live dot uses it too. These are one blue at two lightnesses, not two
@@ -272,8 +294,10 @@ project colours as the only strong colour.
   teal, amber, plum, green, indigo, rose, olive, umber. A project's colour is its
   position in creation order (ties by id), wrapping after eight
   (`src/lib/project-colour.ts`). It is derived, never stored. In this build the edge
-  reaches only the timer bar's project dot; the fill and ink are defined for the
-  calendar blocks of item 13. `chart-2` .. `chart-5` are projects 1–4; `chart-1` is
+  reaches the timer bar's project dot, the start list's template dots, the entry
+  form's Fill from buttons and the project picker (its options and the chosen
+  project inside the field); a template without a project takes a neutral dot (muted
+  text at 40 %). The fill and ink are defined for the calendar blocks of item 13. `chart-2` .. `chart-5` are projects 1–4; `chart-1` is
   the blue.
 
 ### Neutral
@@ -292,6 +316,8 @@ project colours as the only strong colour.
   darker than Kimai's, `sidebar-dark` #0f0f10, near-black on the #141516 dark ground,
   so it still reads as the darkest thing on the screen. `sidebar-primary` fills the
   current item, `sidebar-accent` is hover, `sidebar-border` divides.
+- **Scrim** (black at 40 %, not a token): dims the page under the entry dialog, the
+  entry sheet and the phone start sheet.
 - **Strip** (`sidebar-strip`; dark `sidebar-strip-dark`): the phone timer strip's own
   tone, a step off the top bar above it (darker in light, #1c1c1c under #262626; lighter in dark, #18191a
   under #0f0f10), so what is running reads as its own band rather than as the lower
@@ -305,7 +331,8 @@ decoration, never a heading, never an icon tint.
 A running timer is blue, never red.
 
 **The Project Ink Rule.** A project is one colour, used identically wherever its time
-appears. Today the timer dot uses it; the table dot, calendar block edge and fill, and
+appears. Today the timer dot, the start list, Fill from and the project picker use it;
+the table dot, calendar block edge and fill, and
 phone row bar take it as items 12–15 rebuild each screen. No other element borrows a
 project colour.
 
@@ -320,16 +347,20 @@ ramp below, not from a second face.
 ### Hierarchy
 - **Headline** (600, 21 px / `text-xl`, 1.25, -0.01em): the screen's title, its one
   h1, in the PC header and the phone top bar; the login heading.
-- **Title** (700, 17 px / `text-lg`, 1.35): the wordmark and the phone strip's elapsed
-  time.
+- **Title** (700, 17 px / `text-lg`, 1.35): the wordmark, the phone strip's elapsed
+  time and the entry form's heading ("New entry", "Edit entry").
 - **Body** (400, 15 px / `text-base`, 1.45): phone body and fields, the More sheet's
   rows, the PC timer bar's elapsed time (bold).
 - **Body PC** (400, 14 px / `text-sm`, 1.45): PC body and fields from 1024 px, buttons,
   sidebar items, tables, the undo strip.
 - **Label** (400, 12 px / `text-xs`, 1.35): meta lines (a timer's "since 09:00"),
-  bottom-bar labels.
-- **Caps** (`caps`: 600, 12 px, uppercase, 0.04em): column heads, section heads, badges
-  and state labels such as "Running".
+  bottom-bar labels, field labels over fields (the phone form, the time row's Start,
+  End and Duration) and hints under them, in muted text. On the PC the entry form's
+  left-column labels are 14 px semibold in the text colour.
+- **Caps** (`caps`: 600, 12 px, uppercase, 0.04em): column heads, section heads, badges,
+  state labels such as "Running", and group heads in a list or a row of choices (the
+  start list's "Start a timer", the project picker's customers, the form's "Fill
+  from"), in muted text.
 - **Figures** (`figures`: tabular numbers): every time, date and duration, so columns
   line up and the running time changes in place. Tables get tabular figures by default.
 
@@ -341,22 +372,34 @@ move.
 screens.
 
 **The Caps Are Heads Rule.** `caps` sets a column head, a section head (which is the
-heading itself, an h2 on a rule), a badge or a state label. Never a kicker above a
-heading.
+heading itself, an h2 on a rule), a group head in a list, a badge or a state label.
+Never a kicker above a heading.
 
 ## Layout
 
 On the PC (from 1024 px) the shell is a two-column grid: the 232 px sticky sidebar,
 then a column with the sticky 60 px header (bottom rule) and the screen below. The
 header's row and the main column share one measure (72 rem, left-aligned, 24 px side
-padding), so the timer bar ends where the content ends. The title sits left, the timer
-bar right.
+padding), so the timer bar ends where the content ends. The title sits left; at the
+right, in order, the timer bar, its Start button (outside the pill) and the primary New
+entry button.
 
 On the phone the shell is one column: a sticky 56 px top bar in the rail colour with
 the screen's title (the wordmark is the PC's), the 64 px timer strip under it in its
 own tone, the screen (16 px sides, 24 px top), and a fixed bottom bar of four equal
 56 px cells: Today, Entries, Templates and More, whose sheet holds the rest and Sign
-out. Main reserves 80 px plus the safe area at the bottom for the bar.
+out. A round 56 px "+" floats at the right, 16 px in and 81 px above the bottom edge
+(plus the safe area), over the bottom bar's top. Main reserves 156 px plus the safe
+area at its foot, so the last line clears both. Controls at a screen's right edge
+move out of the "+"'s column on the phone (a row's ▶ leads the row or sits under its
+checkbox; the undo strip's buttons go under its message; filter and template links
+keep a 56 px right margin). Text may pass under the "+"; a control may not.
+
+The entry form opens in place over the screen it was opened from, never as a page
+change: on the PC a centred 660 px dialog (at most the viewport less 64 px tall); on
+the phone a sheet from under the 56 px top bar to the keyboard's top edge, so its
+Cancel and Save stay above the keyboard. While the phone's start sheet is open the
+page behind it is inert.
 
 Regions stack 24 px apart. Controls are 44 px on the phone and 36 px on the PC; table
 cells pad 12 px. The screens inside the shell keep round 1's layouts in the new tokens
@@ -370,24 +413,30 @@ and table views.
 
 Flat. Depth comes from tone (the rail darker than the ground, surfaces lighter than it,
 the strip a step off the top bar) and 1 px rules. Shadows exist only on floating
-things that sit over the page.
+things that sit over the page; the modal ones (the entry dialog and sheet, the phone
+start sheet) also dim the page with the 40 % black scrim.
 
 ### Shadow Vocabulary
-- **Sheet up** (`box-shadow: 0 -8px 24px rgb(0 0 0 / 0.12)`): the phone's More sheet
-  above the bottom bar.
+- **Sheet up** (`box-shadow: 0 -8px 24px rgb(0 0 0 / 0.12)`): the phone's sheets: More
+  above the bottom bar, the start sheet and the entry sheet.
 - **Popover down** (`box-shadow: 0 8px 24px rgb(0 0 0 / 0.12)`): the PC timer bar's
-  list of other running timers.
+  list of other running timers, the PC start popover, the project picker's list and
+  the PC entry dialog, and the undo strip while it is pinned under the bars (scrolled
+  past its place at the top of the screen, it stays in view over the page).
 - **Strip list down** (`box-shadow: 0 8px 24px rgb(0 0 0 / 0.25)`): the phone strip's
   list of other running timers.
 
 ### Named Rules
-**The Floating Only Rule.** A surface at rest has no shadow. Only a sheet or popover
-that floats over the page casts one.
+**The Floating Only Rule.** A surface at rest has no shadow. Only a sheet, popover or
+dialog that floats over the page casts one.
 
 ## Shapes
 
-Corners are 4 px (`rounded.md`) on buttons, fields, the timer bar, the undo strip and
-alerts; 2 px (`rounded.sm`) on badges, nav items and the Stop button's live square.
+Corners are 4 px (`rounded.md`) on buttons, fields, the timer bar, popovers, the undo
+strip and alerts; 2 px (`rounded.sm`) on badges, nav items, list rows and the Stop
+button's live square; 6 px (`rounded.lg`) on the entry dialog and the entry sheet's top
+corners. The phone's "+" is the one full circle among the controls. ▶ (start,
+restart) is Lucide's play, filled in its button's text colour.
 Dots are round: the 10 px live dot with a 3 px ring at 25 % (30 % on the rail), the
 8 px project dot. Rules are 1 px: the text colour under a section head, `input` under a
 table head, `border` elsewhere. The current sidebar item carries a 3 px Rail Blue bar
@@ -405,9 +454,17 @@ Flat, firm, quiet until pressed.
   60 % text and fills with accent. Every secondary action, including Undo.
 - **Destructive:** surface fill, red at 60 % stroke and red text; fills red on hover.
   Separated by space from its neighbours.
+- **With ▶:** Restart (in the undo strip and the entry form) and the PC timer bar's
+  Start are outline buttons with a 14 px filled ▶ before the label.
+- **Icon:** a row's ▶ Restart: a 44 px square on the phone, 36 px on the PC, no stroke,
+  the icon in muted text; hover turns it to the text colour and fills the square.
+- **New entry:** the PC header's primary button at the row's end (title "New entry
+  (n)"); on the phone a round 56 px primary "+" with a 24 px plus icon, fixed above the
+  bottom bar, with no shadow. Both open the entry form in place.
 
 ### Chips (badges)
-- **Style:** `caps`, 20 px tall, 2 px corners, a 1 px outline and no fill.
+- **Style:** `caps`, 20 px tall, 2 px corners, a 1 px outline and no fill. A chip never
+  runs past its row: a long one wraps onto a second line inside its outline.
 - **State:** default (text at 70 %, e.g. Admin), outline (`input`), live (blue),
   spent (muted and struck through, e.g. Disabled), destructive (red).
 
@@ -415,9 +472,15 @@ Flat, firm, quiet until pressed.
 - **Style:** surface fill, 1 px `input` stroke, 4 px corners; 44 px and 15 px text on
   the phone, 36 px and 14 px on the PC. Hover darkens the stroke.
 - **Focus:** the stroke turns blue with a 2 px blue ring at 35 %.
-- **Error / Disabled:** invalid takes a red stroke and a 2 px red ring at 25 %;
-  disabled drops to 50 % opacity. Checkboxes keep a neutral `input` stroke unticked and
-  fill blue when ticked.
+- **Error / Disabled:** invalid takes a red stroke and a 2 px red ring at 25 %, with
+  its reason in red under it (14 px; 12 px in the time row); disabled drops to 50 %
+  opacity. Checkboxes keep a neutral `input` stroke unticked and fill blue when ticked.
+- **Selects and the project picker:** a native select is dressed as a field. The
+  project picker is a field with a muted chevron at the right and the chosen project's
+  dot inside at the left; typing filters a list below it (surface fill, `input`
+  stroke, 4 px corners, popover-down shadow, at most 288 px tall) of customers as
+  `caps` group heads over 44 px (PC 36 px) project rows with their dots; the active row
+  fills with accent.
 
 ### Navigation
 - **PC sidebar:** the wordmark (17 px bold, with a ring mark in Rail Blue), then Today,
@@ -439,16 +502,62 @@ The running timer on every screen.
   timer began on an earlier day, a "+N" disclosure for the other running timers, and
   an outline Stop (32 px) with a blue square. Nothing running: "No timer running" in
   muted text.
+  The pill's body (elapsed time to description) is a link that opens the running
+  entry's form, underlined on hover, never blue. Outside the pill, a 36 px outline **Start** with a filled ▶ opens the
+  start list as a popover.
 - **Phone strip:** 64 px, `sidebar-strip` with a `sidebar-border` rule above: live
-  dot, project dot and project over "activity · since 09:00", "+N", the 17 px bold
-  elapsed time, and a 44 px Stop on `sidebar-primary` with a 20 % white edge.
+  dot, then project dot and customer › project (15 px semibold) over "activity · since
+  09:00", the 17 px bold elapsed time, "+N", a 44 px ▶ that opens the start sheet (20 %
+  white edge, no fill), and a 44 px square Stop on `sidebar-primary` with a 20 % white
+  edge that carries only the live square (its name is for screen readers). Nothing
+  running: "No timer running" in `sidebar-foreground` and the ▶ alone.
+
+### Start list
+How a timer starts from the bar. A `caps` head, "Start a timer", in muted text, then
+one row per template: the project dot, the name in semibold, its customer › project in
+12 px muted text at the right. Rows are 44 px (PC 40 px), 12 px side padding, 2 px
+corners, accent on hover. A template without a description opens a line under itself
+with a description field and a Start; one without a project opens the form. A rule,
+then "Start on a project…" with "opens the form" in muted text. With no templates, a
+"Create a template" row in the in-page link style (never blue). On the PC it is a
+384 px popover under the Start button (surface, `border` stroke, 4 px corners,
+popover-down shadow); on the phone a bottom sheet over the scrim (surface, top rule,
+sheet-up shadow, 15 px rows), the page behind it inert. Escape, a click outside, or
+the ▶ again closes it.
+
+### Entry form (signature)
+One form for a new entry and an existing one, opened in place.
+- **Frame:** a head row with the 17 px bold title over a `border` rule; on the PC a
+  36 px ghost close (×) at its right. The phone sheet has no close; Cancel closes it.
+- **PC dialog:** a left label column (136 px, 14 px semibold labels) beside 36 px
+  fields; Activity and Location on rows of their own.
+- **Phone sheet:** 12 px muted labels over 44 px fields at 15 px; Activity and Location
+  side by side.
+- **Fill from** (a new entry with templates): a `caps` head and one outline button per
+  template, each with its project dot.
+- **Date:** a 160 px figures field, then outline Today and Yesterday.
+- **Time row:** Start, End and Duration in three equal columns of figures fields with
+  12 px muted labels; under it "No end: …" in the text colour when End and Duration
+  are empty, a semibold underlined "Start at previous end HH:MM" (44 px, PC 36 px),
+  and a muted hint of the accepted formats.
+- **Foot:** Cancel (outline) and Save (primary), right-aligned on the PC after a muted
+  "Ctrl+Enter"; on the phone two equal halves pinned at the sheet's foot over a
+  `border` rule. An existing entry adds Delete (destructive, set apart by 8 px more),
+  Copy, Restart with ▶ and Save as template, all outline: on the PC in the same ruled
+  foot row at the left, the row pinned to the dialog's foot; on the phone they scroll
+  with the fields above the pinned pair. While the form has unsaved changes they are
+  disabled at 50 % with "Save or cancel your changes first" in 12 px muted text.
+- **Refusal:** field errors as in Inputs; a form-wide refusal is an alert (surface,
+  red at 60 % stroke, red 14 px text) with an outline Reload or Back beside it.
 
 ### Ruled table
 A muted head band of 36 px `caps` column heads in muted text over an `input` rule,
 then lines divided by `border` hairlines that wash with accent at 50 % on hover;
 selected rows fill with accent. Cells pad 12 px. Times, dates and durations are in
 `figures`. A running entry shows "Running" in blue `caps` and blue hours. On the phone
-a table may stack each row.
+a table may stack each row. A finished entry's row carries an icon ▶ Restart outside
+the row's link (the PC's last column; on the phone leading the row or under its
+checkbox), and a click on the row opens its form in place.
 
 ### Section head
 An h2 in `caps` on a 1 px rule in the text colour, with an optional aside on the right
@@ -457,7 +566,8 @@ An h2 in `caps` on a 1 px rule in the text colour, with an optional aside on the
 ### Undo strip
 A line under the title after every successful action: surface fill, 1 px `border`, 4 px
 corners, 14 px. "Done:" in semibold and the action's label, warnings below in red, an
-outline Undo on the right. It stays until the next load; nothing auto-dismisses. After
+outline Undo on the right; after a Stop, an outline Restart with ▶ before it. On the
+phone the buttons go under the message, at the left. It stays until the next load; nothing auto-dismisses. After
 a refused undo it is the error state: red at 60 % border and the message in red,
 announced as an alert, with Undo kept. A just-changed row stays marked while its undo
 is offered.
@@ -488,12 +598,14 @@ with an `input` underline that darkens on hover; never blue.
 - **Do** carry a project's colour everywhere its time appears, from the creation-order palette, and nowhere else.
 - **Do** set every time, date and duration in `figures`.
 - **Do** keep 44 px targets on the phone and the navigation inside thumb reach.
+- **Do** open an entry's form in place: a dialog on the PC, a sheet on the phone, with Cancel and Save always on screen.
+- **Do** keep every control at a phone screen's right edge out of the "+"'s column.
 - **Do** keep motion to 150 ms ease-out colour changes on state, removed under reduced motion.
 
 ### Don't:
 - **Don't** use blue or red for decoration, headings or icons; red is never the running state.
 - **Don't** store a project's colour or let anything but a project use the project palette.
-- **Don't** give a surface at rest a shadow; only floating sheets and popovers cast one.
+- **Don't** give a surface at rest a shadow; only floating sheets, popovers and dialogs cast one.
 - **Don't** add text sizes beyond 12, 14, 15, 17 and 21 px on working screens.
 - **Don't** set `caps` as a kicker or eyebrow above a heading.
 - **Don't** build stat-tile dashboards or put a themed concept over the tool.

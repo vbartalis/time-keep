@@ -243,15 +243,22 @@
 		@apply font-sans;
 		-webkit-text-size-adjust: 100%;
 		scrollbar-color: var(--input) transparent;
-		/* Focus and anchors clear the sticky top band and the fixed bottom bar (WCAG 2.4.11).
-		 * Measured: band 120px (7.5rem), bottom bar 65px. */
-		scroll-padding-top: 7.5rem;
+		/* Focus and anchors clear the fixed bottom bar (WCAG 2.4.11). Measured: 65px. */
 		scroll-padding-bottom: calc(4.25rem + env(safe-area-inset-bottom));
+	}
+	/* ... and the sticky top band (measured 120px, 7.5rem; the PC header 3.75rem), as a
+	 * margin on the screen's own content rather than a page-wide scroll padding: a control
+	 * in the band itself (always in view) is then never scrolled to, which would drag the
+	 * page behind it. */
+	main * {
+		scroll-margin-top: 7.5rem;
 	}
 	@media (min-width: 64rem) {
 		html {
-			scroll-padding-top: 3.75rem;
 			scroll-padding-bottom: 0;
+		}
+		main * {
+			scroll-margin-top: 3.75rem;
 		}
 	}
 	body {

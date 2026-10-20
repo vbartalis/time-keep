@@ -1,5 +1,4 @@
 <script lang="ts">
-	import StartTimer from '#lib/components/today/StartTimer.svelte';
 	import Templates from '#lib/components/today/Templates.svelte';
 	import TodayEntries from '#lib/components/today/TodayEntries.svelte';
 	import UndoStrip from '#lib/components/UndoStrip.svelte';
@@ -27,7 +26,6 @@
 <div class="grid gap-10 xl:grid-cols-[minmax(0,1fr)_19rem]">
 	<div class="flex flex-col gap-10">
 		<Templates templates={data.templates} projects={data.projects} {failure} />
-		<StartTimer projects={data.projects} {failure} />
 		<TodayEntries entries={data.entries} warnings={data.flash?.warnings ?? []} />
 	</div>
 </div>

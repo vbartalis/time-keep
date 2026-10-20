@@ -819,7 +819,7 @@ Deferred minors:
 - The phone's drawn checkboxes are untested in forced-colours mode.
 - Select-all's mixed state draws nothing (as before).
 
-### 12. The entry and the timer
+### 12. The entry and the timer — done 2026-10-20
 
 The two things used every day, built once and reached from everywhere:
 
@@ -836,6 +836,151 @@ Undo stays one step after every save, stop and delete.
 Exit: the usability gate passes these tasks on phone and PC: an entry for any past
 time is made and corrected without leaving the current view, and a timer is started,
 stopped and restarted from any screen.
+
+Done 2026-10-20: one entry form for new and existing entries, opened in place over
+every screen, and a timer bar that starts and restarts timers. No core, MCP or database
+change. What was built:
+
+- A forgiving time parser shared by browser and server (`src/lib/time-input.ts`):
+  - times as `9`, `900`, `9:00`, `1330` and `9pm`;
+  - durations as `5:30`, `5.5`, `5h30` and `90` (a bare number is minutes);
+  - dates as `2026-10-18`, `20261018` and `10.18` (month, then day);
+  - `17.5` and `9:5` are refused with a reason.
+- The entry form (`src/lib/components/entry/`):
+  - fields: the date with Today and Yesterday; start, end and duration linked;
+    "Start at previous end"; a typed customer › project combobox grouped by customer
+    (a grouped `<select>` without JavaScript); activity, location, reference and
+    description;
+  - on a new entry, "Fill from" templates;
+  - on an existing one, Delete (at once, with Undo), Copy, Restart and Save as
+    template, disabled with the reason while the form has unsaved changes;
+  - Ctrl/Cmd+Enter saves;
+  - an untouched end keeps its exact instant, with "+N days" or its own zone shown;
+  - an empty end and duration start a timer.
+- Pages `/entries/new` and `/entries/[id]` work without JavaScript; with it, the same
+  form opens over the current screen through shallow routing:
+  - on the PC, a 660 px dialog;
+  - on the phone, a sheet whose Cancel and Save stay above the keyboard.
+- "+ New entry" sits in the PC header and a fixed "+" on the phone; `n` opens the form
+  and `s` stops the shown timer. Rows on Today and Entries open the form in place and
+  carry a ▶ Restart.
+- The timer bar:
+  - Start opens a list (a PC popover, a phone sheet) of templates and "Start on a
+    project…";
+  - the running timer opens its form;
+  - the phone strip shows customer › project with ▶ and a 44 px Stop;
+  - the strip offers Restart after a Stop.
+- Routes `/timers/start`, `/timers/restart` and `/entries/previous-end`. Today's "Start
+  a timer" section, round 1's edit page and `StartTimer` are gone.
+
+Records: spec `docs/superpowers/specs/2026-10-20-entry-and-timer-design.md`, plan
+`docs/superpowers/plans/2026-10-20-entry-and-timer.md`. `docs/app.md` and `PRODUCT.md`
+are updated. `DESIGN.md`, `.impeccable/design.json` and the shell's surface brief were
+updated by impeccable's documenter. No new decision record.
+
+Checks:
+
+- 834 unit tests and 218 browser tests (20 skipped); check and lint clean.
+- impeccable's detector was clean. Its critique and audit found 0 P0, 2 P1, 6 P2 and
+  3 P3; nine were fixed, two went to the stand-in.
+- The final whole-branch review found 2 Important; both were fixed and re-reviewed.
+
+Calls made in the operator's place, the stand-in's: spec calls 1–13, as recorded in the
+spec (sources and confidence there). From the build's critique:
+
+- **The phone "+" is always shown, and right-edge controls move out of its column.**
+  Source: operator's voice (Kimai "fiddly"), reference study. Confidence: inferred.
+- **The `input` stroke token stays as it is**, though it is below 3:1. Confidence:
+  ungrounded, queued. Item 11's token touches every screen, so it is tracked as
+  vbartalis/time-keep#1.
+- **Both blue fills in the PC header stay.** Confidence: ungrounded, queued.
+
+The builder's, from the design session: spec calls 14–28.
+
+The builder's, from the build:
+
+- `createInput` reads the date through `readDate`.
+- `edit.ts` keeps `withCurrent` and `postedValues`, which other screens use.
+- A template filled into the form keeps its own zone, as Today's sheets do. A template
+  started as a timer uses the device zone.
+- Changing only an entry's date moves the whole entry; its end loses its seconds.
+- The layout's zone filling never overwrites an edit's, a copy's or a template's zone.
+  The linking never rewrites a field on load.
+- Restarting an entry deleted elsewhere flashes "This entry was deleted elsewhere."
+- The server's form reading learned the linking's "typed" and "followed" states, so a
+  multi-day duration and a moved start save correctly.
+- The form gained an `onFailure` hook, so refusals stay in the overlay. Copy opens in
+  place there.
+- The phone start sheet's scrim leaves the strip undimmed, so ▶ closes it without
+  JavaScript.
+- Rows' Restart posts only `id` and `back`; a restart uses the entry's start zone.
+- Nine critique findings were fixed:
+  - the phone strip's Stop became a square;
+  - the phone sheet pins only Cancel and Save;
+  - the ▶ icons are no longer blue;
+  - a focused field scrolls clear of the footer;
+  - opening an existing entry on the phone focuses the sheet's heading, not the picker;
+  - a running entry reads "No end: the timer keeps running.";
+  - "Start at previous end" is a full-height control on the PC;
+  - the page behind the phone start sheet is inert;
+  - right-edge controls stay out of the "+" column. On the phone, Today's ▶ leads its
+    row, Entries' ▶ sits under the checkbox, and the undo strip's buttons wrap under
+    the message.
+- The "+" guard counts a control as covered only when less than 44 px of it stays
+  beside the "+".
+- An entry under a minute long saves and copies.
+- On a form page, opening another form navigates to its page instead of stacking an
+  overlay.
+- The e2e seed has no Myself › time-keep, so gate 8's test uses Acme › Operations.
+- After gate attempt 1 failed, three fixes, all reviewed:
+  - On the phone, Today's "Overlaps another entry" badge widened the page. Badges now
+    wrap inside their row.
+  - Saving from a row jumped the list to the top. Save, Undo and Restart now keep the
+    scroll position.
+  - The undo strip pins under the sticky bars once the page scrolls past it. An edited
+    row is scrolled clear of it, and keyboard focus in the screen's content stays clear
+    of it.
+  - The page-wide top scroll padding became a top scroll margin on the content in
+    `main`, so focus in the bars never scrolls the page.
+
+Questions queued in `docs/questions.md`:
+
+- the working day;
+- a bare number in a duration;
+- the `input` stroke contrast;
+- two blue fills in the PC header.
+
+Deferred minors:
+
+- The refusal hint for a decimal time always suggests `:30` first.
+- A duration's `H:M` minutes are not bounded.
+- The server reads `Date.now()` for a short date's year.
+- Fill from offers templates whose project is archived.
+- A delete or race refusal's wording: "Not found." on a save that races a delete.
+- The routes read the clock live, not a pinned `now`.
+- Linking is wall-clock only across a DST change or two zones.
+- Colour dot tables are duplicated in three components, the Activity and Location
+  selects are duplicated, and the row Restart is duplicated.
+- A drag that ends on the backdrop closes the form.
+- The gone entry's Back link leaves the form in history.
+- After a save, history holds the screen twice.
+- The history state holds the whole preload data.
+- The phone sheet's focus scroll also fires in the footer.
+- The PC scroll padding.
+- `main` stays inert if the viewport crosses 1024 px with the sheet open.
+- The "+N" list's Stops are icon-only.
+- Same-project Restart buttons share an accessible name.
+- The bar link's name starts with the ticking time.
+- `n` on `/entries/new` reloads the blank form.
+- A new entry, or a Restart from the form, is not scrolled clear of the pinned strip.
+- The content's scroll margin also applies inside the project listbox on the full-page
+  form.
+- Test gaps:
+  - focus return, modifier keys and the no-JavaScript row ▶;
+  - templates with a description or without a project;
+  - leap days;
+  - route tests for `/entries/new` and `/entries/previous-end`;
+  - waits on `networkidle` and hard-coded click points.
 
 ### 13. Calendar views
 

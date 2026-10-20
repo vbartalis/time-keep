@@ -59,11 +59,11 @@ is one undo. Kimai has invoicing and no undo; this has undo and no invoicing.
 
 - Built today: sign-in, account (change password, agent access), admin user
   management and backup, the core (entries, timers, templates, reference data, history,
-  undo), the MCP server, and the screens Today, Entries, Edit entry, Setup, Templates,
-  History, Copy-out and Reports, inside the shell with its always-visible timer bar.
-- Next, in order (roadmap items 12-15): starting timers and the entry form, the
-  calendar views, the table, and every screen redone in the shell's direction with the
-  sign-in page.
+  undo), the MCP server, and the screens Today, Entries, Setup, Templates, History, Copy-out and Reports, inside the
+  shell with its always-visible timer bar; the entry form (new and existing, opened in
+  place over any screen) and starting and restarting timers from the bar.
+- Next, in order (roadmap items 13-15): the calendar views, the table, and every screen
+  redone in the shell's direction with the sign-in page.
 - SvelteKit with server-rendered forms; screens work without JavaScript where they do
   today **(inferred as a standing constraint)**.
 - Tailwind and shadcn-svelte, components copied into the repo (decision 2).

@@ -46,11 +46,13 @@ export type Flash = {
 	undone?: boolean;
 	/** A refused undo: shown in red beside the batch's Undo button. */
 	error?: string;
+	/** After a Stop: the stopped entry, which the strip offers to restart. */
+	restartId?: string;
 };
 
 /** A failed action, returned by `fail(400, …)`. */
 export type ActionFailure = {
-	action: 'start' | 'fromTemplate';
+	action: 'fromTemplate';
 	error: string;
 	fields: Record<string, string>;
 	/** The template of a failed sheet. */

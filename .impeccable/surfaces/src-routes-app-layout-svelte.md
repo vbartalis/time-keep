@@ -2,7 +2,7 @@
 version: 1
 slug: "src-routes-app-layout-svelte"
 primary_target: "src/routes/(app)/+layout.svelte"
-related_targets: ["src/routes/(app)/+page.svelte","src/routes/login/+page.svelte","src/routes/layout.css"]
+related_targets: ["src/routes/(app)/+page.svelte","src/routes/login/+page.svelte","src/routes/layout.css","src/lib/components/shell/TimerBar.svelte","src/lib/components/shell/StartList.svelte","src/lib/components/entry/EntryOverlay.svelte","src/lib/components/entry/EntryForm.svelte"]
 ---
 
 # App shell and screens
@@ -101,8 +101,33 @@ Raises from declined challengers, each its own line:
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 
+## Shipped in item 12
+
+As built on `feat/12-entry-and-timer`; DESIGN.md's Layout and Components hold the
+measures.
+
+- **New entry:** on the PC a primary button at the header row's end, after the timer
+  bar and its Start; on the phone a round 56 px primary "+" fixed above the bottom bar
+  at the right. Main's foot reserves room for both, and controls at a phone screen's
+  right edge move out of the "+"'s column. `n` opens it.
+- **Entry form in place:** a link marked for the form opens it over the current screen
+  (the address changes; Back closes it). PC: a centred 660 px dialog over a 40 % black
+  scrim. Phone: a sheet from under the top bar to the keyboard, Cancel and Save pinned
+  at its foot. The timer bar's body, Today's and Entries' rows, Copy and "Start on a
+  project…" open it.
+- **Timer bar, PC:** the pill's body opens the running entry's form; an outline Start
+  with ▶ sits outside the pill and opens the start list as a popover.
+- **Timer strip, phone:** customer › project over "activity · since", the elapsed
+  time, "+N", a 44 px ▶ that opens the start list as a bottom sheet (page inert behind
+  it), and a 44 px square Stop showing only the live square. `s` stops the shown timer.
+- **Restart:** an outline Restart with ▶ in the undo strip after a Stop and in an
+  existing entry's form; an icon ▶ on each finished row of Today and Entries, in muted
+  text.
+
 ## Unresolved
 
 - A chosen colour per project in Setup (now assigned automatically).
-- Item 12 adds start, restart and templates to the timer bar, and "+ New entry".
 - Item 13 adds Calendar to both navigations.
+- From item 12's critique, left for the operator: the `input` stroke (1.63:1 light,
+  1.78:1 dark) is under 3:1 for field boundaries; the header's filled New entry beside
+  the start list's filled Start shows two blues.

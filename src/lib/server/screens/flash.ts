@@ -15,7 +15,8 @@ const flashSchema = z.object({
 		z.object({ code: z.string(), message: z.string(), subject: z.string().optional() })
 	),
 	undone: z.boolean().optional(),
-	error: z.string().optional()
+	error: z.string().optional(),
+	restartId: z.string().optional()
 }) satisfies z.ZodType<Flash>;
 
 export type { Flash };
@@ -28,6 +29,7 @@ export function setFlash(cookies: Cookies, flash: Flash): void {
 		label: cap(flash.label),
 		batchId: flash.batchId === null ? null : cap(flash.batchId),
 		...(flash.error === undefined ? {} : { error: cap(flash.error) }),
+		...(flash.restartId === undefined ? {} : { restartId: cap(flash.restartId) }),
 		warnings: flash.warnings.slice(0, MAX_WARNINGS).map((w) => ({
 			code: cap(w.code),
 			message: cap(w.message),

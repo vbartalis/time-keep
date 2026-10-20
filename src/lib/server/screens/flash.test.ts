@@ -40,6 +40,14 @@ describe('flash', () => {
 		setFlash(cookies, { ...flash, error: 'x'.repeat(500) });
 		expect(takeFlash(cookies)?.error).toHaveLength(200);
 	});
+	it('round trips the stopped entry to restart and caps it', () => {
+		const { cookies } = fakeCookies();
+		const flash: Flash = { label: 'Stop timer', batchId: 'b1', warnings: [], restartId: 'e1' };
+		setFlash(cookies, flash);
+		expect(takeFlash(cookies)).toEqual(flash);
+		setFlash(cookies, { ...flash, restartId: 'x'.repeat(500) });
+		expect(takeFlash(cookies)?.restartId).toHaveLength(200);
+	});
 	it('round trips the undone mark', () => {
 		const { cookies } = fakeCookies();
 		const flash: Flash = { label: 'Undone', batchId: null, warnings: [], undone: true };

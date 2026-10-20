@@ -1,0 +1,334 @@
+import { render } from 'svelte/server';
+import { describe, expect, it } from 'vitest';
+import EntryForm from './EntryForm.svelte';
+import type { EntryFormData, EntryFormValues } from './types';
+
+const values = (over: Partial<EntryFormValues> = {}): EntryFormValues => ({
+	id: 'e1',
+	version: '3',
+	date: '2026-10-19',
+	start: '09:00',
+	end: '14:30',
+	duration: '5:30',
+	endDays: 0,
+	endZone: null,
+	timeZone: 'Europe/Budapest',
+	projectId: 'p2',
+	activityId: '',
+	locationId: '',
+	reference: '#4512',
+	description: 'Login loop on SSO',
+	running: false,
+	...over
+});
+
+const data = (over: Partial<EntryFormData> = {}): EntryFormData => ({
+	mode: 'edit',
+	values: values(),
+	projects: [
+		{
+			id: 'p1',
+			name: 'ClientY - ProjectZ',
+			customerId: 'c1',
+			customerName: 'CompX',
+			colour: 1,
+			archived: false
+		},
+		{
+			id: 'p2',
+			name: 'CompY - Support',
+			customerId: 'c1',
+			customerName: 'CompX',
+			colour: 2,
+			archived: false
+		},
+		{
+			id: 'p3',
+			name: 'time-keep',
+			customerId: 'c2',
+			customerName: 'Myself',
+			colour: 3,
+			archived: false
+		}
+	],
+	activities: [{ id: 'a1', name: 'Support ticket', archived: false }],
+	locations: [{ id: 'l1', name: 'Home office', archived: false }],
+	templates: [
+		{
+			id: 't1',
+			name: 'Standup',
+			colour: 1,
+			label: 'CompX › ClientY - ProjectZ',
+			timeZone: null,
+			startTime: '09:00',
+			endTime: null,
+			durationMinutes: 15,
+			projectId: 'p1',
+			activityId: null,
+			locationId: null,
+			reference: null,
+			description: 'Standup'
+		},
+		{
+			id: 't2',
+			name: 'Ticket',
+			colour: null,
+			label: null,
+			timeZone: null,
+			startTime: null,
+			endTime: null,
+			durationMinutes: null,
+			projectId: null,
+			activityId: null,
+			locationId: null,
+			reference: null,
+			description: null
+		}
+	],
+	back: '/entries',
+	zoneFixed: true,
+	failure: null,
+	...over
+});
+
+const newData = (over: Partial<EntryFormValues> = {}, zoneFixed = false) =>
+	data({
+		mode: 'new',
+		zoneFixed,
+		values: values({
+			id: null,
+			version: '',
+			start: '',
+			end: '',
+			duration: '',
+			projectId: '',
+			reference: '',
+			description: '',
+			...over
+		})
+	});
+
+const html = (d: EntryFormData) => render(EntryForm, { props: { data: d, action: '?/save' } }).body;
+
+const text = (body: string) =>
+	body
+		.replace(/<!--.*?-->/g, '')
+		.replace(/<[^>]+>/g, ' ')
+		.replace(/\s+/g, ' ');
+
+/** The text of each `<label>` in DOM order. */
+const labels = (body: string) =>
+	[...body.matchAll(/<label[^>]*>([\s\S]*?)<\/label>/g)].map((m) => text(m[1]).trim());
+
+/** The opening tag of the element with `id`. */
+const tagWithId = (body: string, id: string) =>
+	new RegExp(`<[a-z]+[^>]*\\bid="${id}"[^>]*>`).exec(body)?.[0] ?? '';
+
+/** A `disabled` attribute (not a `disabled:` class variant). */
+const DISABLED = /\sdisabled(=""|\s|$)/;
+
+/** The opening tag of the button whose text includes `name`. */
+const button = (body: string, name: string) =>
+	[...body.matchAll(/<(button|a)\b([^>]*)>([\s\S]*?)<\/\1>/g)].find((m) =>
+		text(m[3]).includes(name)
+	);
+
+describe('EntryForm rendered on the server (no JavaScript)', () => {
+	it('labels the fields in order', () => {
+		const order = [
+			'Date',
+			'Start',
+			'End',
+			'Duration',
+			'Customer › project',
+			'Activity',
+			'Location',
+			'Reference',
+			'Description'
+		];
+		for (const d of [data(), newData()]) {
+			const found = labels(html(d)).filter((l) => order.includes(l));
+			expect(found).toEqual(order);
+		}
+	});
+
+	it('offers Fill from on a new entry only, with each template', () => {
+		const fresh = text(html(newData()));
+		expect(fresh).toContain('Fill from');
+		expect(fresh).toContain('Standup');
+		expect(fresh).toContain('Ticket');
+		expect(text(html(data()))).not.toContain('Fill from');
+	});
+
+	it('offers Delete, Copy, Restart and Save as template on an existing entry only', () => {
+		const edit = html(data());
+		const fresh = html(newData());
+		for (const name of ['Delete', 'Copy', 'Restart', 'Save as template']) {
+			expect(text(edit)).toContain(name);
+			expect(text(fresh)).not.toContain(name);
+		}
+		expect(edit).toMatch(/href="\/entries\/new\?copy=e1&amp;back=%2Fentries"/);
+		expect(edit).toMatch(/<form[^>]*action="\/timers\/restart"/);
+	});
+
+	it("disables a running entry's Restart, saying why", () => {
+		const body = html(data({ values: values({ end: '', duration: '', running: true }) }));
+		const restart = button(body, 'Restart');
+		expect(restart?.[2]).toMatch(DISABLED);
+		expect(text(restart?.[3] ?? '')).toContain('Already running');
+		expect(button(html(data()), 'Restart')?.[2]).not.toMatch(DISABLED);
+	});
+
+	it('says an empty end and duration start a timer', () => {
+		expect(text(html(newData({ start: '09:00' })))).toContain('No end: this starts a timer.');
+		expect(text(html(data()))).not.toContain('No end: this starts a timer.');
+	});
+
+	it('says a running entry keeps running, not that it starts a timer', () => {
+		const body = text(html(data({ values: values({ end: '', duration: '', running: true }) })));
+		expect(body).toContain('No end: the timer keeps running.');
+		expect(body).not.toContain('this starts a timer');
+	});
+
+	it('pins only Cancel and Save: the stored-entry actions come before the footer', () => {
+		const dirty = html(data());
+		const at = dirty.indexOf('data-entry-footer');
+		expect(at).toBeGreaterThan(0);
+		const footer = text(dirty.slice(at));
+		expect(footer).toContain('Cancel');
+		expect(footer).toContain('Save');
+		for (const name of ['Delete', 'Copy', 'Restart', 'Save as template']) {
+			expect(footer).not.toContain(name);
+			expect(text(dirty.slice(0, at))).toContain(name);
+		}
+	});
+
+	it('marks an end days later, and the next day', () => {
+		expect(text(html(data({ values: values({ end: '07:15', endDays: 2 }) })))).toContain('+2 days');
+		expect(text(html(data({ values: values({ end: '01:00', endDays: 1 }) })))).toContain(
+			'next day'
+		);
+		expect(text(html(data()))).not.toMatch(/next day|\+\d days/);
+	});
+
+	it("shows an end's other zone beside it", () => {
+		const body = text(html(data({ values: values({ endZone: 'America/New_York' }) })));
+		expect(body).toContain('America/New_York');
+	});
+
+	it('gives the hint line', () => {
+		expect(text(html(newData()))).toContain(
+			'Times: 9, 900, 9:00, 1330 · Duration: 5:30, 5.5, 5h30, 90 (minutes)'
+		);
+	});
+
+	it('has one submit button, the primary Save', () => {
+		for (const body of [html(data()), html(newData())]) {
+			const submits = [...body.matchAll(/<button[^>]*type="submit"[^>]*>([\s\S]*?)<\/button>/g)];
+			const primary = submits.filter((m) => /bg-primary/.test(m[0]));
+			expect(primary).toHaveLength(1);
+			expect(text(primary[0][1]).trim()).toBe('Save');
+		}
+	});
+
+	it('posts the project from a select grouped by customer', () => {
+		const body = html(data());
+		expect(body).toMatch(/<select[^>]*name="projectId"/);
+		expect(body).toMatch(/<optgroup label="CompX">/);
+		expect(body).toMatch(/<optgroup label="Myself">/);
+		expect(body).toMatch(/<option value="p2"[^>]*selected/);
+	});
+
+	it('shows times and dates as text fields that read forgivingly', () => {
+		const body = html(data());
+		for (const id of ['start', 'end', 'duration']) {
+			const tag = tagWithId(body, `entry-${id}`);
+			expect(tag).toMatch(/type="text"/);
+			expect(tag).toMatch(/inputmode="text"/);
+			expect(tag).toMatch(/autocomplete="off"/);
+		}
+		const date = tagWithId(body, 'entry-date');
+		expect(date).toMatch(/inputmode="decimal"/);
+		expect(date).toMatch(/value="2026-10-19"/);
+	});
+
+	it('puts a refusal beside its field and keeps what was typed', () => {
+		const body = html(
+			data({
+				failure: {
+					action: 'save',
+					error: 'The input is not valid.',
+					fields: { start: 'Not a time. Type 9, 900, 9:00 or 1330.' },
+					conflict: false,
+					gone: false,
+					back: '/entries',
+					values: { ...values(), start: 'nine' } as unknown as Record<string, string>
+				}
+			})
+		);
+		const start = tagWithId(body, 'entry-start');
+		expect(start).toMatch(/aria-invalid="true"/);
+		expect(start).toMatch(/aria-describedby="[^"]*start-error/);
+		expect(start).toMatch(/value="nine"/);
+		expect(text(body)).toContain('Not a time. Type 9, 900, 9:00 or 1330.');
+	});
+
+	it('offers a reload on a conflict, and the way back when the entry is gone', () => {
+		const failure = {
+			action: 'save' as const,
+			error: 'This was changed elsewhere; reload and try again.',
+			fields: {},
+			conflict: true,
+			gone: false,
+			back: '/entries'
+		};
+		const stale = html(data({ failure }));
+		expect(button(stale, 'Reload')?.[2]).toMatch(/href="\/entries\/e1\?back=%2Fentries"/);
+		const gone = html(
+			data({
+				failure: {
+					...failure,
+					action: 'delete',
+					error: 'This entry was deleted elsewhere.',
+					conflict: false,
+					gone: true,
+					values: { description: '' }
+				}
+			})
+		);
+		expect(text(gone)).toContain('This entry was deleted elsewhere.');
+		expect(button(gone, 'Back to Entries')?.[2]).toMatch(/href="\/entries"/);
+		// A delete's echo does not replace the form's values.
+		expect(gone).toContain('Login loop on SSO');
+	});
+
+	it("keeps an edit's zone from the device zone filler", () => {
+		expect(tagWithId(html(data()), 'entry-zone')).toMatch(/data-zone-fixed/);
+		expect(tagWithId(html(newData()), 'entry-zone')).not.toMatch(/data-zone-fixed/);
+	});
+
+	it("keeps a copy's or a template's zone on a new entry when the load says so", () => {
+		expect(tagWithId(html(newData({ timeZone: 'America/New_York' }, true)), 'entry-zone')).toMatch(
+			/data-zone-fixed/
+		);
+	});
+
+	it("returns to the refused form's back, not the bare action's", () => {
+		const body = html(
+			data({
+				back: '/',
+				failure: {
+					action: 'save',
+					error: 'No.',
+					fields: {},
+					conflict: false,
+					gone: false,
+					back: '/entries?from=2026-10-01'
+				}
+			})
+		);
+		expect(button(body, 'Cancel')?.[2]).toMatch(/href="\/entries\?from=2026-10-01"/);
+		expect(body).toMatch(/name="back" value="\/entries\?from=2026-10-01"/);
+		expect(body).not.toMatch(/name="back" value="\/"/);
+	});
+});

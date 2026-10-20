@@ -230,7 +230,7 @@ test.describe('templates', () => {
 			await page.getByLabel('Name', { exact: true }).fill('Weekly sync');
 			await pick(page, 'Project', 'Box');
 			await page.getByLabel('Duration in minutes').fill('45');
-			await page.getByLabel('Description').fill('Weekly sync with the team');
+			await page.getByLabel('Description', { exact: true }).fill('Weekly sync with the team');
 			await page.getByRole('button', { name: 'Save' }).click();
 
 			await expect(page).toHaveURL(/\/templates$/);
@@ -249,15 +249,17 @@ test.describe('templates', () => {
 		await test.step('edit it, clearing the description', async () => {
 			await page.goto('/templates');
 			await page.getByRole('link', { name: 'Weekly sync' }).click();
-			await expect(page.getByLabel('Description')).toHaveValue('Weekly sync with the team');
+			await expect(page.getByLabel('Description', { exact: true })).toHaveValue(
+				'Weekly sync with the team'
+			);
 			await page.getByLabel('Name', { exact: true }).fill('Weekly sync-up');
-			await page.getByLabel('Description').fill('');
+			await page.getByLabel('Description', { exact: true }).fill('');
 			await page.getByRole('button', { name: 'Save' }).click();
 			await expect(strip(page)).toContainText('Done: Edit template');
 
 			await page.getByRole('link', { name: 'Weekly sync-up' }).click();
 			await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Weekly sync-up');
-			await expect(page.getByLabel('Description')).toHaveValue('');
+			await expect(page.getByLabel('Description', { exact: true })).toHaveValue('');
 			await expect(page.getByLabel('Duration in minutes')).toHaveValue('45');
 		});
 

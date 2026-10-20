@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Play from '@lucide/svelte/icons/play';
+	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { warningText } from '#lib/format.js';
 	import { Badge } from '#lib/components/ui/badge/index.js';
@@ -44,7 +46,7 @@
 		'rounded-sm text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:inline-flex max-lg:min-h-11 max-lg:min-w-11 max-lg:items-center';
 	// On the phone each row stacks beside its checkbox: date and times, customer ›
 	// project, then reference and description.
-	const cell = 'max-lg:block max-lg:px-0 max-lg:py-0.5';
+	const cell = 'max-lg:col-start-2 max-lg:block max-lg:px-0 max-lg:py-0.5';
 </script>
 
 <Table.Root class="max-lg:block">
@@ -71,6 +73,7 @@
 			<Table.Head class="max-xl:hidden">Location</Table.Head>
 			<Table.Head>Reference</Table.Head>
 			<Table.Head>Description</Table.Head>
+			<Table.Head class="w-11"><span class="sr-only">Restart</span></Table.Head>
 		</Table.Row>
 	</Table.Header>
 	<Table.Body class="max-lg:block">
@@ -79,7 +82,9 @@
 			<Table.Row
 				class="border-b border-border hover:bg-accent max-lg:grid max-lg:grid-cols-[2.75rem_minmax(0,1fr)] max-lg:py-2"
 			>
-				<Table.Cell class="max-lg:row-span-4 max-lg:px-0 max-lg:py-0.5 lg:w-11">
+				<Table.Cell
+					class="max-lg:col-start-1 max-lg:row-span-2 max-lg:row-start-1 max-lg:px-0 max-lg:py-0.5 lg:w-11"
+				>
 					<input
 						type="checkbox"
 						name="id"
@@ -100,7 +105,7 @@
 				<Table.Cell class="{cell} lg:hidden">
 					<span class="flex flex-wrap items-baseline gap-x-3">
 						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- edit() resolves it -->
-						<a href={edit(e.id)} class="figures {link}">{e.date}</a>
+						<a href={edit(e.id)} data-entry-form class="figures {link}">{e.date}</a>
 						<span class="figures">{e.in}–{e.out ?? ''}</span>
 						{#if e.out === null}<span class="text-xs caps text-live">Running</span>{/if}
 						<span class="figures {e.out ? '' : 'text-live'}">{e.hours}</span>
@@ -108,7 +113,7 @@
 				</Table.Cell>
 				<Table.Cell class="max-lg:hidden">
 					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- edit() resolves it -->
-					<a href={edit(e.id)} class="figures {link}">{e.date}</a>
+					<a href={edit(e.id)} data-entry-form class="figures {link}">{e.date}</a>
 				</Table.Cell>
 				<Table.Cell class="figures max-lg:hidden">{e.in}</Table.Cell>
 				{#if e.out}
@@ -137,6 +142,25 @@
 					class="{cell} text-pretty whitespace-normal max-lg:text-muted-foreground max-lg:empty:hidden"
 					>{e.description ?? ''}</Table.Cell
 				>
+				<!-- Outside the row's links: a timer now with the entry's fields. On the phone it sits
+				     under the checkbox, out of the fixed "+"'s column at the right. -->
+				<Table.Cell
+					class="max-lg:col-start-1 max-lg:row-span-3 max-lg:row-start-3 max-lg:p-0 lg:w-11 lg:py-0"
+				>
+					{#if e.out}
+						<form method="POST" action={resolve('/(app)/timers/restart')} use:enhance>
+							<input type="hidden" name="id" value={e.id} />
+							<input type="hidden" name="back" value={back} />
+							<button
+								type="submit"
+								title="Restart"
+								aria-label="Restart {where(e)}"
+								class="inline-flex size-11 items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 ease-out outline-none hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring lg:size-9"
+								><Play class="size-3.5 fill-current" aria-hidden="true" /></button
+							>
+						</form>
+					{/if}
+				</Table.Cell>
 			</Table.Row>
 		{/each}
 	</Table.Body>

@@ -106,17 +106,19 @@ test('the bar says when nothing runs', async ({ page }) => {
 test('a timer is stopped from the bar and undone where it was stopped', async ({ page }) => {
 	const user = await seedUser(`${test.info().project.name}-bar-stop`, zone);
 	await signIn(page, user.username);
-	const start = page.getByRole('region', { name: 'Start a timer', exact: true });
-	await start.getByLabel('Project').selectOption({ label: 'Mobile app' });
-	await start.getByLabel('Description').fill('Bar timer');
-	await start.getByRole('button', { name: 'Start timer' }).click();
-	await expect(bar(page)).toContainText('Mobile app');
+	// Started from the bar's Start list, with the Standup template (Acme › Website).
+	const list = page.locator('[data-start-list]:visible');
+	await page.locator('[data-start-list]:visible > summary').click();
+	await list.locator('summary', { hasText: 'Standup' }).click();
+	await list.getByRole('textbox', { name: 'Description for Standup' }).fill('Bar timer');
+	await list.getByRole('button', { name: 'Start', exact: true }).click();
+	await expect(bar(page)).toContainText('Website');
 
 	await page.goto('/reports');
-	await expect(bar(page)).toContainText('Mobile app');
+	await expect(bar(page)).toContainText('Website');
 	await expect(bar(page)).toContainText(/\d+:\d\d:\d\d/);
 	await bar(page)
-		.getByRole('button', { name: /^Stop Mobile app started/ })
+		.getByRole('button', { name: /^Stop Website started/ })
 		.click();
 	await expect(page).toHaveURL(/\/reports$/);
 	await expect(flash(page)).toContainText('Done: Stop timer');
@@ -125,8 +127,8 @@ test('a timer is stopped from the bar and undone where it was stopped', async ({
 	await flash(page).getByRole('button', { name: 'Undo' }).click();
 	await expect(page).toHaveURL(/\/reports$/);
 	await expect(flash(page)).toContainText('Undone.');
-	await expect(bar(page)).toContainText('Mobile app');
-	await expect(bar(page).getByRole('button', { name: /^Stop Mobile app/ })).toBeVisible();
+	await expect(bar(page)).toContainText('Website');
+	await expect(bar(page).getByRole('button', { name: /^Stop Website/ })).toBeVisible();
 });
 
 test('several timers show as the newest plus a count', async ({ page }) => {
@@ -144,7 +146,8 @@ test('several timers show as the newest plus a count', async ({ page }) => {
 	await expect(bar(page).locator('summary', { hasText: '+1' })).toHaveCount(0);
 	expect(new URL(page.url()).pathname + new URL(page.url()).search).toBe(url);
 	await expect(bar(page)).toContainText('Mobile app');
-	await expect(bar(page)).not.toContainText('Website');
+	// What shows, not the closed start list's template labels.
+	await expect(bar(page)).not.toContainText('Website', { useInnerText: true });
 });
 
 test('a refused stop is shown', async ({ context }) => {
@@ -242,6 +245,9 @@ test('focus lands clear of the sticky bars', async ({ page }) => {
 	await signIn(page, user.username);
 	await page.goto(`/entries/${user.entries.toEdit}`);
 	await page.getByLabel('End', { exact: true }).fill(`${user.today}T05:00`);
+	// Left first, so its message is shown before the click (else the form grows between the
+	// press and the release, and the release can land beside Save).
+	await page.getByLabel('End', { exact: true }).blur();
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	// A refused save focuses the field the core refused.
 	const invalid = page.locator('main form [aria-invalid="true"]').first();

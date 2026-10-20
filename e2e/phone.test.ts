@@ -43,11 +43,25 @@ async function logFromTemplate(page: Page, name: string, description: string) {
 	await sheet.getByRole('button', { name: 'Log' }).click();
 }
 
-async function startTimer(page: Page, project: string, description: string) {
-	const form = section(page, 'Start a timer');
-	await form.getByLabel('Project').selectOption({ label: project });
-	await form.getByLabel('Description').fill(description);
-	await form.getByRole('button', { name: 'Start timer' }).click();
+/** Starts `template` from the bar's Start list, with `description`. */
+async function startTimer(page: Page, template: string, description: string) {
+	const list = page.locator('[data-start-list]:visible');
+	await page.locator('[data-start-list]:visible > summary').click();
+	await list.locator('summary', { hasText: template }).click();
+	await list.getByRole('textbox', { name: `Description for ${template}` }).fill(description);
+	await list.getByRole('button', { name: 'Start', exact: true }).click();
+}
+
+/** The entry form opened over Today from a row. */
+const editDialog = (page: Page) => page.getByRole('dialog', { name: 'Edit entry' });
+
+/** Opens a row's form over Today: the address is the form's, Today stays under it. */
+async function openRow(page: Page, text: string) {
+	await page.waitForLoadState('networkidle');
+	await entryRow(page, text).click();
+	await expect(editDialog(page)).toBeVisible();
+	await expect(page).toHaveURL(/\/entries\/\w+\?back=%2F$/);
+	await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
 }
 
 test('logs from a template with only a description, and undoes it', async ({ page }) => {
@@ -71,8 +85,10 @@ test('Today shows no placeholder panel, only its working sections', async ({ pag
 
 	await expect(page.getByRole('heading', { name: 'At the desk' })).toHaveCount(0);
 	await expect(page.getByText('Not built yet')).toHaveCount(0);
-	for (const name of ['Templates', 'Start a timer', 'Today’s entries'])
+	for (const name of ['Templates', 'Today’s entries'])
 		await expect(section(page, name)).toBeVisible();
+	// Timers start from the bar's Start list on every screen.
+	await expect(section(page, 'Start a timer')).toHaveCount(0);
 });
 
 test('starts a timer, a second on the same project stops the first, stop undoes', async ({
@@ -82,46 +98,51 @@ test('starts a timer, a second on the same project stops the first, stop undoes'
 	const timers = bar(page);
 
 	await test.step('start a timer and see it running', async () => {
-		await startTimer(page, 'Mobile app', 'First timer');
-		await expect(strip(page)).toContainText('Done: Start timer on "Mobile app".');
+		await startTimer(page, 'Standup', 'First timer');
+		await expect(strip(page)).toContainText('Done: Start timer on "Website".');
 		await expect(timers.getByRole('button', { name: /^Stop / })).toHaveCount(1);
-		await expect(timers).toContainText('Mobile app');
+		await expect(timers).toContainText('Website');
 		await expect(entryRow(page, 'First timer')).toContainText('Running');
 	});
 
 	await test.step('a second timer on the same project stops the first', async () => {
-		await startTimer(page, 'Mobile app', 'Second timer');
+		await startTimer(page, 'Standup', 'Second timer');
 		await expect(timers.getByRole('button', { name: /^Stop / })).toHaveCount(1);
-		await expect(timers.locator('summary')).toHaveCount(0);
+		// One timer: no "+N" list of others.
+		await expect(timers.locator('summary', { hasText: '+1' })).toHaveCount(0);
 		await expect(entryRow(page, 'First timer')).not.toContainText('Running');
 		await expect(entryRow(page, 'Second timer')).toContainText('Running');
 	});
 
 	await test.step('stop it, and the redirected Today undoes the stop', async () => {
-		await timers.getByRole('button', { name: /^Stop Mobile app/ }).click();
-		await expect(strip(page)).toContainText('Done: Stop timer on "Mobile app".');
+		await timers.getByRole('button', { name: /^Stop Website/ }).click();
+		await expect(strip(page)).toContainText('Done: Stop timer on "Website".');
 		await expect(timers).toContainText('No timer running');
 		await expect(entryRow(page, 'Second timer')).not.toContainText('Running');
 
 		await strip(page).getByRole('button', { name: 'Undo' }).click();
 		await expect(strip(page)).toContainText('Undone.');
-		await expect(timers).toContainText('Mobile app');
+		await expect(timers).toContainText('Website');
 		await expect(entryRow(page, 'Second timer')).toContainText('Running');
 
-		await timers.getByRole('button', { name: /^Stop Mobile app/ }).click();
+		await timers.getByRole('button', { name: /^Stop Website/ }).click();
 		await expect(timers).toContainText('No timer running');
 	});
 });
 
 test('edits an entry’s end and description, and undoes the edit', async ({ page }) => {
 	await signIn(page, user.username);
-	await entryRow(page, 'Sorted the inbox').click();
-	await expect(page.getByRole('heading', { name: 'Edit entry' })).toBeVisible();
-	await expect(page.getByLabel('End', { exact: true })).toHaveValue(`${user.today}T06:30`);
+	await openRow(page, 'Sorted the inbox');
+	const form = editDialog(page);
+	const end = form.getByLabel('End', { exact: true });
+	await expect(end).toHaveValue('06:30');
 
-	await page.getByLabel('End', { exact: true }).fill(`${user.today}T06:45`);
-	await page.getByLabel('Description').fill('Sorted the inbox and replied');
-	await page.getByRole('button', { name: 'Save' }).click();
+	await end.fill('645');
+	await end.blur();
+	await expect(end).toHaveValue('06:45');
+	await form.getByLabel('Description').fill('Sorted the inbox and replied');
+	await form.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(form).toBeHidden();
 
 	await expect(page).toHaveURL(/\/$/);
 	await expect(strip(page)).toContainText('Done: Edit entry on "Website".');
@@ -140,20 +161,19 @@ test('a save over a change made elsewhere is refused with a reload', async ({ pa
 	await page.goto(`/entries/${user.entries.toEdit}`);
 	editElsewhere(user.id, user.entries.toEdit, 'Changed on the PC');
 
-	await page.getByLabel('Description').fill('Changed on the phone');
+	await page.getByLabel('Description', { exact: true }).fill('Changed on the phone');
 	await page.getByRole('button', { name: 'Save' }).click();
 	const alert = page.getByRole('alert');
 	await expect(alert).toContainText('This was changed elsewhere; reload and try again.');
 	await alert.getByRole('link', { name: 'Reload' }).click();
-	await expect(page.getByLabel('Description')).toHaveValue('Changed on the PC');
+	await expect(page.getByLabel('Description', { exact: true })).toHaveValue('Changed on the PC');
 });
 
-test('deletes an entry after a confirm, and undoes the delete', async ({ page }) => {
+test('deletes an entry at once, and undoes the delete', async ({ page }) => {
 	await signIn(page, user.username);
-	await entryRow(page, 'Filed the receipts').click();
-	await page.getByRole('button', { name: 'Delete entry' }).click();
-	await expect(page.getByText('Delete this entry? You can undo it from Today.')).toBeVisible();
-	await page.getByRole('button', { name: 'Yes, delete it' }).click();
+	await openRow(page, 'Filed the receipts');
+	await editDialog(page).getByRole('button', { name: 'Delete', exact: true }).click();
+	await expect(editDialog(page)).toBeHidden();
 
 	await expect(page).toHaveURL(/\/$/);
 	await expect(strip(page)).toContainText('Done: Delete entry on "Operations".');
@@ -162,6 +182,28 @@ test('deletes an entry after a confirm, and undoes the delete', async ({ page })
 	await strip(page).getByRole('button', { name: 'Undo' }).click();
 	await expect(strip(page)).toContainText('Undone.');
 	await expect(entryRow(page, 'Filed the receipts')).toContainText('07:30');
+});
+
+test('a finished row restarts as a timer from Today', async ({ page }) => {
+	const user = await seedUser(`${test.info().project.name}-row-restart`, zone);
+	await signIn(page, user.username);
+	const row = page.getByRole('listitem').filter({ hasText: 'Filed the receipts' });
+	await expect(row.getByRole('button', { name: 'Restart Acme › Operations' })).toBeVisible();
+	await page.waitForLoadState('networkidle');
+
+	await row.getByRole('button', { name: 'Restart Acme › Operations' }).click();
+	await expect(page).toHaveURL(/\/$/);
+	await expect(strip(page)).toContainText('Done: Start timer on "Operations".');
+	await expect(bar(page)).toContainText('Acme › Operations');
+	// The running row has no Restart.
+	const running = page.getByRole('listitem').filter({ hasText: 'Running' });
+	await expect(running).toContainText('Filed the receipts');
+	await expect(running.getByRole('button', { name: /^Restart / })).toHaveCount(0);
+
+	await bar(page)
+		.getByRole('button', { name: /^Stop Operations/ })
+		.click();
+	await expect(bar(page)).toContainText('No timer running');
 });
 
 /** Opens the template disclosure on an entry's edit screen and posts a name. */
@@ -186,7 +228,8 @@ test('saves an entry as a template; a duplicate name is refused beside the field
 
 	await name.fill(`Inbox ${test.info().project.name}`);
 	await page.getByRole('button', { name: 'Save template' }).click();
-	await expect(page).toHaveURL(/\/templates$/);
+	// Back where the form was opened from: Today, since the page had no `back`.
+	await expect(page).toHaveURL(/\/$/);
 	await expect(strip(page)).toContainText(
 		'Done: Save entry as template "Inbox ' + test.info().project.name + '".'
 	);
@@ -213,13 +256,6 @@ test('a user without projects sees where to set them up', async ({ page }, testI
 	await expect(
 		section(page, 'Templates').getByRole('link', { name: 'Edit templates' })
 	).toHaveAttribute('href', '/templates');
-	await expect(section(page, 'Start a timer')).toContainText(
-		'Customers and projects are set up on the PC.'
-	);
-	await expect(
-		section(page, 'Start a timer').getByRole('link', { name: 'Set up customers and projects' })
-	).toHaveAttribute('href', '/setup');
-	await expect(section(page, 'Start a timer').getByRole('button')).toHaveCount(0);
 	await expect(section(page, 'Today’s entries')).toContainText('Nothing logged today.');
 });
 
@@ -235,7 +271,7 @@ test.describe('without JavaScript', () => {
 		await expect(strip(page)).toContainText('Done: Create entry from template "Review".');
 		await expect(entryRow(page, 'Read the pull requests')).toContainText('10:30');
 
-		await startTimer(page, 'Operations', 'Offline timer');
+		await startTimer(page, 'Review', 'Offline timer');
 		const timers = bar(page);
 		await expect(timers).toContainText('Operations');
 		await timers.getByRole('button', { name: /^Stop Operations/ }).click();

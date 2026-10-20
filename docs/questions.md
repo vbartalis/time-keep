@@ -20,6 +20,59 @@ The operator answers whenever they like, here (under the entry) or in conversati
 An answer is added to [the operator's voice](operator-voice.md) in their words, and if
 it changes built work, it becomes a roadmap item.
 
+## 2026-10-20 — 12
+
+- Question: On the PC, the header's "+ New entry" is a filled blue button on every
+  screen. When the start list is open (its Start is also filled blue), or a screen has
+  its own primary button, two blue fills show at once. Should one of them become an
+  outline button, and which?
+- Call made: Leave both filled. It is the smaller change, and DESIGN.md's rule is one
+  blue primary per form, which each still keeps (the critique calls it "not a per-form
+  breach"). Nothing on record says how you feel about two blue buttons on one screen.
+- If answered differently: either the start list's Start becomes an outline button
+  (Enter still starts the timer), or "+ New entry" becomes an outline button in the
+  header on every screen; DESIGN.md's button rules say which.
+
+## 2026-10-20 — 12
+
+- Question: The strokes around fields and outline buttons (item 11's `input` token,
+  #c8cbd0 light, #43464b dark) are 1.6–1.8:1 against their surface, below the 3:1 that
+  WCAG asks for. An empty field is drawn by that stroke alone. Should the strokes be
+  darker (about #868c95 light, #70757d dark)?
+- Call made: Leave the token as it is. It is the smaller change, and it is the light,
+  thin field outline of the Kimai skin chosen in item 11; empty fields read clearly in
+  the critique's screenshots. Nothing on record speaks to contrast.
+- If answered differently: `--input` in `src/routes/layout.css` (light and dark) and
+  DESIGN.md's `input` and `input-dark` are raised. Every field, outline button,
+  unticked checkbox and table-head rule on every screen gets a darker edge.
+
+## 2026-10-20 — 12
+
+- Question: In a duration field, how should a bare number with no separator or unit
+  read (`5`, `90`, `330`): as minutes, as Kimai, Toggl and Clockify read it (`90` is
+  1:30, `330` is 5:30), or as hours (`5` is 5:00, `330` is 3:30)?
+- Call made: Minutes, as Kimai reads it. Nothing on record says how you type a
+  duration, and you used Kimai for years, so its reading is the familiar one. Every
+  form with an hours mark still reads as hours (`5:30`, `5.5`, `5h30`, `5h`), and the
+  linked end shows the result before saving, with undo after.
+- If answered differently: item 12's time-input table reads a bare one- or two-digit
+  number as hours and three or four digits as hours and minutes; the form's hint and
+  its tests change with it.
+
+## 2026-10-20 — 12
+
+- Question: How does a normal working day's logging go: when do you open the app, on
+  the phone or the PC, and how much is logged as it happens (timers, templates) against
+  afterwards (past intervals typed in), and when do you correct?
+- Call made: Only the split on record is used: the phone for quick capture through the
+  day (start and stop timers, log from a template, fix the day), the PC for logging
+  and correcting afterwards and for month-end (2026-10-18 discovery; vision, "Two
+  surfaces"; roadmap item 16's tasks). No times of day or proportions are assumed, so
+  item 12 makes both paths equally short on both surfaces.
+- If answered differently: item 12 (and 13–14) weight whichever path you use most: for
+  example the phone's start list first if you mostly run timers, or the past-interval
+  form and the calendar's tap-to-create first if you mostly log afterwards.
+
 ## 2026-10-20 — 11
 
 - Question: Where should a project's colour come from: worked out from the project

@@ -82,17 +82,6 @@ export function fromTemplateInput(
 	return input;
 }
 
-/** The input of `timers.start` from the start-a-timer form. */
-export function startInput(form: FormData, zone: string): Record<string, unknown> {
-	const input: Record<string, unknown> = {
-		projectId: given(form, 'projectId') ?? '',
-		timeZone: zone
-	};
-	const description = given(form, 'description');
-	if (description !== undefined) input.description = description;
-	return input;
-}
-
 /**
  * A core failure for a form: errors on the fields it shows stay beside them; the
  * others become the general message, since the screen has nowhere else to put them.

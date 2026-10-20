@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formFailure, fromTemplateInput, groupProjects, startInput } from './actions';
+import { formFailure, fromTemplateInput, groupProjects } from './actions';
 
 const form = (fields: Record<string, string>) => {
 	const f = new FormData();
@@ -109,20 +109,6 @@ describe('fromTemplateInput', () => {
 		expect(
 			fromTemplateInput(form({ templateId: 't1', durationMinutes: 'abc' }), ctx(zoned))
 		).toEqual({ templateId: 't1', durationMinutes: 'abc' });
-	});
-});
-
-describe('startInput', () => {
-	it('starts on the project in the zone with an optional description', () => {
-		expect(startInput(form({ projectId: 'p1', description: ' Call ' }), 'UTC')).toEqual({
-			projectId: 'p1',
-			timeZone: 'UTC',
-			description: 'Call'
-		});
-		expect(startInput(form({ projectId: '', description: '' }), 'UTC')).toEqual({
-			projectId: '',
-			timeZone: 'UTC'
-		});
 	});
 });
 

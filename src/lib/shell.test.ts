@@ -49,6 +49,7 @@ describe('screenTitle', () => {
 	it.each([
 		['/(app)', 'Today'],
 		['/(app)/entries', 'Entries'],
+		['/(app)/entries/new', 'New entry'],
 		['/(app)/entries/[id]', 'Edit entry'],
 		['/(app)/copy-out', 'Copy-out'],
 		['/(app)/reports', 'Reports'],
@@ -82,6 +83,12 @@ describe('currentItem', () => {
 		expect(currentItem('/(app)/entries/[id]', '/entries?from=2026-10-01')).toBe('/(app)/entries');
 		expect(currentItem('/(app)/entries/[id]', '/')).toBe('/(app)');
 		expect(currentItem('/(app)/entries/[id]', null)).toBe('/(app)');
+	});
+
+	it('puts the new entry screen under Entries from the list, else Today', () => {
+		expect(currentItem('/(app)/entries/new', '/entries?from=2026-10-01')).toBe('/(app)/entries');
+		expect(currentItem('/(app)/entries/new', '/templates')).toBe('/(app)');
+		expect(currentItem('/(app)/entries/new', null)).toBe('/(app)');
 	});
 
 	it('marks nothing for a route outside the navigation', () => {

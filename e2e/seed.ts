@@ -421,3 +421,34 @@ export function seedThreeChanges(
 		})
 	);
 }
+
+/** An activity, created for `userId` straight through the core. */
+export const seedActivity = (userId: string, name: string) =>
+	value(asUi(userId).activities.create({ name })).id;
+
+/** A location, created for `userId` straight through the core. */
+export const seedLocation = (userId: string, name: string) =>
+	value(asUi(userId).locations.create({ name })).id;
+
+/** A finished entry today in `zone`, from `start` to `end` (`HH:mm`). */
+export const seedEntry = (
+	userId: string,
+	zone: string,
+	input: {
+		projectId: string;
+		start: string;
+		end: string;
+		description: string;
+		activityId?: string;
+	}
+) =>
+	value(
+		asUi(userId).entries.create({
+			projectId: input.projectId,
+			...(input.activityId === undefined ? {} : { activityId: input.activityId }),
+			start: `${dateIn(zone)}T${input.start}`,
+			end: `${dateIn(zone)}T${input.end}`,
+			timeZone: zone,
+			description: input.description
+		})
+	).id;

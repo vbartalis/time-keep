@@ -29,8 +29,8 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/routes/login`, `logout` | Sign in and out. `/login?restored=1` shows "Restored. Sign in with the backup's passwords." above the form, after a restore. |
 | `src/routes/(app)/admin/backup` | The Backup screen (`+page.svelte`, `+page.server.ts`) and its download route (`download/+server.ts`), admin only. |
 | `src/routes/mcp` | `POST /mcp`, the MCP endpoint, outside the signed-in screens (see [mcp.md](mcp.md)). |
-| `src/routes/(app)/` | Signed-in screens: Today (`/`), `entries` and the entry edit screen (`entries/[id]`), `copy-out` and its CSV route (`copy-out/csv`), `reports`, `account`, `admin/users`, `admin/backup`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell (see Shell). |
-| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`, `edit.ts`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries search and bulk change (`entries.ts`: `readSearch`, `searchInput`, `searchFilters`, `searchPath`, `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`), the copy-out's rows and query (`copy-out.ts`: `outputRows`, `readCopyOut`, `copyOutQuery`, `monthRange`, `csvName`, `sheetFor`, and the pieces and options Reports shares: `outputPieces`, `readOptions`, `optionsQuery`), the reports' totals (`reports.ts`: `isoWeek`, `reportTotals`, `readReport`, `reportFor`, `reportQuery`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`). |
+| `src/routes/(app)/` | Signed-in screens: Today (`/`), `entries` and the entry form (`entries/new`, `entries/[id]`), `copy-out` and its CSV route (`copy-out/csv`), `reports`, `account`, `admin/users`, `admin/backup`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell (see Shell). |
+| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`; `edit.ts`: `withCurrent`, `postedValues`), the entry form's values, pickers, input and refusals (`entry-form.ts`: `valuesFromEntry`, `newValues`, `copyValues`, `templateValues`, `formPickers`, `createInput`, `updateInput`, `previousEnd`, `newEntryValues`, `coreFailure`), the bar's start and restart input (`timer-actions.ts`: `startFromTemplateInput`, `restartInput`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries search and bulk change (`entries.ts`: `readSearch`, `searchInput`, `searchFilters`, `searchPath`, `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`), the copy-out's rows and query (`copy-out.ts`: `outputRows`, `readCopyOut`, `copyOutQuery`, `monthRange`, `csvName`, `sheetFor`, and the pieces and options Reports shares: `outputPieces`, `readOptions`, `optionsQuery`), the reports' totals (`reports.ts`: `isoWeek`, `reportTotals`, `readReport`, `reportFor`, `reportQuery`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`). |
 | `src/lib/components/entries/` | The Entries screen's parts: the filter form (shared with Copy-out), the change form, the selectable table. |
 | `src/lib/components/copy-out/` | The Copy-out screen's parts: the column and option pickers (`OutputFields`), the option pickers alone (`OutputOptions`, shared with Reports), the Copy button and its status (`CopyRows`), the sheet table (`SheetTable`). |
 | `src/lib/components/reports/` | The Reports screen's part: one totals table (`TotalsTable`, a titled section of label and duration rows with a Total row). |
@@ -39,15 +39,20 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/components/templates/` | The template form shared by the new and edit screens. |
 | `src/lib/components/account/` | The Account screen's Agent access parts: the token list with its revoke confirm (`TokenList`), the shown-once token with its Copy button (`NewToken`). |
 | `src/lib/components/setup/` | The Setup screen's parts: a rename-in-place row, the add lines, the Add project disclosure. |
-| `src/lib/components/today/` | The Today screen's parts: template sheets, start a timer, today's entries, the ticking elapsed time (also the timer bar's). |
+| `src/lib/components/today/` | The Today screen's parts: template sheets, today's entries, the ticking elapsed time (also the timer bar's). |
+| `src/lib/components/entry/` | The entry form: `EntryForm` (the form, for a new entry and an existing one), `TimeRow` (Start, End and Duration), `ProjectPicker` (with `match.ts`, `matchProjects`), `fill.ts` (`fillValues`, a template's values into the form), `EntryOverlay` (the form over the current screen), and the types its pages load. |
+| `src/lib/entry-link.ts` | `openForm` and `openInPlace`: open the entry form over the current screen through shallow routing (`pushState`), or go to its page when it cannot be loaded in place or the form is already shown as a page. |
+| `src/lib/time-input.ts` | The forgiving readers for the form's times, durations and dates (`readClock`, `readDuration`, `readDate`, `durationText`, `minutesBetween`, `endAfter`), pure and shared by the browser script and the server actions. |
 | `src/lib/components/UndoStrip.svelte` | The undo strip every screen shows after an action; posts to `/undo`. |
 | `src/routes/(app)/undo/` | The shared `/undo` route: `core.undo`, then back to the screen it came from. |
 | `src/lib/format.ts` | Formatting shared by server and browser: elapsed time, template times, warning text. |
 | `src/lib/output.ts` | The copy-out's columns and writers, shared by server and browser (no server imports): `COLUMNS` and their heads, `formatDuration` (`h:mm` or decimal hours), `safeText` (the formula guard), `toTsv` and `toCsv`. |
-| `src/lib/components/shell/` | The shell: `Sidebar`, `BottomBar` (with More), `TimerBar`, `NavIcon`, and the bar timer type. |
+| `src/lib/components/shell/` | The shell: `Sidebar`, `BottomBar` (with More), `TimerBar`, `StartList`, `NavIcon`, and the bar timer type. |
 | `src/lib/shell.ts`, `src/lib/project-colour.ts` | The navigation items, screen titles and current item; the project colour by creation order. |
 | `src/lib/server/screens/shell.ts` | `shellTimers`: the running timers for the bar. |
-| `src/routes/(app)/timers/stop/` | The bar's Stop: `POST /timers/stop`; a GET redirects to Today. |
+| `src/routes/(app)/entries/new`, `entries/[id]` | The entry form's pages and actions: a plain page without JavaScript, and the data the in-place form loads. |
+| `src/routes/(app)/entries/previous-end/` | `GET /entries/previous-end`: the end of the day's latest earlier entry, for "Start at previous end". |
+| `src/routes/(app)/timers/` | The bar's posts, each a page action with no screen: `start` (a timer now from a template; one without a project goes to the form in timer mode), `stop` and `restart` (a timer with a finished entry's fields). A GET of any redirects to Today. |
 | `src/routes/layout.css` | Design tokens as Tailwind theme values, light and dark (see DESIGN.md). |
 | `src/lib/components/ui/` | shadcn-svelte components, copied in and restyled (decision 2). |
 | `static/manifest.webmanifest`, `static/icons/` | The web app manifest and icons (see Installable). |
@@ -70,6 +75,29 @@ It is the same on every screen; no screen draws its own title or navigation.
 - **Header (PC).** The screen's title at the left, the page's one `h1`, and the timer
   bar at the right. The title comes from `screenTitle` (`src/lib/shell.ts`) by route
   id, not from the screen.
+- **New entry.** On the PC a primary "+ New entry" ("New entry (n)") at the header's right,
+  after the timer bar; on the phone a round "+" (56 px, "New entry") fixed at the right
+  just above the bottom bar, with room left for it at the foot of the content. Below `lg`
+  the controls that sit at the right edge keep out of its column, so it never hides a
+  control at any scroll position: the rows' ▶ lead the row on Today and sit under the
+  checkbox on Entries, the filter's Clear row and "Edit templates" keep a 3.5 rem right
+  margin, and the undo strip's buttons go under its message. Both link
+  to `/entries/new?back=<this screen>` and carry `data-entry-form`, so the form opens over
+  the screen; without JavaScript they are plain links to the page.
+- **Entry form over the screen.** Any link marked `data-entry-form` is opened in place by
+  the layout (`openInPlace`, a plain click only; a modified click goes to the page).
+  `EntryOverlay` shows the form in a native modal `<dialog>` while `page.state.entryForm`
+  holds it: a centred dialog from `lg`, a sheet from under the top bar below it, ending
+  at the visual viewport so Cancel and Save stay above the phone keyboard. The address
+  is the form's, so the browser's Back closes it, and so do Escape, Cancel and a click
+  on the dimmed screen (PC); a saved form follows its redirect to `back` with the data
+  reloaded and the strip, keeping the screen's scroll position (`reset: false`). `back` for the bar's Stop and Undo is then the screen under the
+  form.
+  On the form shown as a page (`/entries/new`, `/entries/[id]`) a link to the form goes
+  to its page instead: a second form in the document would share the first's ids.
+- **Keys.** `n` opens a new entry and `s` stops the timer the bar shows in full; both
+  unmodified, outside fields and while no dialog is open. Ctrl+Enter or Cmd+Enter saves
+  the form.
 - **Phone (below 1024 px).** A near-black top bar with the same title, the timer strip
   under it, one column of content, and a fixed bottom bar: Today, Entries, Templates
   and More. More is a `<details>` sheet over the page, just above the bar, so it works
@@ -79,10 +107,25 @@ It is the same on every screen; no screen draws its own title or navigation.
 - **Timer bar.** The layout load (`shellTimers`) lists the running timers, newest
   start first. With one running: a blue live dot, the elapsed time (ticking with
   JavaScript, the server's value without), the project colour dot, customer ›
-  project, activity and description, and Stop. The phone strip shows project,
-  activity and start, the elapsed time and Stop. With several running the newest shows
-  in full with a "+N" `<details>` that lists the others, each with its elapsed time
-  and Stop. With none it says "No timer running" in the same height.
+  project, activity and description, and Stop ("Stop (s)", marked `data-shown-stop`
+  for the `s` key). The time and name are a `data-entry-form` link to the timer's form,
+  opened over the screen. The phone strip shows customer › project (no description),
+  activity and start, the elapsed time, ▶ and Stop (a 44 px square: the live square,
+  the word for screen readers only). With several running the
+  newest shows in full with a "+N" `<details>` that lists the others, each with its
+  elapsed time and Stop. With none it says "No timer running" in the same height.
+- **Start list.** The PC's Start sits outside the pill; the phone's ▶ sits in the
+  strip. Both are a `<details>` (`data-start-list`) holding `StartList`: "Start a timer",
+  the templates by name (`shellTemplates`: colour dot, customer › project), then "Start
+  on a project…" (`/entries/new?timer=1`). A template with a description posts
+  `templateId` to `/timers/start` at once; one without opens a description line
+  (focused, may stay empty, Enter starts); one without a project links to
+  `/entries/new?template=<id>&timer=1`. With no templates the list also offers "Create
+  a template". On the PC it is a popover under Start; on the phone a sheet from the
+  bottom over a scrim that leaves the strip uncovered, so ▶ closes it without
+  JavaScript (the sticky top raises over the bottom bar while it is open). With
+  JavaScript, Escape, an outside click, a link in it, or a navigation close it, and
+  while the phone's sheet is open main, the bottom bar and the "+" are `inert`.
 - **Project colour.** `colourOf` gives each project the palette colour (1 to 8,
   `bg-project-1` to `bg-project-8`) at its place by creation order, ties by id,
   wrapping after eight. Nothing is stored. The bar's dot is its only use so far.
@@ -94,6 +137,17 @@ It is the same on every screen; no screen draws its own title or navigation.
   (`ownsStrip`), and the stop's Undo or refusal shows there. On every other screen the
   shell draws the strip under the header (`UndoStrip` in the layout), so a stop's
   Undo or a refusal shows there; the layout takes the flash only for those screens.
+  After a Stop (the flash's `restartId`) every strip offers Restart beside Undo, a post
+  of `id` to `/timers/restart`. Undo and Restart from the strip keep the screen's scroll
+  position. The strip is `position: sticky`: scrolled past its place it pins under the
+  sticky bars (their height is the layout's `--bars-height`, measured with the script;
+  without it the strip stays in its place) and casts the popover-down shadow. While it
+  is pinned, a control in the screen's content (in `main`, not in a dialog, not sticky or
+  fixed itself or inside such) focused under it is scrolled down clear of it (a
+  `focusin` handler), so keyboard focus is never hidden (WCAG 2.4.11). Focus in the bars
+  or the entry form leaves the page where it is. After a
+  save over a long screen, the overlay scrolls the saved row out from under the pinned
+  strip if it would be hidden there.
 - **Light and dark** follow the device setting; there is no in-app choice.
 
 ## Screens
@@ -115,20 +169,17 @@ In thumb order, one column; on the PC it keeps the width of a two-column layout,
    none (from its customer's projects when it has a customer). The button is "Start
    timer" when the result would run, else "Log". "Change times" offers date, start,
    end or minutes. Submits `entries.fromTemplate`.
-2. **Start a timer**: an active project, grouped by customer, and an optional
-   description (`timers.start`; the core stops a timer already running on that
-   project).
-3. **Today's entries**: entries whose interval touches today in the user's zone, with
+2. **Today's entries**: entries whose interval touches today in the user's zone, with
    in, out (or Running), hours, customer › project, "Since YYYY-MM-DD" when it
-   started on an earlier day, and description; each row opens
-   the edit screen.
+   started on an earlier day, and description; each row is a `data-entry-form` link
+   to `/entries/<id>?back=/`, so it opens the entry form over Today. A finished row
+   has a ▶ beside its link (a form posting to `/timers/restart`, named "Restart
+   <customer › project>", 44 px below `lg`).
 
-Running timers are in the shell's timer bar, not on Today; a Stop there on Today shows
-its Undo in Today's strip.
+Timers start and run in the shell's timer bar (its Start list), not on Today; a Stop
+there on Today shows its Undo in Today's strip.
 
-Empty states have no dead buttons: Start a timer
-says "Customers and projects are set up on the PC." with a "Set up customers and
-projects" link to `/setup` when there are no projects, and Templates says "Templates
+Empty states have no dead buttons: Templates says "Templates
 are set up on the PC." with a "Create a template" link to `/templates/new` when there
 are none; the Templates head always links "Edit templates" to `/templates`. A refused
 action re-renders the form it came from with the core's field messages beside the
@@ -200,10 +251,11 @@ narrows the projects (`narrowing.svelte.ts`). Activity and Location offer "Any",
 name as the core does. `searchInput` asks `entries.list` for entries that started
 in the range (`startedIn`), oldest first, at most 501; "Clear" returns to the month.
 
-**The list** is a ruled table of at most 500 rows: a checkbox, date (a link to the
-edit screen with `back` set to the search), in, out (or Running), hours, customer ›
-project, activity, location, reference, description, each time in the entry's own
-zone. The narrower PC widths drop activity and location; the phone stacks each row.
+**The list** is a ruled table of at most 500 rows: a checkbox, date (a
+`data-entry-form` link to the entry form with `back` set to the search, so it opens
+over Entries), in, out (or Running), hours, customer › project, activity, location,
+reference, description, each time in the entry's own zone, and on a finished row a ▶
+posting to `/timers/restart` ("Restart <customer › project>", back to the search). The narrower PC widths drop activity and location; the phone stacks each row.
 Above it, "<n> entries, <h:mm>" ("1 entry, h:mm"), running entries counted to now;
 a 501st entry adds "Showing the first 500 entries; narrow the filters."; none says
 "No entries match." with Clear. A head checkbox selects all shown with JavaScript;
@@ -328,32 +380,47 @@ phone one column in the order Customers, Projects, Weeks, Days. None says "No en
 match." with Clear (and the running line, when the only matches run). A date mistake
 shows as on Entries, with no result.
 
-### Edit entry (`/entries/[id]`)
+### The entry form (`/entries/new`, `/entries/[id]`)
 
-Start and end as `datetime-local` in the entry's own zones (an empty end makes the
-entry running), project, activity and location (the active ones plus the entry's
-current one, marked archived when it is), reference, description. Save sends
-`entries.update` with the form's `expectedVersion`; a save that changed nothing
-stores no batch and goes back without a strip. When the entry changed
-elsewhere since the form was loaded, the core's message shows with a Reload link
-that loads the entry as it is now. Delete asks first on the page itself ("Yes,
-delete it" / "Keep it"), then sends `entries.delete` with the version. A missing or
-another user's entry is a 404; a save or delete on an entry deleted since the page
-loaded says "This entry was deleted elsewhere." with a link back.
+One component, `components/entry/EntryForm.svelte`, for a new entry and an existing
+one; both pages render it inside the shell, and it works as a plain page form without
+JavaScript. With JavaScript every link to it (`data-entry-form`) opens it over the
+current screen instead (see Shell). Labels sit left of the fields from `lg`, above them below it. In order:
+"Fill from" (a new entry only: a link per template to `/entries/new?template=…`, which
+the script turns into filling the form in place with `fillValues`, shared with the
+server's `templateValues`), Date (a text field read with `readDate`; Today and Yesterday
+with JavaScript), Start, End and Duration (`TimeRow.svelte`: text fields read with
+`time-input.ts` on leaving them and on save, a refusal beside the field; a typed end
+fills the duration and a typed duration the end; a moved start keeps whichever was
+typed last, an untouched end by default; nothing is rewritten until typed, and a
+duration posted as it was shown is not read again, so an entry under a minute (`0:00`)
+saves; "next day",
+"+N days" and the end's other zone beside End; "No end: this starts a timer." when
+both are empty, "No end: the timer keeps running." on the running entry; "Start at previous end HH:MM" from `/entries/previous-end`),
+Customer › project (`ProjectPicker.svelte`: a grouped select without JavaScript, a
+combobox matching words of customer and project with `matchProjects`), Activity,
+Location, Reference, Description. Focus starts on Start, or on the project when the
+start is given; an existing entry on the phone focuses the sheet's heading instead, so
+no keyboard comes up.
 
-The screen returns to where it was opened from: `back` in the query (checked by
-`safeBack`, else Today) is kept as a hidden field on Save and Delete, and Save,
-Delete, a save that changed nothing, Cancel and the deleted-elsewhere link all go
-there (that link reads "Back to Entries" when `back` starts with `/entries`, else
-"Back to Today"). The Entries list links its rows with `back` set to its search; Today links
-without it. Save as template still goes to `/templates`.
+The footer has Cancel (`back`) and the one primary Save (Ctrl+Enter or Cmd+Enter). An
+existing entry also has Delete (at once; the strip offers it back), Copy
+(`/entries/new?copy=<id>`; a span under one minute, shown as `0:00`, copies as
+`0:01`), Restart (a post to `/timers/restart`; disabled with
+"Already running" on a running entry) and a Save as template disclosure; with
+JavaScript these four are disabled with "Save or cancel your changes first" while the
+form differs from what was loaded. On the PC these sit left of Cancel and Save in one
+footer row; on the phone they scroll with the fields and only Cancel and Save are
+pinned at the sheet's foot (a focused field scrolls clear of them). A refusal shows beside its field and the message
+above the footer; a stale version offers Reload, an entry deleted elsewhere says so
+with a link back. Every action returns to `back` (checked by `safeBack`, else Today)
+with the strip; a refusal carries the posted `back`, so a page post without JavaScript
+keeps it. With an `onDone` prop a successful action's redirect goes to it
+instead of being followed.
 
-A "Save as template" disclosure under the form (a name field and an outline Save
-template button) sends `templates.fromEntry({ entryId, name })`. On success it goes to
-`/templates` with the strip, so the new template is in view. A refusal (a duplicate
-name) re-renders the disclosure open, by attribute so it also works without
-JavaScript, with the posted name and the message beside the field, which takes the
-focus.
+An existing entry's untouched end is never re-sent, so its instant (seconds, days and
+zone) holds; a duration only recomputed from a moved start is no change, and a typed
+duration the end was linked from is sent as the duration (`updateInput`).
 
 ### History (`/history`)
 
@@ -465,8 +532,9 @@ and an outline **Download**, `GET /admin/backup/download?before-restore=1`, name
 
 The request's zone is, in order: the form's hidden `timeZone` field, the `tz`
 cookie, the zone of the user's newest entry of the last month, else UTC
-(`screens/zone.ts`). The app layout's script fills every `timeZone` field with the
-browser's zone and writes the cookie; when the cookie was missing or stale it reloads
+(`screens/zone.ts`). The app layout's script fills every hidden `timeZone` field with the
+browser's zone (except one marked `data-zone-fixed`: an existing entry's own zone, a copied entry's,
+or a template's own zone, from the page's query or a Fill from) and writes the cookie; when the cookie was missing or stale it reloads
 the screen's data once (not while a strip is showing). Today names the zone it uses,
 and says when it is only the default. Times are shown in each entry's own zone, as
 24-hour `HH:mm` and `YYYY-MM-DD`.
@@ -549,7 +617,7 @@ files.
   (so the two never share timers or entries), with customers, projects, templates and
   this morning's entries. The browser runs in a fixed-offset zone where it is about
   noon (`noonZone`), so the seeded times are today and in the past whenever the suite
-  runs. `phone.test.ts` covers Today, the edit screen, Save as template, undo and the
+  runs. `phone.test.ts` covers Today, the entry form from a row, Save as template, undo and the
   no-JavaScript posts; `setup.test.ts` covers Setup (create, rename, duplicates,
   archive and unarchive, a refused undo, a stale rename), Templates (create, edit,
   delete and undo, an archived project, a stale save) and their no-JavaScript posts;
@@ -583,7 +651,17 @@ files.
   time across two days, decimal hours, Last month and This month keeping the options,
   only a running entry matching ("No entries match." and the running line, no tables),
   the sidebar's Reports after Copy-out and current (under More on the phone) and the
-  no-JavaScript Show with Split ticked; `shell.test.ts` covers the shell with a user of its own per test: every screen reached from the navigation and shown current (More on the phone, Users and Backup for an admin), the title as the one `h1`, More closing on a choice and on Escape, "No timer running", a stop from the bar undone where it was stopped, several timers as the newest plus a count, a refused stop, Stop and Save never hidden by the bars, the project colour in the bar, and the bar and More as plain posts and links without JavaScript; `agent.test.ts` covers Agent access and `/mcp`
+  no-JavaScript Show with Split ticked; `entry-form.test.ts` covers the entry form and the timer bar (a user of its own per
+  test): an entry made and corrected over Reports and Entries without leaving them and
+  undone, closing by Back, Escape, Cancel and the dimmed screen, the phone's sheet with
+  Save above the keyboard and the "+" clear of content and bottom bar, forgiving times
+  and durations linked, Fill from a template, Start at previous end, Delete, Copy and
+  Save as template, a timer started from any screen and stopped and restarted from the
+  bar, the start list closing on Escape and an outside click, a timer on an earlier
+  project opened from the bar, a past entry restarted and a running one that cannot be,
+  a refused save keeping what was typed, the keys `n`, `s` and Ctrl+Enter (not typed
+  into a field), and the start list and Restart as plain posts without JavaScript;
+  `shell.test.ts` covers the shell with a user of its own per test: every screen reached from the navigation and shown current (More on the phone, Users and Backup for an admin), the title as the one `h1`, More closing on a choice and on Escape, "No timer running", a stop from the bar undone where it was stopped, several timers as the newest plus a count, a refused stop, Stop and Save never hidden by the bars, the project colour in the bar, and the bar and More as plain posts and links without JavaScript; `agent.test.ts` covers Agent access and `/mcp`
   with a user of its own per test (`seedEmptyUser`): a token made and shown once
   (gone on the next load, listed as "Never used") and a duplicate name refused, a
   `change` call with that token through Playwright's request client (headers

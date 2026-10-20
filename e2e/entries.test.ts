@@ -313,17 +313,22 @@ test('a refusal names the entry it came from', async ({ page }) => {
 	await expect(alert.getByRole('link', { name: 'Reload' })).toHaveCount(0);
 });
 
-test('opens an entry from a search, saves, and lands back on the search', async ({ page }) => {
+test('opens an entry over a search, saves, and the search stays', async ({ page }) => {
 	const user = await newMonth('open');
 	const { day } = user;
 	await openEntries(page, user);
 	await filterBy(page, 'Customer', 'Acme');
 	await search(page);
 
+	await page.waitForLoadState('networkidle');
 	await found(page)
 		.getByRole('link', { name: day(6) })
 		.click();
-	await expect(page.getByRole('heading', { name: 'Edit entry' })).toBeVisible();
+	// The form opens over the search: the address is the form's, Entries stays under it.
+	const form = page.getByRole('dialog', { name: 'Edit entry' });
+	await expect(form).toBeVisible();
+	await expect(page).toHaveURL(/\/entries\/\w+\?back=%2Fentries%3F/);
+	await expect(page.getByRole('heading', { name: 'Entries', level: 1 })).toBeVisible();
 	if (test.info().project.name === 'pc') {
 		await expect(
 			page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Entries' })
@@ -335,8 +340,9 @@ test('opens an entry from a search, saves, and lands back on the search', async 
 		).not.toHaveAttribute('aria-current', 'page');
 	}
 
-	await page.getByLabel('Description').fill('Filed the receipts twice');
-	await page.getByRole('button', { name: 'Save' }).click();
+	await form.getByLabel('Description').fill('Filed the receipts twice');
+	await form.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(form).toBeHidden();
 
 	// The search as the screen writes it: the blank filters left out.
 	await expect(page).toHaveURL(

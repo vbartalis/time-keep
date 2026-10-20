@@ -54,6 +54,7 @@ export function moreItems(isAdmin: boolean): NavItem[] {
 const TITLES: Record<string, string> = {
 	'/(app)': 'Today',
 	'/(app)/entries': 'Entries',
+	'/(app)/entries/new': 'New entry',
 	'/(app)/entries/[id]': 'Edit entry',
 	'/(app)/copy-out': 'Copy-out',
 	'/(app)/reports': 'Reports',
@@ -74,12 +75,12 @@ export function screenTitle(routeId: string | null): string {
 
 /**
  * The route of the nav item to mark current: the route itself or the item whose
- * sub-screen it is. The entry edit screen belongs to Entries when opened from its
- * list (`back` starts with `/entries`), else to Today. Null outside the navigation.
+ * sub-screen it is. The entry form (new or edit) belongs to Entries when opened from
+ * its list (`back` starts with `/entries`), else to Today. Null outside the navigation.
  */
 export function currentItem(routeId: string | null, back: string | null): string | null {
 	if (routeId === null) return null;
-	if (routeId === '/(app)/entries/[id]')
+	if (routeId === '/(app)/entries/[id]' || routeId === '/(app)/entries/new')
 		return back?.startsWith('/entries') ? ENTRIES.route : TODAY.route;
 	// Today's id prefixes every route, so only it matches exactly.
 	const item = sidebarItems(true).find(

@@ -1,4 +1,4 @@
-import type { BarTimer } from '#lib/components/shell/types.js';
+import type { BarTemplate, BarTimer } from '#lib/components/shell/types.js';
 import type { Core } from '../core/index';
 import { colourOf } from '../../project-colour';
 import { rows } from './actions';
@@ -20,4 +20,26 @@ export function shellTimers(core: Core, now: number): BarTimer[] {
 			startDate: earlierDate(e.startAt, e.startZone, now),
 			colour: colours.get(e.projectId) ?? 1
 		}));
+}
+
+/**
+ * The templates in the bar's start list, by name: each with its project's colour and
+ * customer › project, and whether a tap starts it at once (it has a project and a
+ * description) or first asks for a description, or opens the form (no project).
+ */
+export function shellTemplates(core: Core): BarTemplate[] {
+	const projects = rows(core.projects.list({ includeArchived: true }));
+	const colours = colourOf(projects);
+	const byId = new Map(projects.map((p) => [p.id, p]));
+	return rows(core.templates.list()).map((t) => {
+		const project = t.projectId === null ? undefined : byId.get(t.projectId);
+		return {
+			id: t.id,
+			name: t.name,
+			colour: project ? (colours.get(project.id) ?? null) : null,
+			label: project ? `${project.customerName} › ${project.name}` : null,
+			hasProject: t.projectId !== null,
+			hasDescription: (t.description ?? '').trim() !== ''
+		};
+	});
 }

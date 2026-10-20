@@ -1,10 +1,16 @@
 <script lang="ts">
 	import { afterNavigate, invalidateAll } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import { tick } from 'svelte';
+	import Plus from '@lucide/svelte/icons/plus';
+	import EntryOverlay from '#lib/components/entry/EntryOverlay.svelte';
 	import BottomBar from '#lib/components/shell/BottomBar.svelte';
 	import Sidebar from '#lib/components/shell/Sidebar.svelte';
 	import TimerBar from '#lib/components/shell/TimerBar.svelte';
 	import UndoStrip from '#lib/components/UndoStrip.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { openForm, openInPlace } from '#lib/entry-link.js';
 	import { currentItem, screenTitle } from '#lib/shell.js';
 	import type { LayoutProps } from './$types';
 
@@ -12,12 +18,19 @@
 
 	const title = $derived(screenTitle(page.route.id));
 	const current = $derived(currentItem(page.route.id, page.url.searchParams.get('back')));
-	// Where a stop or an undo returns to: this screen, its query included.
-	const back = $derived(page.url.pathname + page.url.search);
+	// Where a stop or an undo returns to: this screen, its query included; while the entry
+	// form is open over it (the address is the form's), the screen under the form.
+	const back = $derived(page.state.entryForm?.back ?? page.url.pathname + page.url.search);
+	/** The sticky bars' height (top bar and timer strip, or the header): the undo strip pins under them. */
+	let barsHeight = $state(0);
+	/** The phone's start sheet is open: the page behind it takes no focus or taps. */
+	let sheetOpen = $state(false);
+	const newEntry = $derived(`${resolve('/(app)/entries/new')}?back=${encodeURIComponent(back)}`);
 
 	/**
 	 * The device's zone: remembered in the `tz` cookie (read by the server when a form
-	 * has none) and written into every hidden `timeZone` field (not the template form's own text field). When the cookie was
+	 * has none) and written into every hidden `timeZone` field (not the template form's own
+	 * text field, nor one marked `data-zone-fixed`: an entry's or a template's own zone). When the cookie was
 	 * missing or stale, the screen reloads (unless a flash is showing) so its times use the device's zone.
 	 */
 	function fillZone() {
@@ -32,7 +45,7 @@
 		const stale = !document.cookie.split('; ').includes(`tz=${value}`);
 		document.cookie = `tz=${value}; path=/; max-age=31536000; samesite=lax`;
 		for (const input of document.querySelectorAll<HTMLInputElement>(
-			'input[type="hidden"][name="timeZone"]'
+			'input[type="hidden"][name="timeZone"]:not([data-zone-fixed])'
 		)) {
 			// The default value, so a form reset keeps it.
 			input.defaultValue = zone;
@@ -42,14 +55,69 @@
 	}
 
 	afterNavigate(fillZone);
+	// A form opened in place is no navigation: its zone field is filled when it opens.
+	$effect(() => {
+		if (page.state.entryForm?.href) void tick().then(fillZone);
+	});
+
+	/** Any link marked `data-entry-form` opens the form over the screen (before the router sees it). */
+	$effect(() => {
+		const onclick = (e: MouseEvent) => {
+			const link =
+				e.target instanceof Element ? e.target.closest('a[data-entry-form][href]') : null;
+			const href = link?.getAttribute('href');
+			if (href) void openInPlace(e, href);
+		};
+		document.addEventListener('click', onclick, true);
+		return () => document.removeEventListener('click', onclick, true);
+	});
+
+	const FIELDS = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])';
+
+	/** The Stop of the timer the bar shows in full, never one in the "+N" list. */
+	function shownStop(): HTMLButtonElement | null {
+		for (const bar of document.querySelectorAll<HTMLElement>('section[aria-label="Timer"]')) {
+			if (!bar.checkVisibility()) continue;
+			return bar.querySelector<HTMLButtonElement>('[data-shown-stop]');
+		}
+		return null;
+	}
+
+	/** `n` opens a new entry, `s` stops the shown timer: outside fields and dialogs, unmodified. */
+	function onkeydown(e: KeyboardEvent) {
+		if (e.key !== 'n' && e.key !== 's') return;
+		if (e.defaultPrevented || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+		const target = e.target instanceof Element ? e.target : null;
+		if (target?.closest(FIELDS) || (target instanceof HTMLElement && target.isContentEditable))
+			return;
+		if (document.querySelector('dialog[open]')) return;
+		if (e.key === 'n') {
+			e.preventDefault();
+			void openForm(newEntry);
+			return;
+		}
+		const stop = shownStop();
+		if (!stop?.form) return;
+		e.preventDefault();
+		stop.form.requestSubmit(stop);
+	}
 </script>
 
-<div class="min-h-dvh lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)]">
+<svelte:window {onkeydown} />
+
+<div
+	class="min-h-dvh lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)]"
+	style:--bars-height={barsHeight ? `${barsHeight}px` : undefined}
+>
 	<Sidebar username={data.user.username} isAdmin={data.user.isAdmin} {current} />
 
 	<div class="flex min-w-0 flex-col">
 		<!-- The screen's title, its one h1: the phone's top bar, the PC's header. -->
-		<div class="sticky top-0 z-20">
+		<!-- Raised over the bottom bar and the "+" while the start list's sheet is open. -->
+		<div
+			class="sticky top-0 z-20 has-[[data-start-list][open]]:z-40"
+			bind:offsetHeight={barsHeight}
+		>
 			<header
 				class="h-14 bg-sidebar text-sidebar-accent-foreground lg:h-15 lg:border-b lg:border-border lg:bg-card lg:text-foreground"
 			>
@@ -59,19 +127,39 @@
 						{title}
 					</h1>
 					<!-- The timer bar on the PC; display:none on the phone, so it is out of the a11y tree. -->
-					<div class="ml-auto hidden min-w-0 flex-1 justify-end lg:flex">
-						<TimerBar timers={data.timers} now={data.now} {back} variant="header" />
+					<div class="ml-auto hidden min-w-0 flex-1 items-center justify-end gap-3 lg:flex">
+						<TimerBar
+							timers={data.timers}
+							templates={data.templates}
+							now={data.now}
+							{back}
+							variant="header"
+						/>
 					</div>
+					<Button
+						href={newEntry}
+						data-entry-form
+						title="New entry (n)"
+						class="hidden shrink-0 lg:inline-flex">+ New entry</Button
+					>
 				</div>
 			</header>
 			<!-- The timer strip on the phone, under the top bar. -->
 			<div class="lg:hidden">
-				<TimerBar timers={data.timers} now={data.now} {back} variant="strip" />
+				<TimerBar
+					timers={data.timers}
+					templates={data.templates}
+					now={data.now}
+					{back}
+					variant="strip"
+					onsheet={(open) => (sheetOpen = open)}
+				/>
 			</div>
 		</div>
 
 		<main
-			class="flex w-full max-w-6xl min-w-0 flex-col gap-6 px-4 pt-6 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:px-6 lg:py-6"
+			inert={sheetOpen}
+			class="flex w-full max-w-6xl min-w-0 flex-col gap-6 px-4 pt-6 pb-[calc(9.75rem+env(safe-area-inset-bottom))] lg:px-6 lg:py-6"
 		>
 			<!-- The undo strip for screens without their own (a bar stop's Undo or refusal). -->
 			<UndoStrip flash={data.flash} {back} />
@@ -79,5 +167,22 @@
 		</main>
 	</div>
 
-	<BottomBar isAdmin={data.user.isAdmin} {current} />
+	<div class="contents" inert={sheetOpen}>
+		<BottomBar isAdmin={data.user.isAdmin} {current} />
+	</div>
+
+	<!-- The phone's "+", above the bottom bar; main's foot leaves it room. -->
+	<!-- eslint-disable svelte/no-navigation-without-resolve -- newEntry resolves it -->
+	<a
+		href={newEntry}
+		data-entry-form
+		aria-label="New entry"
+		inert={sheetOpen}
+		class="fixed right-4 bottom-[calc(5.0625rem+env(safe-area-inset-bottom))] z-30 inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors duration-150 ease-out outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:hidden"
+	>
+		<Plus class="size-6" aria-hidden="true" />
+	</a>
+	<!-- eslint-enable svelte/no-navigation-without-resolve -->
 </div>
+
+<EntryOverlay />

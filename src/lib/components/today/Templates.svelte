@@ -18,7 +18,8 @@
 <section aria-labelledby="templates-heading">
 	<SectionHead id="templates-heading" title="Templates">
 		{#snippet aside()}
-			<a href={resolve('/(app)/templates')} class={link}>Edit templates</a>
+			<!-- Out of the phone's "+" column. -->
+			<a href={resolve('/(app)/templates')} class="{link} max-lg:mr-14">Edit templates</a>
 		{/snippet}
 	</SectionHead>
 	{#if templates.length === 0}
