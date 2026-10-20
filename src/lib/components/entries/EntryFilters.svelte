@@ -58,7 +58,7 @@
 
 	const field = 'flex min-w-0 flex-col gap-2';
 	const link =
-		'rounded-sm font-medium text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring';
+		'rounded-sm font-medium text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:inline-flex max-lg:min-h-11 max-lg:min-w-11 max-lg:items-center';
 </script>
 
 <form method="GET" class="flex flex-col gap-4 border-b border-border pt-3 pb-4" role="search">
@@ -70,7 +70,7 @@
 				name="from"
 				type="date"
 				value={search.from}
-				class="punch"
+				class="figures"
 				aria-invalid={dateError ? 'true' : undefined}
 				aria-describedby={dateError ? 'find-date-error' : undefined}
 			/>
@@ -82,7 +82,7 @@
 				name="to"
 				type="date"
 				value={search.to}
-				class="punch"
+				class="figures"
 				aria-invalid={dateError ? 'true' : undefined}
 				aria-describedby={dateError ? 'find-date-error' : undefined}
 			/>

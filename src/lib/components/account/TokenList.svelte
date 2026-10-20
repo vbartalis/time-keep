@@ -28,9 +28,9 @@
 				<span
 					class="col-start-1 row-start-2 flex flex-wrap gap-x-4 text-xs text-muted-foreground lg:col-start-2 lg:row-start-1"
 				>
-					<span class="punch"><span class="sr-only">Created&nbsp;</span>{t.created}</span>
+					<span class="figures"><span class="sr-only">Created&nbsp;</span>{t.created}</span>
 					{#if t.lastUsed}
-						<span class="punch"><span class="sr-only">Last used&nbsp;</span>{t.lastUsed}</span>
+						<span class="figures"><span class="sr-only">Last used&nbsp;</span>{t.lastUsed}</span>
 					{:else}
 						<span>Never used</span>
 					{/if}

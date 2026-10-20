@@ -36,12 +36,10 @@
 	const none = $derived(enhanced && chosen.length === 0);
 
 	const link =
-		'rounded-sm font-medium text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring';
+		'rounded-sm font-medium text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:inline-flex max-lg:min-h-11 max-lg:min-w-11 max-lg:items-center';
 </script>
 
 <svelte:head><title>History · Time Keep</title></svelte:head>
-
-<h1 class="text-xl font-semibold tracking-[-0.01em]">History</h1>
 
 <!-- A refused action replaces the strip: the screen shows the failure, not an older success. -->
 <UndoStrip flash={failure ? null : data.flash} back={data.back} />
@@ -90,8 +88,8 @@
 					id="day-{i}"
 					class="flex items-baseline gap-2 border-b border-foreground pb-1.5 text-sm"
 				>
-					<span class="punch">{date}</span>
-					<span class="printed">{weekday}</span>
+					<span class="figures">{date}</span>
+					<span class="caps">{weekday}</span>
 				</h2>
 				<ul>
 					{#each group.batches as batch (batch.id)}

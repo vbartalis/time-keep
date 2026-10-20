@@ -7,15 +7,15 @@
 		title,
 		rows,
 		total,
-		punched = false
+		dateLabels = false
 	}: {
 		/** The title's id: the section is named by it. */
 		id: string;
 		title: string;
 		rows: { key: string; label: string; duration: string }[];
 		total: string;
-		/** The labels are dates, so they are punched. */
-		punched?: boolean;
+		/** The labels are dates, so they set in figures. */
+		dateLabels?: boolean;
 	} = $props();
 </script>
 
@@ -31,17 +31,17 @@
 		<Table.Body>
 			{#each rows as row (row.key)}
 				<Table.Row class="border-b border-border hover:bg-accent">
-					<Table.Cell class={punched ? 'punch whitespace-normal' : 'whitespace-normal'}
+					<Table.Cell class={dateLabels ? 'whitespace-normal figures' : 'whitespace-normal'}
 						>{row.label}</Table.Cell
 					>
-					<Table.Cell class="text-right punch">{row.duration}</Table.Cell>
+					<Table.Cell class="text-right figures">{row.duration}</Table.Cell>
 				</Table.Row>
 			{/each}
 		</Table.Body>
 		<Table.Footer class="bg-transparent">
 			<Table.Row class="border-t border-foreground">
 				<Table.Cell class="font-semibold">Total</Table.Cell>
-				<Table.Cell class="text-right punch font-semibold">{total}</Table.Cell>
+				<Table.Cell class="text-right font-semibold figures">{total}</Table.Cell>
 			</Table.Row>
 		</Table.Footer>
 	</Table.Root>

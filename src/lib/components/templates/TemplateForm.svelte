@@ -154,7 +154,7 @@
 				name={f.name}
 				type={f.type as 'time' | 'number'}
 				value={value(f.name)}
-				class="punch lg:max-w-48"
+				class="figures lg:max-w-48"
 				min={f.type === 'number' ? 1 : undefined}
 				step={f.type === 'number' ? 1 : undefined}
 				inputmode={f.type === 'number' ? 'numeric' : undefined}

@@ -150,7 +150,7 @@ test('an agent change with the token shows on History and undoes in one step', a
 	const line = tokenLine(page, 'Laptop');
 	await expect(line).not.toContainText('Never used');
 	// The hidden prefix ends in a no-break space, so the name reads "Last used 2026-…".
-	await expect(line.locator('.punch').filter({ hasText: 'Last used' })).toHaveText(
+	await expect(line.locator('.figures').filter({ hasText: 'Last used' })).toHaveText(
 		/^Last used\s\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/
 	);
 });

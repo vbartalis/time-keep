@@ -20,7 +20,7 @@ export const warningText = (w: { code: string; message: string }): string =>
 const hm = (minutes: number) =>
 	`${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`;
 
-/** A template's fixed times, punched: `09:00–17:30`, `09:00 + 0:45`, `0:45`, `09:00 –`; null when none. */
+/** A template's fixed times: `09:00–17:30`, `09:00 + 0:45`, `0:45`, `09:00 –`; null when none. */
 export function templateTimes(t: {
 	startTime: string | null;
 	endTime: string | null;

@@ -13,7 +13,7 @@
 
 <div class="flex min-h-dvh flex-col">
 	<header class="flex h-14 items-center bg-sidebar px-4 text-sidebar-accent-foreground lg:px-6">
-		<span class="text-base printed tracking-[0.08em]">time-keep</span>
+		<span class="text-lg font-bold">time-keep</span>
 	</header>
 
 	<main class="flex flex-1 flex-col items-center px-4 pt-10 pb-10 sm:justify-center sm:pt-6">

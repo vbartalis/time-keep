@@ -1,10 +1,10 @@
 # 5. The UI looks like a punch-clock time card
 
 - date: 2026-10-18
-- status: active
+- status: superseded
 - amends: —
 - amended-by: —
-- superseded-by: —
+- superseded-by: 9
 
 ## Rule
 

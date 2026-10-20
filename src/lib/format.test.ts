@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { formatElapsed, templateTimes, warningText } from './format';
 
 describe('formatElapsed', () => {
-	it('punches h:mm:ss, never negative', () => {
+	it('formats h:mm:ss, never negative', () => {
 		expect(formatElapsed(0)).toBe('0:00:00');
 		expect(formatElapsed(3_723_999)).toBe('1:02:03');
 		expect(formatElapsed(26 * 3_600_000)).toBe('26:00:00');
@@ -29,7 +29,7 @@ describe('templateTimes', () => {
 		endTime,
 		durationMinutes
 	});
-	it('punches what the template fixes', () => {
+	it('formats what the template fixes', () => {
 		expect(templateTimes(t('09:00', '17:30', null))).toBe('09:00–17:30');
 		expect(templateTimes(t('22:00', '06:00', null))).toBe('22:00–06:00');
 		expect(templateTimes(t('09:00', null, 45))).toBe('09:00 + 0:45');

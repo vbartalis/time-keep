@@ -20,6 +20,55 @@ The operator answers whenever they like, here (under the entry) or in conversati
 An answer is added to [the operator's voice](operator-voice.md) in their words, and if
 it changes built work, it becomes a roadmap item.
 
+## 2026-10-20 — 11
+
+- Question: Where should a project's colour come from: worked out from the project
+  with nothing stored (two projects may share one once there are more projects than
+  colours), stored on the project automatically, or picked by you per customer and
+  project in Setup, as Kimai lets you?
+- Call made: Worked out from the project, nothing stored. It is the smallest change:
+  no new field, migration, history or MCP change, and the back end stays as it is.
+  Colour is presentation, applied on the way out (vision, principle 4). Nothing on
+  record says you want to pick colours, and the vision gives projects no colour field.
+- If answered differently: a later item adds a colour to projects (a migration, the
+  core's write path and history, the MCP schemas, backup), assigned on creation or
+  picked in Setup, and every screen reads the stored colour instead.
+
+## 2026-10-20 — 11
+
+- Question: Option A (Kimai's structure in a new skin) was chosen as the direction. Its
+  skin had a green-grey ground, a bottle-green sidebar, and a double rule under every
+  total. Should those stay, or should the skin keep to Kimai's own colours: a neutral
+  light ground, a near-black sidebar and plain bold totals?
+- Call made: Keep to Kimai. A neutral near-white ground (dark: neutral near-black), a
+  neutral near-black sidebar as in Kimai and option C, and totals in plain bold with no
+  double rule. Nothing on record asks for a green tint or a ledger-style rule, and
+  neither Kimai nor the calendar apps have them. Everything else in A stays: the
+  layout, one blue for the running timer and the primary action, red only for
+  overlaps, project-colour blocks with a pale fill and a strong edge, Public Sans.
+- If answered differently: item 11's tokens bring back the green ground and sidebar,
+  the double rule under totals, or both, and items 12–15 inherit them.
+
+## 2026-10-20 — 11
+
+- Question: Light and dark: should the app only follow the device's setting, or also
+  offer a light, dark or automatic choice in the app, as Kimai's skins do?
+- Call made: Follow the device only, as round 1 does. It is the smaller change, and an
+  in-app choice is a stored user setting the vision does not list. Both themes are
+  still designed and checked.
+- If answered differently: item 11's shell (or item 15's Account screen) gains a
+  light, dark or automatic choice, stored per user, that wins over the device.
+
+## 2026-10-20 — 11
+
+- Question: Beyond "nothing like kimai", "horrendous" and "UX seems awful"
+  (2026-10-19), what would make a new look feel wrong to you?
+- Call made: Nothing more on record. The direction is judged against your words: close
+  to Kimai's structure, the calendar apps you named (Google, Samsung) as inspiration,
+  and no themed concept like round 1's punch card. No other dislikes are assumed.
+- If answered differently: the direction chosen in item 11 is checked against what you
+  name, and items 12–15 follow any change to it.
+
 ## 2026-10-20 — 10
 
 - Question: Roadmap item 12 has the timer bar start "from recents, favourites and

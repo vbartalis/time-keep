@@ -13,13 +13,12 @@
 			? `${t.customerName} › ${t.projectName}`
 			: (t.customerName ?? t.projectName);
 	const link =
-		'rounded-sm font-semibold text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring';
+		'rounded-sm font-semibold text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:inline-flex max-lg:min-h-11 max-lg:min-w-11 max-lg:items-center';
 </script>
 
 <svelte:head><title>Templates · Time Keep</title></svelte:head>
 
-<div class="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
-	<h1 class="text-xl font-semibold tracking-[-0.01em]">Templates</h1>
+<div class="flex flex-wrap items-end justify-end gap-x-4 gap-y-3">
 	<Button href={resolve('/(app)/templates/new')} class="w-full sm:w-auto">New template</Button>
 </div>
 
@@ -57,8 +56,8 @@
 					<Table.Cell class="whitespace-normal max-md:hidden">{where(t) ?? ''}</Table.Cell>
 					<Table.Cell class="whitespace-normal max-lg:hidden">{t.activityName ?? ''}</Table.Cell>
 					<Table.Cell class="whitespace-normal max-lg:hidden">{t.locationName ?? ''}</Table.Cell>
-					<Table.Cell class="punch whitespace-nowrap">{times ?? ''}</Table.Cell>
-					<Table.Cell class="text-xs printed {t.runs ? 'text-live' : 'text-muted-foreground'}">
+					<Table.Cell class="whitespace-nowrap figures">{times ?? ''}</Table.Cell>
+					<Table.Cell class="text-xs caps {t.runs ? 'text-live' : 'text-muted-foreground'}">
 						{t.runs ? 'Timer' : 'Log'}
 					</Table.Cell>
 				</Table.Row>

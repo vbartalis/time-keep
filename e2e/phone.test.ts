@@ -29,6 +29,8 @@ const rememberZone = (context: BrowserContext) =>
 
 const strip = (page: Page) => page.getByRole('status');
 const section = (page: Page, name: string) => page.getByRole('region', { name, exact: true });
+/** The shell's timer bar: the PC header's pill or the phone's strip. */
+const bar = (page: Page) => section(page, 'Timer');
 const entryRow = (page: Page, text: string) =>
 	section(page, 'Today’s entries').getByRole('link').filter({ hasText: text });
 
@@ -69,7 +71,7 @@ test('Today shows no placeholder panel, only its working sections', async ({ pag
 
 	await expect(page.getByRole('heading', { name: 'At the desk' })).toHaveCount(0);
 	await expect(page.getByText('Not built yet')).toHaveCount(0);
-	for (const name of ['Timers', 'Templates', 'Start a timer', 'Today’s entries'])
+	for (const name of ['Templates', 'Start a timer', 'Today’s entries'])
 		await expect(section(page, name)).toBeVisible();
 });
 
@@ -77,22 +79,20 @@ test('starts a timer, a second on the same project stops the first, stop undoes'
 	page
 }) => {
 	await signIn(page, user.username);
-	const timers = section(page, 'Timers');
+	const timers = bar(page);
 
 	await test.step('start a timer and see it running', async () => {
 		await startTimer(page, 'Mobile app', 'First timer');
 		await expect(strip(page)).toContainText('Done: Start timer on "Mobile app".');
-		await expect(timers.getByRole('listitem')).toHaveCount(1);
-		await expect(timers).toContainText('Northwind › Mobile app');
-		await expect(timers).toContainText('First timer');
+		await expect(timers.getByRole('button', { name: /^Stop / })).toHaveCount(1);
+		await expect(timers).toContainText('Mobile app');
 		await expect(entryRow(page, 'First timer')).toContainText('Running');
 	});
 
 	await test.step('a second timer on the same project stops the first', async () => {
 		await startTimer(page, 'Mobile app', 'Second timer');
-		await expect(timers.getByRole('listitem')).toHaveCount(1);
-		await expect(timers).toContainText('Second timer');
-		await expect(timers).not.toContainText('First timer');
+		await expect(timers.getByRole('button', { name: /^Stop / })).toHaveCount(1);
+		await expect(timers.locator('summary')).toHaveCount(0);
 		await expect(entryRow(page, 'First timer')).not.toContainText('Running');
 		await expect(entryRow(page, 'Second timer')).toContainText('Running');
 	});
@@ -100,16 +100,16 @@ test('starts a timer, a second on the same project stops the first, stop undoes'
 	await test.step('stop it, and the redirected Today undoes the stop', async () => {
 		await timers.getByRole('button', { name: /^Stop Mobile app/ }).click();
 		await expect(strip(page)).toContainText('Done: Stop timer on "Mobile app".');
-		await expect(timers).toContainText('No timer running.');
+		await expect(timers).toContainText('No timer running');
 		await expect(entryRow(page, 'Second timer')).not.toContainText('Running');
 
 		await strip(page).getByRole('button', { name: 'Undo' }).click();
 		await expect(strip(page)).toContainText('Undone.');
-		await expect(timers).toContainText('Second timer');
+		await expect(timers).toContainText('Mobile app');
 		await expect(entryRow(page, 'Second timer')).toContainText('Running');
 
 		await timers.getByRole('button', { name: /^Stop Mobile app/ }).click();
-		await expect(timers).toContainText('No timer running.');
+		await expect(timers).toContainText('No timer running');
 	});
 });
 
@@ -205,7 +205,7 @@ test('a user without projects sees where to set them up', async ({ page }, testI
 	const empty = await seedEmptyUser(`${testInfo.project.name}-empty`);
 	await signIn(page, empty.username);
 
-	await expect(section(page, 'Timers')).toContainText('No timer running.');
+	await expect(bar(page)).toContainText('No timer running');
 	await expect(section(page, 'Templates')).toContainText('Templates are set up on the PC.');
 	await expect(
 		section(page, 'Templates').getByRole('link', { name: 'Create a template' })
@@ -236,17 +236,17 @@ test.describe('without JavaScript', () => {
 		await expect(entryRow(page, 'Read the pull requests')).toContainText('10:30');
 
 		await startTimer(page, 'Operations', 'Offline timer');
-		const timers = section(page, 'Timers');
-		await expect(timers).toContainText('Offline timer');
+		const timers = bar(page);
+		await expect(timers).toContainText('Operations');
 		await timers.getByRole('button', { name: /^Stop Operations/ }).click();
 		await expect(strip(page)).toContainText('Done: Stop timer on "Operations".');
-		await expect(timers).toContainText('No timer running.');
+		await expect(timers).toContainText('No timer running');
 
 		await strip(page).getByRole('button', { name: 'Undo' }).click();
 		await expect(strip(page)).toContainText('Undone.');
-		await expect(timers).toContainText('Offline timer');
+		await expect(timers).toContainText('Operations');
 		await timers.getByRole('button', { name: /^Stop Operations/ }).click();
-		await expect(timers).toContainText('No timer running.');
+		await expect(timers).toContainText('No timer running');
 
 		// The layout's script writes the zone cookie; without JavaScript it never ran.
 		const cookies = await page.context().cookies();

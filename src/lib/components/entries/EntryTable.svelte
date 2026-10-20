@@ -41,7 +41,7 @@
 	const box =
 		'size-4.5 rounded-sm border-input align-middle accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
 	const link =
-		'rounded-sm text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring';
+		'rounded-sm text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:inline-flex max-lg:min-h-11 max-lg:min-w-11 max-lg:items-center';
 	// On the phone each row stacks beside its checkbox: date and times, customer ›
 	// project, then reference and description.
 	const cell = 'max-lg:block max-lg:px-0 max-lg:py-0.5';
@@ -96,27 +96,27 @@
 						{form}
 					/>
 				</Table.Cell>
-				<!-- The phone's first line: the date and the punched times together. -->
+				<!-- The phone's first line: the date and the times together. -->
 				<Table.Cell class="{cell} lg:hidden">
 					<span class="flex flex-wrap items-baseline gap-x-3">
 						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- edit() resolves it -->
-						<a href={edit(e.id)} class="punch {link}">{e.date}</a>
-						<span class="punch">{e.in}–{e.out ?? ''}</span>
-						{#if e.out === null}<span class="text-xs printed text-live">Running</span>{/if}
-						<span class="punch {e.out ? '' : 'text-live'}">{e.hours}</span>
+						<a href={edit(e.id)} class="figures {link}">{e.date}</a>
+						<span class="figures">{e.in}–{e.out ?? ''}</span>
+						{#if e.out === null}<span class="text-xs caps text-live">Running</span>{/if}
+						<span class="figures {e.out ? '' : 'text-live'}">{e.hours}</span>
 					</span>
 				</Table.Cell>
 				<Table.Cell class="max-lg:hidden">
 					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- edit() resolves it -->
-					<a href={edit(e.id)} class="punch {link}">{e.date}</a>
+					<a href={edit(e.id)} class="figures {link}">{e.date}</a>
 				</Table.Cell>
-				<Table.Cell class="punch max-lg:hidden">{e.in}</Table.Cell>
+				<Table.Cell class="figures max-lg:hidden">{e.in}</Table.Cell>
 				{#if e.out}
-					<Table.Cell class="punch max-lg:hidden">{e.out}</Table.Cell>
+					<Table.Cell class="figures max-lg:hidden">{e.out}</Table.Cell>
 				{:else}
-					<Table.Cell class="text-xs printed text-live max-lg:hidden">Running</Table.Cell>
+					<Table.Cell class="text-xs caps text-live max-lg:hidden">Running</Table.Cell>
 				{/if}
-				<Table.Cell class="punch max-lg:hidden {e.out ? '' : 'text-live'}">{e.hours}</Table.Cell>
+				<Table.Cell class="figures max-lg:hidden {e.out ? '' : 'text-live'}">{e.hours}</Table.Cell>
 				<Table.Cell class="{cell} whitespace-normal">
 					<span class="font-semibold text-pretty">{where(e)}</span>
 					{#if marks.length > 0}

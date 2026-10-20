@@ -75,10 +75,10 @@
 			<span class="font-semibold text-pretty">{t.name}</span>
 			<span class="text-sm text-pretty text-muted-foreground">
 				{where ?? 'Any project'}
-				{#if times}· <span class="punch">{times}</span>{/if}
+				{#if times}· <span class="figures">{times}</span>{/if}
 			</span>
 		</span>
-		<span class="text-xs printed {t.runs ? 'text-live' : 'text-muted-foreground'}">
+		<span class="text-xs caps {t.runs ? 'text-live' : 'text-muted-foreground'}">
 			{t.runs ? 'Timer' : 'Log'}
 		</span>
 		<ChevronDown
@@ -104,7 +104,7 @@
 				{/each}
 				{#if times}
 					<dt class="text-muted-foreground">Times</dt>
-					<dd class="punch">{times}</dd>
+					<dd class="figures">{times}</dd>
 				{/if}
 				{#if t.timeZone}
 					<dt class="text-muted-foreground">Time zone</dt>
@@ -199,7 +199,7 @@
 							name={f.name}
 							type={f.type as 'date' | 'time' | 'number'}
 							value={values[f.name] ?? ''}
-							class="punch"
+							class="figures"
 							min={f.type === 'number' ? 1 : undefined}
 							step={f.type === 'number' ? 1 : undefined}
 							inputmode={f.type === 'number' ? 'numeric' : undefined}

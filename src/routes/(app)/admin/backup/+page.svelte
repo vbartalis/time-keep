@@ -11,11 +11,9 @@
 
 <svelte:head><title>Backup</title></svelte:head>
 
-<h1 class="text-xl font-semibold tracking-[-0.01em]">Backup</h1>
-
 <div class="flex flex-col gap-10">
 	<section class="flex w-full max-w-2xl flex-col">
-		<h2 class="border-b border-foreground pb-1.5 text-sm printed">Backup</h2>
+		<h2 class="border-b border-foreground pb-1.5 caps">Backup</h2>
 		<p class="border-b border-border py-3 text-sm">
 			A backup is the whole database: every user, their time data and history. Keep it somewhere
 			safe; it holds password hashes.
@@ -35,7 +33,7 @@
 		use:enhance
 		class="flex w-full max-w-2xl flex-col"
 	>
-		<h2 class="border-b border-foreground pb-1.5 text-sm printed">Restore</h2>
+		<h2 class="border-b border-foreground pb-1.5 caps">Restore</h2>
 		<p class="border-b border-border py-3 text-sm">
 			Restoring replaces every user's data with the backup's and signs everyone out.
 		</p>
@@ -48,7 +46,7 @@
 				name="file"
 				type="file"
 				accept=".db"
-				class="min-w-0 text-sm file:mr-3 file:h-9 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:text-sm file:font-medium"
+				class="min-w-0 text-sm file:mr-3 file:h-11 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:text-sm file:font-medium lg:file:h-9"
 			/>
 		</div>
 		<div
@@ -74,9 +72,9 @@
 
 	{#if data.beforeRestore}
 		<section class="flex w-full max-w-2xl flex-col">
-			<h2 class="border-b border-foreground pb-1.5 text-sm printed">Before the last restore</h2>
+			<h2 class="border-b border-foreground pb-1.5 caps">Before the last restore</h2>
 			<p class="border-b border-border py-3 text-sm">
-				The data as it was just before the last restore, <span class="punch"
+				The data as it was just before the last restore, <span class="figures"
 					>{data.beforeRestore}</span
 				>.
 			</p>

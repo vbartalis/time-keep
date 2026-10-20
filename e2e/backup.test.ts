@@ -58,6 +58,12 @@ test('backup: a user who is not an admin has no access', async ({ page }, testIn
 	const user = await seedEmptyUser(`${testInfo.project.name}-nobackup`);
 	await signIn(page, user.username, PASSWORD);
 	await expect(page.getByText(`Signed in as ${user.username}`)).toBeVisible();
+	// On the phone the screens past the bar are in More.
+	const more = page
+		.getByRole('navigation', { name: 'Main' })
+		.locator('summary', { hasText: 'More' });
+	if (await more.isVisible()) await more.click();
+	await expect(page.getByRole('link', { name: 'Account' })).toBeVisible();
 	await expect(page.getByRole('link', { name: 'Backup' })).toHaveCount(0);
 
 	expect((await page.request.get('/admin/backup')).status()).toBe(403);

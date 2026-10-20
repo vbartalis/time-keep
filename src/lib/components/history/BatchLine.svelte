@@ -33,7 +33,7 @@
 		undone && 'text-muted-foreground'
 	]}
 >
-	<span class="pt-0.5 punch">{batch.time}</span>
+	<span class="pt-0.5 figures">{batch.time}</span>
 
 	<div class="flex min-w-0 flex-col gap-1">
 		<p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
@@ -52,7 +52,7 @@
 		<details {open} class="group text-sm">
 			<summary
 				aria-describedby="batch-{batch.id}"
-				class="w-fit cursor-pointer rounded-sm underline outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:py-1.5"
+				class="w-fit cursor-pointer rounded-sm underline outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:py-3"
 			>
 				{changes(batch.count)}
 			</summary>

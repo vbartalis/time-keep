@@ -30,17 +30,6 @@ export const load: PageServerLoad = ({ locals, cookies }) => {
 	const { zone, source } = zoneFor(core, { cookie: cookies.get(ZONE_COOKIE) }, now);
 	const range = todayRange(now, zone);
 
-	const timers = rows(core.entries.list({ running: true })).map((e) => ({
-		id: e.id,
-		projectName: e.projectName,
-		customerName: e.customerName,
-		description: e.description,
-		startAt: e.startAt,
-		start: formatTime(e.startAt, e.startZone),
-		startDate: earlierDate(e.startAt, e.startZone, now),
-		startZone: e.startZone
-	}));
-
 	const entries = rows(core.entries.list({ from: range.from, to: range.to })).map(
 		(e: EntryItem) => ({
 			id: e.id,
@@ -73,11 +62,9 @@ export const load: PageServerLoad = ({ locals, cookies }) => {
 	}));
 
 	return {
-		now,
 		zone,
 		zoneSource: source,
 		today: range.date,
-		timers,
 		entries,
 		templates,
 		projects: groupProjects(rows(core.projects.list())),
@@ -100,15 +87,6 @@ function open(locals: App.Locals, cookies: Cookies, form: FormData, now: number)
 const refuse = (failure: ActionFailure) => fail(400, failure);
 
 export const actions: Actions = {
-	stop: async ({ request, locals, cookies }) => {
-		const form = await request.formData();
-		const { core } = open(locals, cookies, form, Date.now());
-		const id = text(form, 'id');
-		const r = core.timers.stop({ id });
-		if (!r.ok) return refuse({ action: 'stop', subject: id, ...formFailure(r.error, []) });
-		done(core, cookies, r);
-	},
-
 	start: async ({ request, locals, cookies }) => {
 		const form = await request.formData();
 		const { core, zone } = open(locals, cookies, form, Date.now());

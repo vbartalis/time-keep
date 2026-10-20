@@ -41,7 +41,7 @@
 				autocomplete="off"
 				spellcheck="false"
 				aria-describedby="new-token-note"
-				class="min-w-0 flex-1 punch"
+				class="min-w-0 flex-1 figures"
 				onfocus={(e) => e.currentTarget.select()}
 			/>
 			{#if enhanced}

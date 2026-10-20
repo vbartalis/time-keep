@@ -20,8 +20,6 @@
 
 <svelte:head><title>Users</title></svelte:head>
 
-<h1 class="text-xl font-semibold tracking-[-0.01em]">Users</h1>
-
 {#if form?.error}
 	<Alert variant="destructive"><AlertDescription>{form.error}</AlertDescription></Alert>
 {:else if form?.message}
@@ -30,7 +28,7 @@
 
 <div class="flex flex-col gap-10">
 	<form method="POST" action="?/create" use:enhance class="flex w-full max-w-2xl flex-col">
-		<h2 class="border-b border-foreground pb-1.5 text-sm printed">Create user</h2>
+		<h2 class="border-b border-foreground pb-1.5 caps">Create user</h2>
 		<div
 			class="grid gap-2 border-b border-border py-3 lg:grid-cols-[12rem_minmax(0,1fr)] lg:items-center lg:gap-x-4"
 		>
@@ -72,9 +70,7 @@
 	</form>
 
 	<section aria-labelledby="all-users-heading" class="min-w-0">
-		<h2 id="all-users-heading" class="border-b border-foreground pb-1.5 text-sm printed">
-			All users
-		</h2>
+		<h2 id="all-users-heading" class="border-b border-foreground pb-1.5 caps">All users</h2>
 		<!-- On the phone each row stacks: name and date, then its actions full width. -->
 		<Table class="max-lg:block">
 			<TableHeader class="max-lg:hidden">
@@ -100,7 +96,7 @@
 								{#if u.disabled}<Badge variant="spent">Disabled</Badge>{/if}
 							</div>
 						</TableCell>
-						<TableCell class="punch text-xs max-lg:px-0 max-lg:py-1 max-lg:text-right"
+						<TableCell class="text-xs figures max-lg:px-0 max-lg:py-1 max-lg:text-right"
 							>{u.createdAt}</TableCell
 						>
 						<TableCell class="max-lg:col-span-2 max-lg:px-0 max-lg:py-1 max-lg:whitespace-normal">

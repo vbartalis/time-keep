@@ -1,0 +1,256 @@
+import { expect, test, type BrowserContext, type Locator, type Page } from '@playwright/test';
+import { barItems, moreItems, sidebarItems, type NavItem } from '../src/lib/shell';
+import { PASSWORD, dateIn, noonZone, seedEmptyUser, seedUser, startElsewhere } from './seed';
+
+const zone = noonZone();
+test.use({ timezoneId: zone });
+
+const isPc = () => test.info().project.name === 'pc';
+
+async function signIn(page: Page, username: string, password = PASSWORD) {
+	await rememberZone(page.context());
+	await page.goto('/login');
+	await page.getByLabel('Username').fill(username);
+	await page.getByLabel('Password').fill(password);
+	await page.getByRole('button', { name: 'Sign in' }).click();
+	await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
+}
+
+const rememberZone = (context: BrowserContext) =>
+	context.addCookies([
+		{ name: 'tz', value: encodeURIComponent(zone), domain: 'localhost', path: '/' }
+	]);
+
+const main = (page: Page) => page.getByRole('navigation', { name: 'Main' });
+const more = (page: Page) => main(page).locator('summary', { hasText: 'More' });
+
+/** Opens an item from the navigation: the sidebar on the PC, the bar or More on the phone. */
+async function open(page: Page, item: NavItem) {
+	const inMore = !isPc() && !barItems().some((i) => i.route === item.route);
+	const link = main(page).getByRole('link', { name: item.label, exact: true });
+	if (inMore) await more(page).click();
+	await link.click();
+	await expect(page.getByRole('heading', { name: item.label, level: 1 })).toBeVisible();
+	// More closes on navigation; its items are only exposed while it is open.
+	if (inMore) await more(page).click();
+	await expect(link).toHaveAttribute('aria-current', 'page');
+	if (inMore) await more(page).click();
+}
+
+async function signOutIsThere(page: Page) {
+	if (!isPc()) await more(page).click();
+	await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+	if (!isPc()) await more(page).click();
+}
+
+test('every screen is reachable from the navigation', async ({ page }) => {
+	const user = await seedEmptyUser(`${test.info().project.name}-shell`);
+	await signIn(page, user.username);
+	const items = isPc() ? sidebarItems(false) : [...barItems(), ...moreItems(false)];
+	for (const item of items) await open(page, item);
+	await signOutIsThere(page);
+	await expect(main(page).getByRole('link', { name: 'Users', exact: true })).toHaveCount(0);
+});
+
+test('an admin also reaches Users and Backup', async ({ page }) => {
+	await signIn(page, 'admin', 'admin-password-1');
+	const admin = sidebarItems(true).filter((i) => i.route.startsWith('/(app)/admin'));
+	expect(admin.map((i) => i.label)).toEqual(['Users', 'Backup']);
+	for (const item of admin) await open(page, item);
+});
+
+test("the screen's title is its one h1", async ({ page }) => {
+	const user = await seedEmptyUser(`${test.info().project.name}-title`);
+	await signIn(page, user.username);
+	await page.goto('/reports');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Reports');
+});
+
+test('More is a sheet that closes when an item is chosen', async ({ page }) => {
+	test.skip(isPc(), 'the phone’s More');
+	const user = await seedEmptyUser('phone-more');
+	await signIn(page, user.username);
+	await more(page).click();
+	const reports = main(page).getByRole('link', { name: 'Reports', exact: true });
+	await expect(reports).toBeVisible();
+	await reports.click();
+	await expect(page.getByRole('heading', { name: 'Reports', level: 1 })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Sign out' })).toBeHidden();
+});
+
+test('Escape closes More and returns focus to it', async ({ page }) => {
+	test.skip(isPc(), 'the phone’s More');
+	const user = await seedEmptyUser('phone-more-escape');
+	await signIn(page, user.username);
+	await more(page).click();
+	await main(page).getByRole('link', { name: 'Reports', exact: true }).focus();
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('button', { name: 'Sign out' })).toBeHidden();
+	await expect(more(page)).toBeFocused();
+});
+
+const bar = (page: Page) => page.getByRole('region', { name: 'Timer', exact: true });
+const flash = (page: Page) => page.getByRole('status');
+
+test('the bar says when nothing runs', async ({ page }) => {
+	const user = await seedEmptyUser(`${test.info().project.name}-bar-none`);
+	await signIn(page, user.username);
+	for (const path of ['/', '/entries', '/reports']) {
+		await page.goto(path);
+		await expect(bar(page)).toHaveCount(1);
+		await expect(bar(page)).toContainText('No timer running');
+	}
+});
+
+test('a timer is stopped from the bar and undone where it was stopped', async ({ page }) => {
+	const user = await seedUser(`${test.info().project.name}-bar-stop`, zone);
+	await signIn(page, user.username);
+	const start = page.getByRole('region', { name: 'Start a timer', exact: true });
+	await start.getByLabel('Project').selectOption({ label: 'Mobile app' });
+	await start.getByLabel('Description').fill('Bar timer');
+	await start.getByRole('button', { name: 'Start timer' }).click();
+	await expect(bar(page)).toContainText('Mobile app');
+
+	await page.goto('/reports');
+	await expect(bar(page)).toContainText('Mobile app');
+	await expect(bar(page)).toContainText(/\d+:\d\d:\d\d/);
+	await bar(page)
+		.getByRole('button', { name: /^Stop Mobile app started/ })
+		.click();
+	await expect(page).toHaveURL(/\/reports$/);
+	await expect(flash(page)).toContainText('Done: Stop timer');
+	await expect(bar(page)).toContainText('No timer running');
+
+	await flash(page).getByRole('button', { name: 'Undo' }).click();
+	await expect(page).toHaveURL(/\/reports$/);
+	await expect(flash(page)).toContainText('Undone.');
+	await expect(bar(page)).toContainText('Mobile app');
+	await expect(bar(page).getByRole('button', { name: /^Stop Mobile app/ })).toBeVisible();
+});
+
+test('several timers show as the newest plus a count', async ({ page }) => {
+	const user = await seedUser(`${test.info().project.name}-bar-many`, zone);
+	startElsewhere(user.id, user.projects.website, zone, '09:00', 'Older');
+	startElsewhere(user.id, user.projects.mobile, zone, '10:00', 'Newer');
+	await signIn(page, user.username);
+	const url = `/entries?from=${dateIn(zone)}`;
+	await page.goto(url);
+	await expect(bar(page)).toContainText('Mobile app');
+	const more = bar(page).locator('summary', { hasText: '+1' });
+	await expect(more).toBeVisible();
+	await more.click();
+	await bar(page).getByRole('button', { name: 'Stop Website started 09:00' }).click();
+	await expect(bar(page).locator('summary', { hasText: '+1' })).toHaveCount(0);
+	expect(new URL(page.url()).pathname + new URL(page.url()).search).toBe(url);
+	await expect(bar(page)).toContainText('Mobile app');
+	await expect(bar(page)).not.toContainText('Website');
+});
+
+test('a refused stop is shown', async ({ context }) => {
+	const user = await seedUser(`${test.info().project.name}-bar-refused`, zone);
+	startElsewhere(user.id, user.projects.mobile, zone, '09:00', 'Twice');
+	const first = await context.newPage();
+	await signIn(first, user.username);
+	const second = await context.newPage();
+	await first.goto('/reports');
+	await second.goto('/reports');
+	const stop = (page: Page) => bar(page).getByRole('button', { name: /^Stop Mobile app started/ });
+	await stop(first).click();
+	await expect(flash(first)).toContainText('Done: Stop timer');
+	await stop(second).click();
+	await expect(second.getByRole('alert')).toContainText('That timer is already stopped.');
+	await expect(second).toHaveURL(/\/reports$/);
+});
+
+test('the bar never hides Stop or Save', async ({ page }) => {
+	const user = await seedUser(`${test.info().project.name}-bar-room`, zone);
+	startElsewhere(user.id, user.projects.mobile, zone, '09:00', 'x'.repeat(120));
+	await page.setViewportSize({ width: 390, height: 844 });
+	await signIn(page, user.username);
+	const stop = bar(page).getByRole('button', { name: /^Stop Mobile app/ });
+	await expect(stop).toBeInViewport({ ratio: 1 });
+	const box = await stop.boundingBox();
+	expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+
+	await page.goto(`/entries/${user.entries.toEdit}`);
+	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+	const save = (await page.getByRole('button', { name: 'Save', exact: true }).boundingBox())!;
+	const nav = (await page.getByRole('navigation', { name: 'Main' }).boundingBox())!;
+	expect(save.y + save.height).toBeLessThanOrEqual(nav.y);
+});
+
+test("the bar uses the project's colour", async ({ page }) => {
+	const user = await seedUser(`${test.info().project.name}-bar-colour`, zone);
+	startElsewhere(user.id, user.projects.website, zone, '09:00', 'One');
+	startElsewhere(user.id, user.projects.mobile, zone, '10:00', 'Two');
+	await signIn(page, user.username);
+	await bar(page).locator('summary', { hasText: '+1' }).click();
+	const dots = bar(page).locator('[data-project-dot]');
+	await expect(dots).toHaveCount(2);
+	const colours = await dots.evaluateAll((els) =>
+		els.map((el) => getComputedStyle(el).backgroundColor)
+	);
+	expect(colours[0]).not.toBe(colours[1]);
+});
+
+test.describe('without JavaScript', () => {
+	test.use({ javaScriptEnabled: false });
+
+	test('the bar stops and undoes as plain posts', async ({ page }) => {
+		const user = await seedUser(`${test.info().project.name}-bar-nojs`, zone);
+		startElsewhere(user.id, user.projects.website, zone, '09:00', 'Older');
+		startElsewhere(user.id, user.projects.mobile, zone, '10:00', 'Newer');
+		await signIn(page, user.username);
+		await page.goto('/reports');
+		await bar(page).locator('summary', { hasText: '+1' }).click();
+		await bar(page).getByRole('button', { name: 'Stop Website started 09:00' }).click();
+		await expect(page).toHaveURL(/\/reports$/);
+		await expect(flash(page)).toContainText('Done: Stop timer');
+		await expect(bar(page).locator('summary', { hasText: '+1' })).toHaveCount(0);
+		await flash(page).getByRole('button', { name: 'Undo' }).click();
+		await expect(flash(page)).toContainText('Undone.');
+		await expect(bar(page).locator('summary', { hasText: '+1' })).toBeVisible();
+	});
+
+	test('More opens and its items work', async ({ page }) => {
+		test.skip(isPc(), 'the phone’s More');
+		const user = await seedEmptyUser('phone-more-nojs');
+		await signIn(page, user.username);
+		await more(page).click();
+		await main(page).getByRole('link', { name: 'History', exact: true }).click();
+		await expect(page.getByRole('heading', { name: 'History', level: 1 })).toBeVisible();
+		await more(page).click();
+		await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+	});
+});
+
+/** The control's box lies below the phone's top band and above its bottom bar. */
+async function expectClear(page: Page, control: Locator) {
+	const box = await control.boundingBox();
+	// The sticky top bar with the timer strip, and the visible Main nav (the bottom bar).
+	const band = await page.locator('div.sticky').first().boundingBox();
+	const bar = await page.locator('nav[aria-label="Main"]:visible').boundingBox();
+	// A pixel of slack: the browser rounds the scroll position.
+	expect(box!.y).toBeGreaterThanOrEqual(band!.y + band!.height - 1);
+	expect(box!.y + box!.height).toBeLessThanOrEqual(bar!.y);
+}
+
+test('focus lands clear of the sticky bars', async ({ page }) => {
+	test.skip(isPc(), 'the phone has the top band and the bottom bar');
+	const user = await seedUser(`${test.info().project.name}-focus`, zone);
+	await signIn(page, user.username);
+	await page.goto(`/entries/${user.entries.toEdit}`);
+	await page.getByLabel('End', { exact: true }).fill(`${user.today}T05:00`);
+	await page.getByRole('button', { name: 'Save', exact: true }).click();
+	// A refused save focuses the field the core refused.
+	const invalid = page.locator('main form [aria-invalid="true"]').first();
+	await expect(invalid).toBeFocused();
+	await expectClear(page, invalid);
+
+	// Scrolled to the bottom, bringing it back the nearest way (as Tab does) stops short of
+	// the top band.
+	await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+	await invalid.evaluate((el) => el.scrollIntoView({ block: 'nearest' }));
+	await expectClear(page, invalid);
+});

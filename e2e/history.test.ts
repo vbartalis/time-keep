@@ -85,7 +85,7 @@ test('shows a batch with its label, time and changes', async ({ page }) => {
 
 	const row = batch(page, 'Create customer "Acme"');
 	await expect(row).toHaveCount(1);
-	await expect(row.locator('.punch').first()).toHaveText(/^\d{2}:\d{2}$/);
+	await expect(row.locator('.figures').first()).toHaveText(/^\d{2}:\d{2}$/);
 	await expect(state(row)).toHaveText('Create customer "Acme"');
 	await expect(row.locator('summary')).toHaveText('1 change');
 	await expect(row.getByRole('button', { name: 'Undo', exact: true })).toBeVisible();
@@ -188,7 +188,11 @@ test('undoes changes from two batches in one step', async ({ page }) => {
 
 	await expect(strip(page)).toContainText('Done: Undo 2 changes.');
 	await expect(batch(page, 'Undo 2 changes')).toHaveCount(1);
-	await expect(page.locator('summary')).toHaveText(['2 changes', '1 change', '1 change']);
+	await expect(page.getByRole('main').locator('summary')).toHaveText([
+		'2 changes',
+		'1 change',
+		'1 change'
+	]);
 	for (const name of ['Acme', 'Initech']) {
 		const label = `Create customer "${name}"`;
 		await expect(state(batch(page, label))).toHaveText(`${label} Undone`);
@@ -219,7 +223,7 @@ test('a refused undo shows the core’s message, keeps the ticks and changes not
 	await expect(change(row, 'Customer Hooli').getByRole('checkbox')).toBeChecked();
 	await expect(page.getByText('1 selected')).toBeVisible();
 	await expect(state(row)).toHaveText(label);
-	await expect(page.locator('summary')).toHaveCount(2);
+	await expect(page.getByRole('main').locator('summary')).toHaveCount(2);
 	await expect(strip(page)).toHaveCount(0);
 
 	await page.goto('/setup');
@@ -233,7 +237,7 @@ test('51 batches page by Older and Newest', async ({ page }) => {
 	await signIn(page, user.username);
 	await openHistory(page);
 
-	await expect(page.locator('summary')).toHaveCount(50);
+	await expect(page.getByRole('main').locator('summary')).toHaveCount(50);
 	await expect(batch(page, 'Create customer "Customer 51"')).toHaveCount(1);
 	await expect(batch(page, 'Create customer "Customer 2"')).toHaveCount(1);
 	await expect(batch(page, 'Create customer "Customer 1"')).toHaveCount(0);
@@ -241,13 +245,13 @@ test('51 batches page by Older and Newest', async ({ page }) => {
 
 	await page.getByRole('link', { name: 'Older' }).click();
 	await expect(page).toHaveURL(/\/history\?before=/);
-	await expect(page.locator('summary')).toHaveCount(1);
+	await expect(page.getByRole('main').locator('summary')).toHaveCount(1);
 	await expect(batch(page, 'Create customer "Customer 1"')).toHaveCount(1);
 	await expect(page.getByRole('link', { name: 'Older' })).toHaveCount(0);
 
 	await page.getByRole('link', { name: 'Newest' }).click();
 	await expect(page).toHaveURL(/\/history$/);
-	await expect(page.locator('summary')).toHaveCount(50);
+	await expect(page.getByRole('main').locator('summary')).toHaveCount(50);
 	await expect(batch(page, 'Create customer "Customer 51"')).toHaveCount(1);
 });
 
@@ -327,7 +331,7 @@ test('exactly 50 batches show no Older', async ({ page }) => {
 	await signIn(page, user.username);
 	await openHistory(page);
 
-	await expect(page.locator('summary')).toHaveCount(50);
+	await expect(page.getByRole('main').locator('summary')).toHaveCount(50);
 	await expect(batch(page, 'Create customer "Customer 1"')).toHaveCount(1);
 	await expect(page.getByRole('link', { name: 'Older' })).toHaveCount(0);
 	await expect(page.getByRole('link', { name: 'Newest' })).toHaveCount(0);
@@ -346,7 +350,7 @@ test('an agent batch shows the Agent chip', async ({ page }) => {
 	await expect(state(batch(page, 'Create customer "Acme"'))).toHaveText('Create customer "Acme"');
 });
 
-test('the rail shows History current on /history', async ({ page }) => {
+test('the sidebar shows History current on /history', async ({ page }) => {
 	const user = await newUser('rail');
 	await signIn(page, user.username);
 	await openHistory(page, false);
@@ -363,9 +367,14 @@ test('the rail shows History current on /history', async ({ page }) => {
 			'page'
 		);
 	} else {
-		// The phone's bar has no History; Today is not current either.
+		// The phone's bar has no History, More has it; Today is not current either.
 		await expect(main.getByRole('link', { name: 'History' })).toHaveCount(0);
 		await expect(main.getByRole('link', { name: 'Today' })).not.toHaveAttribute(
+			'aria-current',
+			'page'
+		);
+		await main.locator('summary', { hasText: 'More' }).click();
+		await expect(main.getByRole('link', { name: 'History' })).toHaveAttribute(
 			'aria-current',
 			'page'
 		);

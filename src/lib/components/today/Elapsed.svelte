@@ -16,4 +16,4 @@
 	const shown = $derived(formatElapsed((clientNow ?? serverNow) - startAt));
 </script>
 
-<span class="punch text-live">{shown}</span>
+<span class="figures">{shown}</span>

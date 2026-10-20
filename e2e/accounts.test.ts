@@ -9,8 +9,17 @@ async function signIn(page: Page, username: string, password: string) {
 
 async function signOut(page: Page) {
 	await page.goto('/');
+	await openMore(page);
 	await page.getByRole('button', { name: 'Sign out' }).click();
 	await expect(page).toHaveURL(/\/login$/);
+}
+
+/** On the phone, opens More, where the screens past the bar and Sign out are. */
+async function openMore(page: Page) {
+	const more = page
+		.getByRole('navigation', { name: 'Main' })
+		.locator('summary', { hasText: 'More' });
+	if (await more.isVisible()) await more.click();
 }
 
 async function signedInAdmin(browser: Browser, extraHTTPHeaders: Record<string, string> = {}) {
@@ -34,6 +43,7 @@ test('accounts: sign in, manage users, change password, disable', async ({
 	});
 
 	await test.step('admin creates a user, and a duplicate is refused', async () => {
+		await openMore(page);
 		await page.getByRole('link', { name: 'Users' }).click();
 		await expect(page).toHaveURL(/\/admin\/users$/);
 		const create = async () => {
@@ -51,6 +61,8 @@ test('accounts: sign in, manage users, change password, disable', async ({
 	await test.step('the user has no admin access', async () => {
 		await signIn(page, name, 'first-password-1');
 		await expect(page.getByText(`Signed in as ${name}`)).toBeVisible();
+		await openMore(page);
+		await expect(page.getByRole('link', { name: 'Account' })).toBeVisible();
 		await expect(page.getByRole('link', { name: 'Users' })).toHaveCount(0);
 
 		const get = await page.request.get('/admin/users');

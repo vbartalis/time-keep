@@ -57,11 +57,13 @@ is one undo. Kimai has invoicing and no undo; this has undo and no invoicing.
 
 ## Capabilities and Constraints
 
-- Built today: sign-in, account (change password), admin user management, and the
-  core (entries, timers, templates, reference data, history, undo) with no screens yet.
-- Next screens, in order: phone quick capture (today, timers, templates), PC dense
-  work (reference data, templates, finding and bulk-editing entries, history and undo),
-  output (reports, copy-out, CSV).
+- Built today: sign-in, account (change password, agent access), admin user
+  management and backup, the core (entries, timers, templates, reference data, history,
+  undo), the MCP server, and the screens Today, Entries, Edit entry, Setup, Templates,
+  History, Copy-out and Reports, inside the shell with its always-visible timer bar.
+- Next, in order (roadmap items 12-15): starting timers and the entry form, the
+  calendar views, the table, and every screen redone in the shell's direction with the
+  sign-in page.
 - SvelteKit with server-rendered forms; screens work without JavaScript where they do
   today **(inferred as a standing constraint)**.
 - Tailwind and shadcn-svelte, components copied into the repo (decision 2).
@@ -72,6 +74,10 @@ is one undo. Kimai has invoicing and no undo; this has undo and no invoicing.
 
 The name is `time-keep` (shown as "Time Keep" in the page title). No logo, mascot or
 marketing voice exists, and none is wanted for a one-person tool **(inferred)**.
+
+It looks and is laid out like Kimai, with the calendar apps' colour by project
+(decision 9). There is no themed concept: no world, mascot or motif laid over the tool
+(the operator stand-in's call, 2026-10-20).
 
 ## Evidence on Hand
 

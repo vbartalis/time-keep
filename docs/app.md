@@ -1,8 +1,8 @@
 # The app
 
 A SvelteKit 3.1 server (adapter-node 6) over SQLite through Drizzle, TypeScript
-throughout (decision 1). The UI is Tailwind and shadcn-svelte (decision 2), dressed as
-a punch-clock time card (decision 5); [DESIGN.md](../DESIGN.md) is the visual system
+throughout (decision 1). The UI is Tailwind and shadcn-svelte (decision 2), in
+Kimai's structure and skin (decision 9); [DESIGN.md](../DESIGN.md) is the visual system
 and `PRODUCT.md` the product record it serves. The app owns every write to the
 database.
 
@@ -29,7 +29,7 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/routes/login`, `logout` | Sign in and out. `/login?restored=1` shows "Restored. Sign in with the backup's passwords." above the form, after a restore. |
 | `src/routes/(app)/admin/backup` | The Backup screen (`+page.svelte`, `+page.server.ts`) and its download route (`download/+server.ts`), admin only. |
 | `src/routes/mcp` | `POST /mcp`, the MCP endpoint, outside the signed-in screens (see [mcp.md](mcp.md)). |
-| `src/routes/(app)/` | Signed-in screens: Today (`/`), `entries` and the entry edit screen (`entries/[id]`), `copy-out` and its CSV route (`copy-out/csv`), `reports`, `account`, `admin/users`, `admin/backup`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell: a left rail on the PC (Today, Entries, Copy-out, Reports, Templates, Setup, History, Account, Users and Backup for an admin), a top bar and bottom navigation on the phone (Today, Setup, Account, Users for an admin; Entries, Copy-out, Reports, Templates and History are PC screens). The current item follows the route; the entry edit screen keeps Entries current when its `back` starts with `/entries`, else Today. |
+| `src/routes/(app)/` | Signed-in screens: Today (`/`), `entries` and the entry edit screen (`entries/[id]`), `copy-out` and its CSV route (`copy-out/csv`), `reports`, `account`, `admin/users`, `admin/backup`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell (see Shell). |
 | `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`, `edit.ts`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries search and bulk change (`entries.ts`: `readSearch`, `searchInput`, `searchFilters`, `searchPath`, `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`), the copy-out's rows and query (`copy-out.ts`: `outputRows`, `readCopyOut`, `copyOutQuery`, `monthRange`, `csvName`, `sheetFor`, and the pieces and options Reports shares: `outputPieces`, `readOptions`, `optionsQuery`), the reports' totals (`reports.ts`: `isoWeek`, `reportTotals`, `readReport`, `reportFor`, `reportQuery`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`). |
 | `src/lib/components/entries/` | The Entries screen's parts: the filter form (shared with Copy-out), the change form, the selectable table. |
 | `src/lib/components/copy-out/` | The Copy-out screen's parts: the column and option pickers (`OutputFields`), the option pickers alone (`OutputOptions`, shared with Reports), the Copy button and its status (`CopyRows`), the sheet table (`SheetTable`). |
@@ -39,17 +39,62 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/components/templates/` | The template form shared by the new and edit screens. |
 | `src/lib/components/account/` | The Account screen's Agent access parts: the token list with its revoke confirm (`TokenList`), the shown-once token with its Copy button (`NewToken`). |
 | `src/lib/components/setup/` | The Setup screen's parts: a rename-in-place row, the add lines, the Add project disclosure. |
-| `src/lib/components/today/` | The Today screen's parts: timers, template sheets, start a timer, today's entries, the ticking elapsed time. |
+| `src/lib/components/today/` | The Today screen's parts: template sheets, start a timer, today's entries, the ticking elapsed time (also the timer bar's). |
 | `src/lib/components/UndoStrip.svelte` | The undo strip every screen shows after an action; posts to `/undo`. |
 | `src/routes/(app)/undo/` | The shared `/undo` route: `core.undo`, then back to the screen it came from. |
 | `src/lib/format.ts` | Formatting shared by server and browser: elapsed time, template times, warning text. |
 | `src/lib/output.ts` | The copy-out's columns and writers, shared by server and browser (no server imports): `COLUMNS` and their heads, `formatDuration` (`h:mm` or decimal hours), `safeText` (the formula guard), `toTsv` and `toCsv`. |
+| `src/lib/components/shell/` | The shell: `Sidebar`, `BottomBar` (with More), `TimerBar`, `NavIcon`, and the bar timer type. |
+| `src/lib/shell.ts`, `src/lib/project-colour.ts` | The navigation items, screen titles and current item; the project colour by creation order. |
+| `src/lib/server/screens/shell.ts` | `shellTimers`: the running timers for the bar. |
+| `src/routes/(app)/timers/stop/` | The bar's Stop: `POST /timers/stop`; a GET redirects to Today. |
 | `src/routes/layout.css` | Design tokens as Tailwind theme values, light and dark (see DESIGN.md). |
 | `src/lib/components/ui/` | shadcn-svelte components, copied in and restyled (decision 2). |
 | `static/manifest.webmanifest`, `static/icons/` | The web app manifest and icons (see Installable). |
 | `src/routes/healthz` | Health check: `{"status":"ok"}`, or 503 when the database fails a query. |
 | `drizzle/` | Generated SQL migrations. |
 | `e2e/` | Playwright tests; `seed.ts` seeds their data through the core. |
+
+## Shell
+
+Every signed-in screen sits in the shell, drawn by `src/routes/(app)/+layout.svelte`.
+It is the same on every screen; no screen draws its own title or navigation.
+
+- **Sidebar (PC, from 1024 px).** Near-black in both themes (`#262626` in light,
+  `#0f0f10` in dark), full height and fixed, scrolling on its own when the window is
+  short. The wordmark, then Today, Entries, Copy-out, Reports, Templates, Setup,
+  History, Account, and for an admin Users and Backup; at its foot the signed-in name
+  and Sign out. The current item has a blue bar. The route sets the current item; the
+  entry edit screen keeps Entries current when its `back` starts with `/entries`, else
+  Today.
+- **Header (PC).** The screen's title at the left, the page's one `h1`, and the timer
+  bar at the right. The title comes from `screenTitle` (`src/lib/shell.ts`) by route
+  id, not from the screen.
+- **Phone (below 1024 px).** A near-black top bar with the same title, the timer strip
+  under it, one column of content, and a fixed bottom bar: Today, Entries, Templates
+  and More. More is a `<details>` sheet over the page, just above the bar, so it works
+  without JavaScript; choosing an item or pressing Escape closes it (Escape returns
+  the focus to More). It lists Setup, Copy-out, Reports, History, Account, for an admin
+  Users and Backup, and Sign out. Every screen is within two taps.
+- **Timer bar.** The layout load (`shellTimers`) lists the running timers, newest
+  start first. With one running: a blue live dot, the elapsed time (ticking with
+  JavaScript, the server's value without), the project colour dot, customer ›
+  project, activity and description, and Stop. The phone strip shows project,
+  activity and start, the elapsed time and Stop. With several running the newest shows
+  in full with a "+N" `<details>` that lists the others, each with its elapsed time
+  and Stop. With none it says "No timer running" in the same height.
+- **Project colour.** `colourOf` gives each project the palette colour (1 to 8,
+  `bg-project-1` to `bg-project-8`) at its place by creation order, ties by id,
+  wrapping after eight. Nothing is stored. The bar's dot is its only use so far.
+- **Stop.** A form posting `id` and `back` to `/timers/stop`, which calls
+  `timers.stop` and returns to `back` (the same URL with its query), with the flash
+  for Undo. A refused stop sets the flash's `error` and returns the same way. The
+  layout re-runs on every navigation, query-only ones included, so the bar is current.
+- **Undo strip.** Today, Entries, Setup, Templates and History draw their own strip
+  (`ownsStrip`), and the stop's Undo or refusal shows there. On every other screen the
+  shell draws the strip under the header (`UndoStrip` in the layout), so a stop's
+  Undo or a refusal shows there; the layout takes the flash only for those screens.
+- **Light and dark** follow the device setting; there is no in-app choice.
 
 ## Screens
 
@@ -64,24 +109,24 @@ Copy-out and Reports only read: they have no actions.
 
 In thumb order, one column; on the PC it keeps the width of a two-column layout, the side track left empty:
 
-1. **Timers**: each running entry with its start, the elapsed time (ticking each
-   second with JavaScript, the server's value without), customer › project,
-   description, and Stop (`timers.stop`).
-2. **Templates**: one row per template, opening a sheet (a `<details>` panel, so it
+1. **Templates**: one row per template, opening a sheet (a `<details>` panel, so it
    works without JavaScript) that shows the template's filled fields and asks for a
    description; a reference when the template has none, and a project when it has
    none (from its customer's projects when it has a customer). The button is "Start
    timer" when the result would run, else "Log". "Change times" offers date, start,
    end or minutes. Submits `entries.fromTemplate`.
-3. **Start a timer**: an active project, grouped by customer, and an optional
+2. **Start a timer**: an active project, grouped by customer, and an optional
    description (`timers.start`; the core stops a timer already running on that
    project).
-4. **Today's entries**: entries whose interval touches today in the user's zone, with
+3. **Today's entries**: entries whose interval touches today in the user's zone, with
    in, out (or Running), hours, customer › project, "Since YYYY-MM-DD" when it
    started on an earlier day, and description; each row opens
    the edit screen.
 
-Empty states have no dead buttons: Timers says "No timer running.", Start a timer
+Running timers are in the shell's timer bar, not on Today; a Stop there on Today shows
+its Undo in Today's strip.
+
+Empty states have no dead buttons: Start a timer
 says "Customers and projects are set up on the PC." with a "Set up customers and
 projects" link to `/setup` when there are no projects, and Templates says "Templates
 are set up on the PC." with a "Create a template" link to `/templates/new` when there
@@ -114,7 +159,7 @@ core's lists read with archived rows included.
 ### Templates (`/templates`, `/templates/new`, `/templates/[id]`)
 
 `/templates` is a ruled table sorted by name: name (a link to its edit screen),
-customer › project, activity, location, times (punched) and a printed Timer or Log
+customer › project, activity, location, times and a Timer or Log
 mark as on Today; the phone keeps name, times and mark (customer › project under the
 name) and the narrower PC widths drop activity and location. "New template" is the one
 primary button; with no templates the page says "No templates yet." beside the same
@@ -140,7 +185,7 @@ Templates item stays current on both sub-routes.
 
 ### Entries (`/entries`)
 
-A PC screen (in the rail, not the phone's bar) for finding entries and changing or
+A PC screen (in the sidebar and under More, not the phone's bar) for finding entries and changing or
 deleting many at once; it stays usable at phone widths.
 
 **Filters** are a `GET` form, so a search is a URL. From and To are dates, inclusive,
@@ -193,7 +238,7 @@ the change form's fields.
 
 ### Copy-out (`/copy-out`, `/copy-out/csv`)
 
-A PC screen (in the rail after Entries, not the phone's bar) that writes a month's
+A PC screen (in the sidebar after Entries, under More on the phone) that writes a month's
 entries out as the columns chosen, to paste into Excel or download as CSV; it stays
 usable at phone widths. It only reads: nothing rounded or split is stored.
 
@@ -227,7 +272,7 @@ and durations never do. Running entries are left out and counted.
 rows' minutes summed in the chosen format; a Copy button and a Download CSV link,
 both outline; "1 running entry left out." / "<n> running entries left out." when any;
 then the rows as a ruled table with the chosen columns as heads, every value as it is
-copied, the times and durations punched. The table scrolls sideways at any width and
+copied, the times and durations in figures. The table scrolls sideways at any width and
 never stacks. None says "No entries match." with Clear (and the running line, when
 the only matches run). A date mistake shows as on Entries, with no result.
 
@@ -252,7 +297,7 @@ with the screen's message as plain text.
 
 ### Reports (`/reports`)
 
-A PC screen (in the rail after Copy-out, not the phone's bar) that shows a month's
+A PC screen (in the sidebar after Copy-out, under More on the phone) that shows a month's
 entries as totals per day, week, customer and project, to check a month before copying
 it out; it stays usable at phone widths. It only reads: nothing rounded or split is
 stored, and the totals are computed on the way out.
@@ -312,14 +357,14 @@ focus.
 
 ### History (`/history`)
 
-A PC screen (in the rail after Setup, not the phone's bar) listing every batch the
+A PC screen (in the sidebar after Setup, under More on the phone) listing every batch the
 user's changes were recorded in, newest first, to undo or redo any batch or chosen
 changes in one step; it stays usable at phone widths. Undo and redo are
 `core.undo` and `core.redo` (see [core.md](core.md)).
 
 **The list** asks `history.list` for 51 batches and shows 50, under a heading per day
 in the request's zone (`dayHeading` gives "2026-10-19, Monday"; the screen shows the
-date punched beside the weekday printed). Each batch is one ruled row: its time (`HH:mm`, punched), its label
+date beside the weekday). Each batch is one ruled row: its time (`HH:mm`), its label
 as the core stored it, an "Agent" or "System" chip when it was not made in the UI,
 its state ("Undone" when every change is undone, the row muted; "Partly undone, <k>
 of <n>" otherwise; nothing when it stands, from `batchState`), a disclosure "1
@@ -359,8 +404,7 @@ and their batches open.
 
 ### Account (`/account`)
 
-On the phone's bar and the PC's rail. Two sections, each a printed head on a card-ink
-rule over ruled lines: **Change password** (current, new, confirm; see Accounts and
+In the sidebar, and under More on the phone. Two sections, each a caps head over ruled lines: **Change password** (current, new, confirm; see Accounts and
 sessions) and **Agent access**, the user's tokens for agents (decision 6,
 [mcp.md](mcp.md)).
 
@@ -382,9 +426,9 @@ section's head.
 
 ### Backup (`/admin/backup`)
 
-Admin only (`requireAdmin`: signed out 303 to `/login`, a non-admin 403), in the PC
-rail after Users and not on the phone's bar; the URL works on the phone (decision 7).
-Three sections, each a printed head over ruled lines.
+Admin only (`requireAdmin`: signed out 303 to `/login`, a non-admin 403), in the sidebar
+after Users and under More on the phone (decision 7).
+Three sections, each a caps head over ruled lines.
 
 **Backup**: "A backup is the whole database: every user, their time data and history.
 Keep it somewhere safe; it holds password hashes." and **Download backup**, the
@@ -522,7 +566,7 @@ files.
   (`seedBatches`), the Agent chip (`seedAgentCustomer`, through
   `openCore(db, userId, 'agent')`), a batch's own Undo beating a tick on another
   batch, an unknown `before` returning to the newest page, a forged batch id showing
-  "Not found.", an undo on an older page landing back there, the rail's current item
+  "Not found.", an undo on an older page landing back there, the sidebar's current item
   and the no-JavaScript undo of a ticked change; `copy-out.test.ts` covers Copy-out
   with a user of its own per test (`seedCopyOut`: four entries this month, one of
   them overnight, one with a comma, a quote and a line break in its description
@@ -531,15 +575,15 @@ files.
   month and This month keeping the columns, no column ticked, Split at midnight and
   rounding off, Copy on the PC (the clipboard granted; tab-separated, no header, one
   line per row), Download CSV (its name, byte-order mark and header, every value
-  read back through a small CSV reader, the line break kept), the rail's current
+  read back through a small CSV reader, the line break kept), the sidebar's current
   item, the CSV route signed out, for another user and with bad queries, and the
   no-JavaScript Show, table and CSV link with no Copy button; `reports.test.ts` covers
   Reports with a user of its own per test (`seedCopyOut`): the month's four tables with
   their rows and every Total (`7:15`), Split at midnight moving the overnight entry's
   time across two days, decimal hours, Last month and This month keeping the options,
   only a running entry matching ("No entries match." and the running line, no tables),
-  the rail's Reports after Copy-out and current (none on the phone's bar) and the
-  no-JavaScript Show with Split ticked; `agent.test.ts` covers Agent access and `/mcp`
+  the sidebar's Reports after Copy-out and current (under More on the phone) and the
+  no-JavaScript Show with Split ticked; `shell.test.ts` covers the shell with a user of its own per test: every screen reached from the navigation and shown current (More on the phone, Users and Backup for an admin), the title as the one `h1`, More closing on a choice and on Escape, "No timer running", a stop from the bar undone where it was stopped, several timers as the newest plus a count, a refused stop, Stop and Save never hidden by the bars, the project colour in the bar, and the bar and More as plain posts and links without JavaScript; `agent.test.ts` covers Agent access and `/mcp`
   with a user of its own per test (`seedEmptyUser`): a token made and shown once
   (gone on the next load, listed as "Never used") and a duplicate name refused, a
   `change` call with that token through Playwright's request client (headers
@@ -560,7 +604,7 @@ files.
   migrated, a forced failure rolled back, the before-restore copy), and the body limit
   tests in `mcp/http.test.ts`.
 - `e2e/backup.test.ts` covers Backup with the seeded admin: a non-admin refused on the
-  screen and the download with no Backup in the rail; a download (its name, the SQLite
+  screen and the download with no Backup in the sidebar; a download (its name, the SQLite
   header), a customer made after it, the restore of that file landing on
   `/login?restored=1`, the customer gone after signing in again and the before-restore
   download; the two refusals (box unticked, no file) leaving the admin signed in; and

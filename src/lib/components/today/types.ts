@@ -1,18 +1,5 @@
 /** What the Today screen shows; built by its load from the core's rows. */
 
-export type TimerRow = {
-	id: string;
-	projectName: string;
-	customerName: string;
-	description: string | null;
-	startAt: number;
-	/** `HH:mm` in the entry's start zone. */
-	start: string;
-	/** `YYYY-MM-DD` in the start zone when that is not today; else null. */
-	startDate: string | null;
-	startZone: string;
-};
-
 export type EntryRow = {
 	id: string;
 	projectName: string;
@@ -63,10 +50,10 @@ export type Flash = {
 
 /** A failed action, returned by `fail(400, …)`. */
 export type ActionFailure = {
-	action: 'stop' | 'start' | 'fromTemplate';
+	action: 'start' | 'fromTemplate';
 	error: string;
 	fields: Record<string, string>;
-	/** The entry the failed stop was for, or the template of a failed sheet. */
+	/** The template of a failed sheet. */
 	subject?: string;
 	values?: Record<string, string>;
 };

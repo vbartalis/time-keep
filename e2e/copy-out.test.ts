@@ -277,7 +277,7 @@ test('Download CSV gives the file with its header, and the quoted description ro
 	expect(rows).toEqual(expected);
 });
 
-test('the rail shows Copy-out current; the phone bar has none', async ({ page }) => {
+test('the sidebar shows Copy-out current; the phone has it in More', async ({ page }) => {
 	const user = await newUser('rail');
 	await openCopyOut(page, user);
 	const main = page.getByRole('navigation', { name: 'Main' });
@@ -292,6 +292,11 @@ test('the rail shows Copy-out current; the phone bar has none', async ({ page })
 		);
 	} else {
 		await expect(main.getByRole('link', { name: 'Copy-out' })).toHaveCount(0);
+		await main.locator('summary', { hasText: 'More' }).click();
+		await expect(main.getByRole('link', { name: 'Copy-out' })).toHaveAttribute(
+			'aria-current',
+			'page'
+		);
 	}
 });
 

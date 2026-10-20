@@ -11,12 +11,10 @@
 	const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 	const link =
-		'rounded-sm font-medium text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring';
+		'rounded-sm font-medium text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:inline-flex max-lg:min-h-11 max-lg:min-w-11 max-lg:items-center';
 </script>
 
 <svelte:head><title>Reports · Time Keep</title></svelte:head>
-
-<h1 class="text-xl font-semibold tracking-[-0.01em]">Reports</h1>
 
 <section aria-labelledby="filters-heading">
 	<SectionHead id="filters-heading" title="Filters" />
@@ -62,7 +60,7 @@
 				<SectionHead id="result-heading" title="Result">
 					{#snippet aside()}
 						<p class="text-sm">
-							{plural(data.entries, 'entry', 'entries')}, <span class="punch">{data.total}</span>
+							{plural(data.entries, 'entry', 'entries')}, <span class="figures">{data.total}</span>
 						</p>
 					{/snippet}
 				</SectionHead>
@@ -89,12 +87,18 @@
 							title="Weeks"
 							rows={data.weeks}
 							total={data.total}
-							punched
+							dateLabels
 						/>
 					</div>
 				</div>
 				<div class="lg:col-start-1 lg:row-start-1">
-					<TotalsTable id="days-heading" title="Days" rows={data.days} total={data.total} punched />
+					<TotalsTable
+						id="days-heading"
+						title="Days"
+						rows={data.days}
+						total={data.total}
+						dateLabels
+					/>
 				</div>
 			</div>
 		</section>

@@ -17,10 +17,8 @@
 
 <svelte:head><title>Account</title></svelte:head>
 
-<h1 class="text-xl font-semibold tracking-[-0.01em]">Account</h1>
-
 <form method="POST" action="?/password" use:enhance class="flex w-full max-w-2xl flex-col">
-	<h2 class="border-b border-foreground pb-1.5 text-sm printed">Change password</h2>
+	<h2 class="border-b border-foreground pb-1.5 caps">Change password</h2>
 	{#if form?.error}
 		<Alert variant="destructive" class="mt-3"
 			><AlertDescription>{form.error}</AlertDescription></Alert
@@ -46,9 +44,7 @@
 </form>
 
 <section aria-labelledby="agent-access-heading" class="flex w-full max-w-2xl flex-col">
-	<h2 id="agent-access-heading" class="border-b border-foreground pb-1.5 text-sm printed">
-		Agent access
-	</h2>
+	<h2 id="agent-access-heading" class="border-b border-foreground pb-1.5 caps">Agent access</h2>
 	{#if form?.tokenError}
 		<Alert variant="destructive" class="mt-3"
 			><AlertDescription>{form.tokenError}</AlertDescription></Alert

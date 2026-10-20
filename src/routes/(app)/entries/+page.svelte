@@ -47,12 +47,10 @@
 	});
 
 	const link =
-		'rounded-sm font-medium text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring';
+		'rounded-sm font-medium text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:inline-flex max-lg:min-h-11 max-lg:min-w-11 max-lg:items-center';
 </script>
 
 <svelte:head><title>Entries · Time Keep</title></svelte:head>
-
-<h1 class="text-xl font-semibold tracking-[-0.01em]">Entries</h1>
 
 <!-- A refused action replaces the strip: the screen shows the failure, not an older success. -->
 <UndoStrip flash={failure ? null : data.flash} back={data.back} />
@@ -138,7 +136,7 @@
 			<SectionHead id="list-heading" title="Found">
 				{#snippet aside()}
 					<p class="flex flex-wrap items-baseline justify-end gap-x-4 text-sm">
-						<span>{entries(data.count)}, <span class="punch">{data.total}</span></span>
+						<span>{entries(data.count)}, <span class="figures">{data.total}</span></span>
 						{#if enhanced}
 							<label class="flex items-center gap-2 lg:hidden">
 								<input

@@ -19,15 +19,14 @@
 	const toggle = $derived(data.showArchived ? base : `${base}?archived=1`);
 
 	const link =
-		'rounded-sm text-sm font-medium text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring';
+		'rounded-sm text-sm font-medium text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:inline-flex max-lg:min-h-11 max-lg:min-w-11 max-lg:items-center';
 	const list = 'flex flex-col';
 	const ruled = 'border-b border-border';
 </script>
 
 <svelte:head><title>Setup · Time Keep</title></svelte:head>
 
-<div class="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
-	<h1 class="text-xl font-semibold tracking-[-0.01em]">Setup</h1>
+<div class="flex flex-wrap items-end justify-end gap-x-4 gap-y-1">
 	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 	<a href={toggle} class={link}>{data.showArchived ? 'Hide archived' : 'Show archived'}</a>
 </div>

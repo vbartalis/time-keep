@@ -1,284 +1,472 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-18T22:20:59+00:00",
+  "generatedAt": "2026-10-20T02:17:58+00:00",
   "title": "Design System: time-keep",
   "extensions": {
     "colorMeta": {
-      "card-stock": {
-        "role": "neutral",
-        "displayName": "Card Stock",
-        "canonical": "oklch(0.955 0.016 236)",
-        "dark": "oklch(0.225 0.04 252)",
-        "tonalRamp": [
-          "oklch(0.15 0.016 236)",
-          "oklch(0.26 0.016 236)",
-          "oklch(0.37 0.016 236)",
-          "oklch(0.48 0.016 236)",
-          "oklch(0.6 0.016 236)",
-          "oklch(0.71 0.016 236)",
-          "oklch(0.83 0.016 236)",
-          "oklch(0.95 0.016 236)"
-        ]
-      },
-      "card-face": {
-        "role": "neutral",
-        "displayName": "Card Face",
-        "canonical": "oklch(0.99 0.005 236)",
-        "dark": "oklch(0.26 0.044 252)",
-        "tonalRamp": [
-          "oklch(0.15 0.005 236)",
-          "oklch(0.26 0.005 236)",
-          "oklch(0.37 0.005 236)",
-          "oklch(0.48 0.005 236)",
-          "oklch(0.6 0.005 236)",
-          "oklch(0.71 0.005 236)",
-          "oklch(0.83 0.005 236)",
-          "oklch(0.95 0.005 236)"
-        ]
-      },
-      "card-ink": {
-        "role": "neutral",
-        "displayName": "Card Ink",
-        "canonical": "oklch(0.255 0.04 262)",
-        "dark": "oklch(0.93 0.014 240)",
-        "tonalRamp": [
-          "oklch(0.15 0.04 262)",
-          "oklch(0.26 0.04 262)",
-          "oklch(0.37 0.04 262)",
-          "oklch(0.48 0.04 262)",
-          "oklch(0.6 0.04 262)",
-          "oklch(0.71 0.04 262)",
-          "oklch(0.83 0.04 262)",
-          "oklch(0.95 0.04 262)"
-        ]
-      },
-      "ribbon-violet": {
+      "primary": {
         "role": "primary",
-        "displayName": "Ribbon Violet",
-        "canonical": "oklch(0.46 0.165 308)",
-        "dark": "oklch(0.75 0.11 306)",
+        "displayName": "Kimai Blue",
+        "canonical": "#0b63c9",
+        "dark": "#5aa0ff",
         "tonalRamp": [
-          "oklch(0.15 0.165 308)",
-          "oklch(0.26 0.165 308)",
-          "oklch(0.37 0.165 308)",
-          "oklch(0.48 0.165 308)",
-          "oklch(0.6 0.165 308)",
-          "oklch(0.71 0.165 308)",
-          "oklch(0.83 0.165 308)",
-          "oklch(0.95 0.165 308)"
+          "oklch(0.15 0.176 257)",
+          "oklch(0.26 0.176 257)",
+          "oklch(0.38 0.176 257)",
+          "oklch(0.49 0.176 257)",
+          "oklch(0.61 0.176 257)",
+          "oklch(0.72 0.176 257)",
+          "oklch(0.84 0.176 257)",
+          "oklch(0.95 0.176 257)"
         ]
       },
-      "ribbon-violet-paper": {
+      "sidebar-ring": {
         "role": "primary",
-        "displayName": "Violet Paper",
-        "canonical": "oklch(0.985 0.006 308)",
-        "dark": "oklch(0.2 0.045 305)",
+        "displayName": "Rail Blue",
+        "canonical": "#3d8bfd",
+        "dark": "#5aa0ff",
         "tonalRamp": [
-          "oklch(0.15 0.006 308)",
-          "oklch(0.26 0.006 308)",
-          "oklch(0.37 0.006 308)",
-          "oklch(0.48 0.006 308)",
-          "oklch(0.6 0.006 308)",
-          "oklch(0.71 0.006 308)",
-          "oklch(0.83 0.006 308)",
-          "oklch(0.95 0.006 308)"
+          "oklch(0.15 0.186 258)",
+          "oklch(0.26 0.186 258)",
+          "oklch(0.38 0.186 258)",
+          "oklch(0.49 0.186 258)",
+          "oklch(0.61 0.186 258)",
+          "oklch(0.72 0.186 258)",
+          "oklch(0.84 0.186 258)",
+          "oklch(0.95 0.186 258)"
         ]
       },
-      "ribbon-red": {
+      "destructive": {
         "role": "secondary",
-        "displayName": "Ribbon Red",
-        "canonical": "oklch(0.52 0.19 25)",
-        "dark": "oklch(0.73 0.15 25)",
+        "displayName": "Signal Red",
+        "canonical": "#c4291c",
+        "dark": "#ff7b6e",
         "tonalRamp": [
-          "oklch(0.15 0.19 25)",
-          "oklch(0.26 0.19 25)",
-          "oklch(0.37 0.19 25)",
-          "oklch(0.48 0.19 25)",
-          "oklch(0.6 0.19 25)",
-          "oklch(0.71 0.19 25)",
-          "oklch(0.83 0.19 25)",
-          "oklch(0.95 0.19 25)"
+          "oklch(0.15 0.193 30)",
+          "oklch(0.26 0.193 30)",
+          "oklch(0.38 0.193 30)",
+          "oklch(0.49 0.193 30)",
+          "oklch(0.61 0.193 30)",
+          "oklch(0.72 0.193 30)",
+          "oklch(0.84 0.193 30)",
+          "oklch(0.95 0.193 30)"
         ]
       },
-      "ink-faded": {
+      "ground": {
         "role": "neutral",
-        "displayName": "Faded Ink",
-        "canonical": "oklch(0.45 0.035 256)",
-        "dark": "oklch(0.75 0.03 248)",
+        "displayName": "Ground",
+        "canonical": "#f7f7f8",
+        "dark": "#141516",
         "tonalRamp": [
-          "oklch(0.15 0.035 256)",
-          "oklch(0.26 0.035 256)",
-          "oklch(0.37 0.035 256)",
-          "oklch(0.48 0.035 256)",
-          "oklch(0.6 0.035 256)",
-          "oklch(0.71 0.035 256)",
-          "oklch(0.83 0.035 256)",
-          "oklch(0.95 0.035 256)"
+          "oklch(0.15 0.001 286)",
+          "oklch(0.26 0.001 286)",
+          "oklch(0.38 0.001 286)",
+          "oklch(0.49 0.001 286)",
+          "oklch(0.61 0.001 286)",
+          "oklch(0.72 0.001 286)",
+          "oklch(0.84 0.001 286)",
+          "oklch(0.95 0.001 286)"
         ]
       },
-      "ink-stroke": {
+      "surface": {
         "role": "neutral",
-        "displayName": "Ink Stroke",
-        "canonical": "oklch(0.62 0.035 252)",
-        "dark": "oklch(0.56 0.035 255)",
+        "displayName": "Surface",
+        "canonical": "#ffffff",
+        "dark": "#1c1d1f",
         "tonalRamp": [
-          "oklch(0.15 0.035 252)",
-          "oklch(0.26 0.035 252)",
-          "oklch(0.37 0.035 252)",
-          "oklch(0.48 0.035 252)",
-          "oklch(0.6 0.035 252)",
-          "oklch(0.71 0.035 252)",
-          "oklch(0.83 0.035 252)",
-          "oklch(0.95 0.035 252)"
+          "oklch(0.15 0.000 90)",
+          "oklch(0.26 0.000 90)",
+          "oklch(0.38 0.000 90)",
+          "oklch(0.49 0.000 90)",
+          "oklch(0.61 0.000 90)",
+          "oklch(0.72 0.000 90)",
+          "oklch(0.84 0.000 90)",
+          "oklch(0.95 0.000 90)"
         ]
       },
-      "ink-hairline": {
+      "foreground": {
         "role": "neutral",
-        "displayName": "Hairline",
-        "canonical": "oklch(0.83 0.028 245)",
-        "dark": "oklch(0.36 0.045 252)",
+        "displayName": "Text",
+        "canonical": "#1d2025",
+        "dark": "#e6e7e9",
         "tonalRamp": [
-          "oklch(0.15 0.028 245)",
-          "oklch(0.26 0.028 245)",
-          "oklch(0.37 0.028 245)",
-          "oklch(0.48 0.028 245)",
-          "oklch(0.6 0.028 245)",
-          "oklch(0.71 0.028 245)",
-          "oklch(0.83 0.028 245)",
-          "oklch(0.95 0.028 245)"
+          "oklch(0.15 0.011 261)",
+          "oklch(0.26 0.011 261)",
+          "oklch(0.38 0.011 261)",
+          "oklch(0.49 0.011 261)",
+          "oklch(0.61 0.011 261)",
+          "oklch(0.72 0.011 261)",
+          "oklch(0.84 0.011 261)",
+          "oklch(0.95 0.011 261)"
         ]
       },
-      "ink-shade": {
+      "muted": {
         "role": "neutral",
-        "displayName": "Ink Shade",
-        "canonical": "oklch(0.93 0.02 238)",
-        "dark": "oklch(0.275 0.045 252)",
+        "displayName": "Muted",
+        "canonical": "#f2f3f5",
+        "dark": "#222326",
         "tonalRamp": [
-          "oklch(0.15 0.02 238)",
-          "oklch(0.26 0.02 238)",
-          "oklch(0.37 0.02 238)",
-          "oklch(0.48 0.02 238)",
-          "oklch(0.6 0.02 238)",
-          "oklch(0.71 0.02 238)",
-          "oklch(0.83 0.02 238)",
-          "oklch(0.95 0.02 238)"
+          "oklch(0.15 0.003 265)",
+          "oklch(0.26 0.003 265)",
+          "oklch(0.38 0.003 265)",
+          "oklch(0.49 0.003 265)",
+          "oklch(0.61 0.003 265)",
+          "oklch(0.72 0.003 265)",
+          "oklch(0.84 0.003 265)",
+          "oklch(0.95 0.003 265)"
         ]
       },
-      "ink-wash": {
+      "muted-foreground": {
         "role": "neutral",
-        "displayName": "Ink Wash",
-        "canonical": "oklch(0.915 0.025 240)",
-        "dark": "oklch(0.3 0.048 252)",
+        "displayName": "Muted Text",
+        "canonical": "#5d636c",
+        "dark": "#9a9fa7",
         "tonalRamp": [
-          "oklch(0.15 0.025 240)",
-          "oklch(0.26 0.025 240)",
-          "oklch(0.37 0.025 240)",
-          "oklch(0.48 0.025 240)",
-          "oklch(0.6 0.025 240)",
-          "oklch(0.71 0.025 240)",
-          "oklch(0.83 0.025 240)",
-          "oklch(0.95 0.025 240)"
+          "oklch(0.15 0.016 258)",
+          "oklch(0.26 0.016 258)",
+          "oklch(0.38 0.016 258)",
+          "oklch(0.49 0.016 258)",
+          "oklch(0.61 0.016 258)",
+          "oklch(0.72 0.016 258)",
+          "oklch(0.84 0.016 258)",
+          "oklch(0.95 0.016 258)"
         ]
       },
-      "rack-ink": {
+      "accent": {
         "role": "neutral",
-        "displayName": "Rack Ink",
-        "canonical": "oklch(0.255 0.045 262)",
-        "dark": "oklch(0.13 0.022 262)",
+        "displayName": "Accent",
+        "canonical": "#eef0f3",
+        "dark": "#26282b",
         "tonalRamp": [
-          "oklch(0.15 0.045 262)",
-          "oklch(0.26 0.045 262)",
-          "oklch(0.37 0.045 262)",
-          "oklch(0.48 0.045 262)",
-          "oklch(0.6 0.045 262)",
-          "oklch(0.71 0.045 262)",
-          "oklch(0.83 0.045 262)",
-          "oklch(0.95 0.045 262)"
+          "oklch(0.15 0.005 258)",
+          "oklch(0.26 0.005 258)",
+          "oklch(0.38 0.005 258)",
+          "oklch(0.49 0.005 258)",
+          "oklch(0.61 0.005 258)",
+          "oklch(0.72 0.005 258)",
+          "oklch(0.84 0.005 258)",
+          "oklch(0.95 0.005 258)"
         ]
       },
-      "rack-ink-raised": {
+      "border": {
         "role": "neutral",
-        "displayName": "Rack Ink Raised",
-        "canonical": "oklch(0.32 0.048 262)",
-        "dark": "oklch(0.18 0.028 262)",
+        "displayName": "Border",
+        "canonical": "#e4e5e8",
+        "dark": "#2b2d30",
         "tonalRamp": [
-          "oklch(0.15 0.048 262)",
-          "oklch(0.26 0.048 262)",
-          "oklch(0.37 0.048 262)",
-          "oklch(0.48 0.048 262)",
-          "oklch(0.6 0.048 262)",
-          "oklch(0.71 0.048 262)",
-          "oklch(0.83 0.048 262)",
-          "oklch(0.95 0.048 262)"
+          "oklch(0.15 0.004 271)",
+          "oklch(0.26 0.004 271)",
+          "oklch(0.38 0.004 271)",
+          "oklch(0.49 0.004 271)",
+          "oklch(0.61 0.004 271)",
+          "oklch(0.72 0.004 271)",
+          "oklch(0.84 0.004 271)",
+          "oklch(0.95 0.004 271)"
         ]
       },
-      "rack-text": {
+      "input": {
         "role": "neutral",
-        "displayName": "Rack Text",
-        "canonical": "oklch(0.9 0.018 240)",
-        "dark": "oklch(0.82 0.02 245)",
+        "displayName": "Input Stroke",
+        "canonical": "#c8cbd0",
+        "dark": "#43464b",
         "tonalRamp": [
-          "oklch(0.15 0.018 240)",
-          "oklch(0.26 0.018 240)",
-          "oklch(0.37 0.018 240)",
-          "oklch(0.48 0.018 240)",
-          "oklch(0.6 0.018 240)",
-          "oklch(0.71 0.018 240)",
-          "oklch(0.83 0.018 240)",
-          "oklch(0.95 0.018 240)"
+          "oklch(0.15 0.008 261)",
+          "oklch(0.26 0.008 261)",
+          "oklch(0.38 0.008 261)",
+          "oklch(0.49 0.008 261)",
+          "oklch(0.61 0.008 261)",
+          "oklch(0.72 0.008 261)",
+          "oklch(0.84 0.008 261)",
+          "oklch(0.95 0.008 261)"
         ]
       },
-      "rack-focus": {
-        "role": "primary",
-        "displayName": "Rack Focus",
-        "canonical": "oklch(0.8 0.11 308)",
-        "dark": "oklch(0.77 0.12 308)",
+      "sidebar": {
+        "role": "neutral",
+        "displayName": "The Rail",
+        "canonical": "#262626",
+        "dark": "#0f0f10",
         "tonalRamp": [
-          "oklch(0.15 0.11 308)",
-          "oklch(0.26 0.11 308)",
-          "oklch(0.37 0.11 308)",
-          "oklch(0.48 0.11 308)",
-          "oklch(0.6 0.11 308)",
-          "oklch(0.71 0.11 308)",
-          "oklch(0.83 0.11 308)",
-          "oklch(0.95 0.11 308)"
+          "oklch(0.15 0.000 90)",
+          "oklch(0.26 0.000 90)",
+          "oklch(0.38 0.000 90)",
+          "oklch(0.49 0.000 90)",
+          "oklch(0.61 0.000 90)",
+          "oklch(0.72 0.000 90)",
+          "oklch(0.84 0.000 90)",
+          "oklch(0.95 0.000 90)"
+        ],
+        "note": "Light uses Kimai's #262626; dark is darker than Kimai's, #0f0f10 on the #141516 dark ground."
+      },
+      "sidebar-strip": {
+        "role": "neutral",
+        "displayName": "Strip",
+        "canonical": "#1c1c1c",
+        "dark": "#18191a",
+        "tonalRamp": [
+          "oklch(0.15 0.000 90)",
+          "oklch(0.26 0.000 90)",
+          "oklch(0.38 0.000 90)",
+          "oklch(0.49 0.000 90)",
+          "oklch(0.61 0.000 90)",
+          "oklch(0.72 0.000 90)",
+          "oklch(0.84 0.000 90)",
+          "oklch(0.95 0.000 90)"
+        ],
+        "note": "The phone timer strip's own tone, a step off the top bar: darker in light, lighter in dark."
+      },
+      "sidebar-primary": {
+        "role": "neutral",
+        "displayName": "Rail Current",
+        "canonical": "#1b1b1b",
+        "dark": "#1c1d1f",
+        "tonalRamp": [
+          "oklch(0.15 0.000 90)",
+          "oklch(0.26 0.000 90)",
+          "oklch(0.38 0.000 90)",
+          "oklch(0.49 0.000 90)",
+          "oklch(0.61 0.000 90)",
+          "oklch(0.72 0.000 90)",
+          "oklch(0.84 0.000 90)",
+          "oklch(0.95 0.000 90)"
         ]
+      },
+      "sidebar-accent": {
+        "role": "neutral",
+        "displayName": "Rail Hover",
+        "canonical": "#333333",
+        "dark": "#1a1b1d",
+        "tonalRamp": [
+          "oklch(0.15 0.000 90)",
+          "oklch(0.26 0.000 90)",
+          "oklch(0.38 0.000 90)",
+          "oklch(0.49 0.000 90)",
+          "oklch(0.61 0.000 90)",
+          "oklch(0.72 0.000 90)",
+          "oklch(0.84 0.000 90)",
+          "oklch(0.95 0.000 90)"
+        ]
+      },
+      "project-1": {
+        "role": "tertiary",
+        "displayName": "Project 1: Teal",
+        "canonical": "#1a7f95",
+        "dark": "#4fbad0",
+        "tonalRamp": [
+          "oklch(0.15 0.092 217)",
+          "oklch(0.26 0.092 217)",
+          "oklch(0.38 0.092 217)",
+          "oklch(0.49 0.092 217)",
+          "oklch(0.61 0.092 217)",
+          "oklch(0.72 0.092 217)",
+          "oklch(0.84 0.092 217)",
+          "oklch(0.95 0.092 217)"
+        ],
+        "fill": "color-mix(in oklch, #1a7f95 16%, white)",
+        "ink": "color-mix(in oklch, #1a7f95, black 45%)",
+        "fillDark": "color-mix(in oklch, #4fbad0 26%, #1c1d1f)",
+        "inkDark": "color-mix(in oklch, #4fbad0, white 75%)",
+        "note": "Assigned by creation order (ties by id), wrapping after eight; derived, never stored."
+      },
+      "project-2": {
+        "role": "tertiary",
+        "displayName": "Project 2: Amber",
+        "canonical": "#b8680f",
+        "dark": "#e8a052",
+        "tonalRamp": [
+          "oklch(0.15 0.135 60)",
+          "oklch(0.26 0.135 60)",
+          "oklch(0.38 0.135 60)",
+          "oklch(0.49 0.135 60)",
+          "oklch(0.61 0.135 60)",
+          "oklch(0.72 0.135 60)",
+          "oklch(0.84 0.135 60)",
+          "oklch(0.95 0.135 60)"
+        ],
+        "fill": "color-mix(in oklch, #b8680f 16%, white)",
+        "ink": "color-mix(in oklch, #b8680f, black 45%)",
+        "fillDark": "color-mix(in oklch, #e8a052 26%, #1c1d1f)",
+        "inkDark": "color-mix(in oklch, #e8a052, white 75%)",
+        "note": "Assigned by creation order (ties by id), wrapping after eight; derived, never stored."
+      },
+      "project-3": {
+        "role": "tertiary",
+        "displayName": "Project 3: Plum",
+        "canonical": "#8c3f9a",
+        "dark": "#c98ad6",
+        "tonalRamp": [
+          "oklch(0.15 0.158 321)",
+          "oklch(0.26 0.158 321)",
+          "oklch(0.38 0.158 321)",
+          "oklch(0.49 0.158 321)",
+          "oklch(0.61 0.158 321)",
+          "oklch(0.72 0.158 321)",
+          "oklch(0.84 0.158 321)",
+          "oklch(0.95 0.158 321)"
+        ],
+        "fill": "color-mix(in oklch, #8c3f9a 16%, white)",
+        "ink": "color-mix(in oklch, #8c3f9a, black 45%)",
+        "fillDark": "color-mix(in oklch, #c98ad6 26%, #1c1d1f)",
+        "inkDark": "color-mix(in oklch, #c98ad6, white 75%)",
+        "note": "Assigned by creation order (ties by id), wrapping after eight; derived, never stored."
+      },
+      "project-4": {
+        "role": "tertiary",
+        "displayName": "Project 4: Green",
+        "canonical": "#2f8a4c",
+        "dark": "#62c283",
+        "tonalRamp": [
+          "oklch(0.15 0.128 151)",
+          "oklch(0.26 0.128 151)",
+          "oklch(0.38 0.128 151)",
+          "oklch(0.49 0.128 151)",
+          "oklch(0.61 0.128 151)",
+          "oklch(0.72 0.128 151)",
+          "oklch(0.84 0.128 151)",
+          "oklch(0.95 0.128 151)"
+        ],
+        "fill": "color-mix(in oklch, #2f8a4c 16%, white)",
+        "ink": "color-mix(in oklch, #2f8a4c, black 45%)",
+        "fillDark": "color-mix(in oklch, #62c283 26%, #1c1d1f)",
+        "inkDark": "color-mix(in oklch, #62c283, white 75%)",
+        "note": "Assigned by creation order (ties by id), wrapping after eight; derived, never stored."
+      },
+      "project-5": {
+        "role": "tertiary",
+        "displayName": "Project 5: Indigo",
+        "canonical": "#4f5bd5",
+        "dark": "#8e97f0",
+        "tonalRamp": [
+          "oklch(0.15 0.186 274)",
+          "oklch(0.26 0.186 274)",
+          "oklch(0.38 0.186 274)",
+          "oklch(0.49 0.186 274)",
+          "oklch(0.61 0.186 274)",
+          "oklch(0.72 0.186 274)",
+          "oklch(0.84 0.186 274)",
+          "oklch(0.95 0.186 274)"
+        ],
+        "fill": "color-mix(in oklch, #4f5bd5 16%, white)",
+        "ink": "color-mix(in oklch, #4f5bd5, black 45%)",
+        "fillDark": "color-mix(in oklch, #8e97f0 26%, #1c1d1f)",
+        "inkDark": "color-mix(in oklch, #8e97f0, white 75%)",
+        "note": "Assigned by creation order (ties by id), wrapping after eight; derived, never stored."
+      },
+      "project-6": {
+        "role": "tertiary",
+        "displayName": "Project 6: Rose",
+        "canonical": "#c2417a",
+        "dark": "#ef86b4",
+        "tonalRamp": [
+          "oklch(0.15 0.172 357)",
+          "oklch(0.26 0.172 357)",
+          "oklch(0.38 0.172 357)",
+          "oklch(0.49 0.172 357)",
+          "oklch(0.61 0.172 357)",
+          "oklch(0.72 0.172 357)",
+          "oklch(0.84 0.172 357)",
+          "oklch(0.95 0.172 357)"
+        ],
+        "fill": "color-mix(in oklch, #c2417a 16%, white)",
+        "ink": "color-mix(in oklch, #c2417a, black 45%)",
+        "fillDark": "color-mix(in oklch, #ef86b4 26%, #1c1d1f)",
+        "inkDark": "color-mix(in oklch, #ef86b4, white 75%)",
+        "note": "Assigned by creation order (ties by id), wrapping after eight; derived, never stored."
+      },
+      "project-7": {
+        "role": "tertiary",
+        "displayName": "Project 7: Olive",
+        "canonical": "#7a7a12",
+        "dark": "#c3c35a",
+        "tonalRamp": [
+          "oklch(0.15 0.117 110)",
+          "oklch(0.26 0.117 110)",
+          "oklch(0.38 0.117 110)",
+          "oklch(0.49 0.117 110)",
+          "oklch(0.61 0.117 110)",
+          "oklch(0.72 0.117 110)",
+          "oklch(0.84 0.117 110)",
+          "oklch(0.95 0.117 110)"
+        ],
+        "fill": "color-mix(in oklch, #7a7a12 16%, white)",
+        "ink": "color-mix(in oklch, #7a7a12, black 45%)",
+        "fillDark": "color-mix(in oklch, #c3c35a 26%, #1c1d1f)",
+        "inkDark": "color-mix(in oklch, #c3c35a, white 75%)",
+        "note": "Assigned by creation order (ties by id), wrapping after eight; derived, never stored."
+      },
+      "project-8": {
+        "role": "tertiary",
+        "displayName": "Project 8: Umber",
+        "canonical": "#8a5a3c",
+        "dark": "#c99a7a",
+        "tonalRamp": [
+          "oklch(0.15 0.077 52)",
+          "oklch(0.26 0.077 52)",
+          "oklch(0.38 0.077 52)",
+          "oklch(0.49 0.077 52)",
+          "oklch(0.61 0.077 52)",
+          "oklch(0.72 0.077 52)",
+          "oklch(0.84 0.077 52)",
+          "oklch(0.95 0.077 52)"
+        ],
+        "fill": "color-mix(in oklch, #8a5a3c 16%, white)",
+        "ink": "color-mix(in oklch, #8a5a3c, black 45%)",
+        "fillDark": "color-mix(in oklch, #c99a7a 26%, #1c1d1f)",
+        "inkDark": "color-mix(in oklch, #c99a7a, white 75%)",
+        "note": "Assigned by creation order (ties by id), wrapping after eight; derived, never stored."
       }
     },
     "typographyMeta": {
       "headline": {
         "displayName": "Headline",
-        "purpose": "The one screen title per page."
+        "purpose": "The screen title, its one h1 (21 px, text-xl)."
       },
       "title": {
-        "displayName": "Printed Head",
-        "purpose": "Section heads in condensed capitals, always on a card-ink rule."
+        "displayName": "Title",
+        "purpose": "Wordmark and phone elapsed time (17 px, text-lg)."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Running text, cells, nav items and form labels."
+        "purpose": "Phone body and fields (15 px, text-base)."
+      },
+      "body-pc": {
+        "displayName": "Body PC",
+        "purpose": "PC body, buttons, tables (14 px, text-sm)."
       },
       "label": {
-        "displayName": "Printed Column Head",
-        "purpose": "Column heads and badges."
+        "displayName": "Label",
+        "purpose": "Meta lines and bottom-bar labels (12 px, text-xs)."
       },
-      "punch": {
-        "displayName": "Punch",
-        "purpose": "Every time, date and duration; condensed mono on tabular, slashed-zero figures."
+      "caps": {
+        "displayName": "Caps",
+        "purpose": "The caps utility: column heads, section heads, badges, state labels."
+      },
+      "figures": {
+        "displayName": "Figures",
+        "purpose": "The figures utility: tabular numbers for every time, date and duration."
       }
     },
     "shadows": [
       {
-        "name": "focus-ring",
-        "value": "0 0 0 2px var(--background), 0 0 0 4px var(--ring)",
-        "purpose": "The only shadow: keyboard focus on buttons. Inputs use a 2px ring at 35% violet. Surfaces are flat."
+        "name": "sheet-up",
+        "value": "0 -8px 24px rgb(0 0 0 / 0.12)",
+        "purpose": "The phone's More sheet."
+      },
+      {
+        "name": "popover-down",
+        "value": "0 8px 24px rgb(0 0 0 / 0.12)",
+        "purpose": "The PC timer bar's other-timers list."
+      },
+      {
+        "name": "strip-list-down",
+        "value": "0 8px 24px rgb(0 0 0 / 0.25)",
+        "purpose": "The phone strip's other-timers list."
       }
     ],
     "motion": [
       {
-        "name": "state-change",
+        "name": "state",
         "value": "150ms ease-out",
-        "purpose": "Colour, border and 1px press changes on state only; no entrance motion; removed under prefers-reduced-motion."
+        "purpose": "Colour changes on state only; removed under prefers-reduced-motion."
       }
     ],
     "breakpoints": [
@@ -287,131 +475,161 @@
         "value": "640px"
       },
       {
-        "name": "md",
-        "value": "768px"
-      },
-      {
         "name": "lg",
         "value": "1024px",
-        "purpose": "Rack becomes the left rail; bottom bar hides; controls drop from 44px to 36px."
+        "purpose": "Sidebar and header replace top bar, strip and bottom bar."
       },
       {
         "name": "xl",
-        "value": "1280px",
-        "purpose": "Today gains its second column."
+        "value": "1280px"
       }
-    ],
-    "colorScheme": "Light by default; dark via prefers-color-scheme (values in colorMeta.*.dark)."
+    ]
   },
   "components": [
     {
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "The one violet action per form.",
-      "html": "<button class=\"ds-btn-primary\">Create user</button>",
-      "css": ".ds-btn-primary{font-family:var(--font-sans,'Archivo Variable',sans-serif);display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 16px;border:1px solid transparent;border-radius:4px;background:var(--primary,oklch(0.46 0.165 308));color:var(--primary-foreground,oklch(0.985 0.006 308));font-size:15px;font-weight:600;cursor:pointer;transition:background-color 150ms ease-out,transform 150ms ease-out}.ds-btn-primary:hover{background:color-mix(in oklch,var(--primary,oklch(0.46 0.165 308)),var(--foreground,oklch(0.255 0.04 262)) 18%)}.ds-btn-primary:focus-visible{outline:none;box-shadow:0 0 0 2px var(--background,oklch(0.955 0.016 236)),0 0 0 4px var(--ring,oklch(0.46 0.165 308))}.ds-btn-primary:active{transform:translateY(1px)}"
+      "description": "The one primary action per form, in Kimai Blue.",
+      "html": "<button class=\"ds-btn-primary\">Save</button>",
+      "css": ".ds-btn-primary{font:600 0.875rem/1.45 \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif;height:44px;padding:0 16px;border:1px solid transparent;border-radius:4px;background:var(--primary,#0b63c9);color:var(--primary-foreground,#fff);cursor:pointer;transition:background-color 150ms ease-out,transform 150ms ease-out}.ds-btn-primary:hover{background:color-mix(in oklch,var(--primary,#0b63c9),var(--foreground,#1d2025) 18%)}.ds-btn-primary:focus-visible{outline:none;box-shadow:0 0 0 2px var(--background,#f7f7f8),0 0 0 4px var(--ring,#0b63c9)}.ds-btn-primary:active{transform:translateY(1px)}"
     },
     {
       "name": "Outline Button",
       "kind": "button",
       "refersTo": "button-outline",
-      "description": "Every secondary action.",
-      "html": "<button class=\"ds-btn-outline\">Set password</button>",
-      "css": ".ds-btn-outline{font-family:var(--font-sans,'Archivo Variable',sans-serif);display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 16px;border:1px solid var(--input,oklch(0.62 0.035 252));border-radius:4px;background:var(--card,oklch(0.99 0.005 236));color:var(--foreground,oklch(0.255 0.04 262));font-size:15px;font-weight:600;cursor:pointer;transition:background-color 150ms ease-out,border-color 150ms ease-out,transform 150ms ease-out}.ds-btn-outline:hover{border-color:color-mix(in oklch,var(--foreground,oklch(0.255 0.04 262)) 60%,transparent);background:var(--accent,oklch(0.915 0.025 240))}.ds-btn-outline:focus-visible{outline:none;box-shadow:0 0 0 2px var(--background,oklch(0.955 0.016 236)),0 0 0 4px var(--ring,oklch(0.46 0.165 308))}.ds-btn-outline:active{transform:translateY(1px)}"
+      "description": "Every secondary action, including Undo.",
+      "html": "<button class=\"ds-btn-outline\">Undo</button>",
+      "css": ".ds-btn-outline{font:600 0.875rem/1.45 \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif;height:44px;padding:0 16px;border:1px solid var(--input,#c8cbd0);border-radius:4px;background:var(--card,#fff);color:var(--foreground,#1d2025);cursor:pointer;transition:background-color 150ms ease-out,border-color 150ms ease-out}.ds-btn-outline:hover{border-color:color-mix(in oklch,var(--foreground,#1d2025) 60%,transparent);background:var(--accent,#eef0f3)}.ds-btn-outline:focus-visible{outline:none;box-shadow:0 0 0 2px var(--background,#f7f7f8),0 0 0 4px var(--ring,#0b63c9)}.ds-btn-outline:active{transform:translateY(1px)}"
     },
     {
       "name": "Destructive Button",
       "kind": "button",
       "refersTo": "button-destructive",
-      "description": "Red outline that fills red on hover; destructive actions only.",
-      "html": "<button class=\"ds-btn-destructive\">Delete</button>",
-      "css": ".ds-btn-destructive{font-family:var(--font-sans,'Archivo Variable',sans-serif);display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 16px;border:1px solid color-mix(in oklch,var(--destructive,oklch(0.52 0.19 25)) 60%,transparent);border-radius:4px;background:var(--card,oklch(0.99 0.005 236));color:var(--destructive,oklch(0.52 0.19 25));font-size:15px;font-weight:600;cursor:pointer;transition:background-color 150ms ease-out,color 150ms ease-out}.ds-btn-destructive:hover{background:var(--destructive,oklch(0.52 0.19 25));color:var(--primary-foreground,oklch(0.985 0.006 308))}.ds-btn-destructive:focus-visible{outline:none;box-shadow:0 0 0 2px var(--background,oklch(0.955 0.016 236)),0 0 0 4px var(--destructive,oklch(0.52 0.19 25))}"
+      "description": "Delete, revoke, restore; set apart by space from its neighbours.",
+      "html": "<button class=\"ds-btn-destructive\">Yes, delete them</button>",
+      "css": ".ds-btn-destructive{font:600 0.875rem/1.45 \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif;height:44px;padding:0 16px;border:1px solid color-mix(in oklch,var(--destructive,#c4291c) 60%,transparent);border-radius:4px;background:var(--card,#fff);color:var(--destructive,#c4291c);cursor:pointer;transition:background-color 150ms ease-out,color 150ms ease-out}.ds-btn-destructive:hover{background:var(--destructive,#c4291c);color:var(--primary-foreground,#fff)}.ds-btn-destructive:focus-visible{outline:none;box-shadow:0 0 0 2px var(--background,#f7f7f8),0 0 0 4px var(--destructive,#c4291c)}"
     },
     {
-      "name": "Ruled Field",
+      "name": "Text Field",
       "kind": "input",
       "refersTo": "input",
-      "description": "One form field on one ruled line: label column, then the input.",
-      "html": "<div class=\"ds-field\"><label class=\"ds-field-label\" for=\"ds-u\">Username</label><input class=\"ds-input\" id=\"ds-u\" placeholder=\"New password\"></div>",
-      "css": ".ds-field{display:grid;grid-template-columns:12rem minmax(0,1fr);align-items:center;gap:8px 16px;padding:12px 0;border-bottom:1px solid var(--border,oklch(0.83 0.028 245));font-family:var(--font-sans,'Archivo Variable',sans-serif)}.ds-field-label{font-size:15px;font-weight:600;line-height:1;color:var(--foreground,oklch(0.255 0.04 262))}.ds-input{height:36px;padding:4px 10px;border:1px solid var(--input,oklch(0.62 0.035 252));border-radius:4px;background:var(--card,oklch(0.99 0.005 236));color:var(--foreground,oklch(0.255 0.04 262));font:inherit;font-size:15px;outline:none;transition:border-color 150ms ease-out,box-shadow 150ms ease-out}.ds-input::placeholder{color:var(--muted-foreground,oklch(0.45 0.035 256))}.ds-input:hover{border-color:color-mix(in oklch,var(--foreground,oklch(0.255 0.04 262)) 60%,transparent)}.ds-input:focus-visible{border-color:var(--ring,oklch(0.46 0.165 308));box-shadow:0 0 0 2px color-mix(in oklch,var(--ring,oklch(0.46 0.165 308)) 35%,transparent)}"
+      "description": "Surface fill, input stroke, blue focus.",
+      "html": "<input class=\"ds-input\" placeholder=\"Description\">",
+      "css": ".ds-input{font:400 0.9375rem/1.45 \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif;height:44px;width:16rem;padding:4px 12px;border:1px solid var(--input,#c8cbd0);border-radius:4px;background:var(--card,#fff);color:var(--foreground,#1d2025);outline:none;transition:border-color 150ms ease-out,box-shadow 150ms ease-out}.ds-input::placeholder{color:var(--muted-foreground,#5d636c)}.ds-input:hover{border-color:color-mix(in oklch,var(--foreground,#1d2025) 60%,transparent)}.ds-input:focus-visible{border-color:var(--ring,#0b63c9);box-shadow:0 0 0 2px color-mix(in oklch,var(--ring,#0b63c9) 35%,transparent)}"
     },
     {
-      "name": "Printed Marks",
+      "name": "Badges",
       "kind": "chip",
-      "refersTo": "badge-mark",
-      "description": "Status badges as printed marks: mark, live, spent, destructive.",
-      "html": "<span class=\"ds-badge\">Admin</span> <span class=\"ds-badge ds-badge-live\">Running</span> <span class=\"ds-badge ds-badge-spent\">Disabled</span> <span class=\"ds-badge ds-badge-red\">Overlap</span>",
-      "css": ".ds-badge{display:inline-flex;align-items:center;height:20px;padding:0 6px;border:1px solid color-mix(in oklch,var(--foreground,oklch(0.255 0.04 262)) 70%,transparent);border-radius:2px;color:var(--foreground,oklch(0.255 0.04 262));font-family:var(--font-sans,'Archivo Variable',sans-serif);font-size:13px;line-height:1;font-weight:650;font-stretch:72%;text-transform:uppercase;letter-spacing:0.05em}.ds-badge-live{border-color:color-mix(in oklch,var(--primary,oklch(0.46 0.165 308)) 70%,transparent);color:var(--primary,oklch(0.46 0.165 308))}.ds-badge-spent{border-color:var(--input,oklch(0.62 0.035 252));color:var(--muted-foreground,oklch(0.45 0.035 256));text-decoration:line-through;text-decoration-thickness:1px}.ds-badge-red{border-color:color-mix(in oklch,var(--destructive,oklch(0.52 0.19 25)) 70%,transparent);color:var(--destructive,oklch(0.52 0.19 25))}"
+      "refersTo": "badge",
+      "description": "Caps marks with a 1 px outline: default, live, spent.",
+      "html": "<span class=\"ds-badge\">Admin</span> <span class=\"ds-badge ds-badge-live\">Running</span> <span class=\"ds-badge ds-badge-spent\">Disabled</span>",
+      "css": ".ds-badge{display:inline-flex;align-items:center;height:20px;padding:0 6px;border:1px solid color-mix(in oklch,var(--foreground,#1d2025) 70%,transparent);border-radius:2px;font:600 0.75rem/1 \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif;text-transform:uppercase;letter-spacing:0.04em;color:var(--foreground,#1d2025)}.ds-badge-live{border-color:color-mix(in oklch,var(--primary,#0b63c9) 70%,transparent);color:var(--primary,#0b63c9)}.ds-badge-spent{border-color:var(--input,#c8cbd0);color:var(--muted-foreground,#5d636c);text-decoration:line-through}"
     },
     {
-      "name": "Rack Navigation",
+      "name": "PC Sidebar",
       "kind": "nav",
-      "refersTo": "rack",
-      "description": "The PC rail; the current screen is a card-stock slot running flush into the work area.",
-      "html": "<nav class=\"ds-rack\"><span class=\"ds-rack-mark\">time-keep</span><a class=\"ds-rack-item\" aria-current=\"page\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>Today</a><a class=\"ds-rack-item\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"8\" r=\"5\"/><path d=\"M20 21a8 8 0 0 0-16 0\"/></svg>Account</a></nav>",
-      "css": ".ds-rack{display:flex;flex-direction:column;gap:4px;width:15rem;padding:24px 0 24px 12px;background:var(--sidebar,oklch(0.255 0.045 262));color:var(--sidebar-foreground,oklch(0.9 0.018 240));font-family:var(--font-sans,'Archivo Variable',sans-serif)}.ds-rack-mark{padding:0 12px 28px;font-size:16px;font-weight:650;font-stretch:72%;text-transform:uppercase;letter-spacing:0.08em;color:var(--sidebar-accent-foreground,oklch(0.97 0.01 240))}.ds-rack-item{display:flex;align-items:center;gap:12px;height:40px;padding:0 12px;border-radius:4px 0 0 4px;color:inherit;text-decoration:none;font-size:15px;font-weight:500;transition:background-color 150ms ease-out,color 150ms ease-out}.ds-rack-item:hover{background:var(--sidebar-accent,oklch(0.32 0.048 262));color:var(--sidebar-accent-foreground,oklch(0.97 0.01 240))}.ds-rack-item:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--sidebar-ring,oklch(0.8 0.11 308))}.ds-rack-item[aria-current=page]{background:var(--sidebar-primary,oklch(0.955 0.016 236));color:var(--sidebar-primary-foreground,oklch(0.255 0.04 262));font-weight:600}"
+      "refersTo": "sidebar-item",
+      "description": "Kimai's near-black rail with a blue bar on the current item.",
+      "html": "<nav class=\"ds-rail\"><a class=\"ds-rail-wm\" href=\"#\"><span class=\"ds-rail-ring\"></span>time-keep</a><a class=\"ds-rail-item\" aria-current=\"page\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><polyline points=\"12 6 12 12 16 14\"/></svg>Today</a><a class=\"ds-rail-item\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"8\" y1=\"6\" x2=\"21\" y2=\"6\"/><line x1=\"8\" y1=\"12\" x2=\"21\" y2=\"12\"/><line x1=\"8\" y1=\"18\" x2=\"21\" y2=\"18\"/><line x1=\"3\" y1=\"6\" x2=\"3.01\" y2=\"6\"/><line x1=\"3\" y1=\"12\" x2=\"3.01\" y2=\"12\"/><line x1=\"3\" y1=\"18\" x2=\"3.01\" y2=\"18\"/></svg>Entries</a></nav>",
+      "css": ".ds-rail{display:flex;flex-direction:column;gap:2px;width:232px;padding:20px 10px;background:var(--sidebar,#262626);color:var(--sidebar-foreground,#c8c8c8);font-family:\"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif}.ds-rail-wm{display:flex;align-items:center;gap:10px;margin:0 2px 24px;padding:0 8px;font-size:1.0625rem;font-weight:700;color:var(--sidebar-accent-foreground,#fff);text-decoration:none}.ds-rail-ring{width:14px;height:14px;border:2px solid var(--sidebar-ring,#3d8bfd);border-radius:50%}.ds-rail-item{position:relative;display:flex;align-items:center;gap:12px;height:40px;padding:0 12px;border-radius:2px;font-size:0.875rem;font-weight:500;color:inherit;text-decoration:none;transition:background-color 150ms ease-out,color 150ms ease-out}.ds-rail-item:hover{background:var(--sidebar-accent,#333);color:#fff}.ds-rail-item:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--sidebar-ring,#3d8bfd)}.ds-rail-item[aria-current=page]{background:var(--sidebar-primary,#1b1b1b);color:#fff;font-weight:600}.ds-rail-item[aria-current=page]::before{content:\"\";position:absolute;inset:0 auto 0 0;width:3px;background:var(--sidebar-ring,#3d8bfd)}"
+    },
+    {
+      "name": "Timer Bar (PC header)",
+      "kind": "custom",
+      "refersTo": "timer-bar",
+      "description": "The running timer in the PC header: a pale-blue pill with a ticking figure and Stop.",
+      "html": "<section class=\"ds-timer\"><span class=\"ds-live\"></span><b class=\"ds-fig\">1:24:07</b><span class=\"ds-pdot\"></span><span class=\"ds-what\"><b>Acme › Website</b> <span class=\"ds-muted\">Design · header review</span></span><button class=\"ds-stop\"><span class=\"ds-sq\"></span>Stop</button></section>",
+      "css": ".ds-timer{display:flex;align-items:center;gap:12px;height:40px;max-width:36rem;padding:0 4px 0 12px;border:1px solid color-mix(in oklch,var(--primary,#0b63c9) 25%,transparent);border-radius:4px;background:color-mix(in oklch,var(--primary,#0b63c9) 8%,transparent);font:400 0.875rem/1.45 \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif;color:var(--foreground,#1d2025)}.ds-live{width:10px;height:10px;flex:none;border-radius:50%;background:var(--primary,#0b63c9);box-shadow:0 0 0 3px color-mix(in oklch,var(--primary,#0b63c9) 25%,transparent)}.ds-fig{font-size:0.9375rem;font-variant-numeric:tabular-nums}.ds-pdot{width:8px;height:8px;flex:none;border-radius:50%;background:var(--project-3,#8c3f9a)}.ds-what{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ds-muted{color:var(--muted-foreground,#5d636c)}.ds-stop{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border:1px solid var(--input,#c8cbd0);border-radius:4px;background:var(--card,#fff);font:600 0.875rem \"Public Sans Variable\",sans-serif;color:var(--foreground,#1d2025);cursor:pointer;transition:background-color 150ms ease-out,border-color 150ms ease-out}.ds-stop:hover{background:var(--accent,#eef0f3);border-color:color-mix(in oklch,var(--foreground,#1d2025) 60%,transparent)}.ds-stop:focus-visible{outline:none;box-shadow:0 0 0 2px var(--ring,#0b63c9)}.ds-sq{width:10px;height:10px;border-radius:2px;background:var(--primary,#0b63c9)}"
+    },
+    {
+      "name": "Timer Strip (phone)",
+      "kind": "custom",
+      "refersTo": "timer-strip",
+      "description": "The phone's running timer under the top bar, in the strip's own tone.",
+      "html": "<section class=\"ds-strip\"><span class=\"ds-slive\"></span><span class=\"ds-scol\"><b><span class=\"ds-spdot\"></span>Website</b><small>Design · since 09:00</small></span><b class=\"ds-sfig\">1:24:07</b><button class=\"ds-sstop\"><span class=\"ds-ssq\"></span>Stop</button></section>",
+      "css": ".ds-strip{display:flex;align-items:center;gap:12px;height:64px;width:22rem;padding:0 16px;border-top:1px solid var(--sidebar-border,#333);background:var(--sidebar-strip,#1c1c1c);color:#fff;font-family:\"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif}.ds-slive{width:10px;height:10px;flex:none;border-radius:50%;background:var(--sidebar-ring,#3d8bfd);box-shadow:0 0 0 3px color-mix(in oklch,var(--sidebar-ring,#3d8bfd) 30%,transparent)}.ds-scol{display:flex;flex-direction:column;flex:1;min-width:0}.ds-scol b{display:flex;align-items:center;gap:8px;font-size:0.9375rem;font-weight:600}.ds-scol small{font-size:0.75rem;color:var(--sidebar-foreground,#c8c8c8)}.ds-spdot{width:8px;height:8px;border-radius:50%;background:var(--project-3,#8c3f9a)}.ds-sfig{font-size:1.0625rem;font-variant-numeric:tabular-nums}.ds-sstop{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 16px;border:1px solid rgb(255 255 255/0.2);border-radius:4px;background:var(--sidebar-primary,#1b1b1b);color:#fff;font:600 0.9375rem \"Public Sans Variable\",sans-serif;cursor:pointer;transition:background-color 150ms ease-out}.ds-sstop:hover{background:var(--sidebar-accent,#333)}.ds-sstop:focus-visible{outline:none;box-shadow:0 0 0 2px var(--sidebar-ring,#3d8bfd)}.ds-ssq{width:10px;height:10px;border-radius:2px;background:var(--primary,#0b63c9)}"
     },
     {
       "name": "Ruled Table",
       "kind": "custom",
-      "refersTo": "column-head",
-      "description": "Section head on an ink rule, column-head band, hairline-ruled lines, punched dates.",
-      "html": "<section class=\"ds-ruled\"><h2 class=\"ds-printed-head\">All users</h2><table class=\"ds-table\"><thead><tr><th>Username</th><th>Created</th></tr></thead><tbody><tr><td><strong>admin</strong></td><td class=\"ds-punch\">2026-10-18</td></tr><tr><td><strong class=\"ds-spent\">old-laptop</strong></td><td class=\"ds-punch\">2026-10-18</td></tr></tbody></table></section>",
-      "css": ".ds-ruled{font-family:var(--font-sans,'Archivo Variable',sans-serif);color:var(--foreground,oklch(0.255 0.04 262))}.ds-printed-head{margin:0;padding-bottom:6px;border-bottom:1px solid var(--foreground,oklch(0.255 0.04 262));font-size:15px;font-weight:650;font-stretch:72%;text-transform:uppercase;letter-spacing:0.05em}.ds-table{width:100%;border-collapse:collapse;font-size:15px;font-variant-numeric:tabular-nums}.ds-table thead{background:var(--muted,oklch(0.93 0.02 238))}.ds-table th{height:36px;padding:0 12px;text-align:left;border-bottom:1px solid var(--input,oklch(0.62 0.035 252));color:var(--muted-foreground,oklch(0.45 0.035 256));font-size:13px;font-weight:650;font-stretch:72%;text-transform:uppercase;letter-spacing:0.05em}.ds-table td{padding:10px 12px;border-bottom:1px solid var(--border,oklch(0.83 0.028 245))}.ds-table tbody tr{transition:background-color 150ms ease-out}.ds-table tbody tr:hover{background:color-mix(in oklch,var(--accent,oklch(0.915 0.025 240)) 50%,transparent)}.ds-punch{font-family:var(--font-mono,'Martian Mono Variable',monospace);font-stretch:75%;font-size:13px;font-variant-numeric:tabular-nums slashed-zero}.ds-spent{color:var(--muted-foreground,oklch(0.45 0.035 256));text-decoration:line-through;text-decoration-thickness:1px}"
+      "refersTo": "table-head",
+      "description": "Muted caps head band over an input rule, hairline rows, figures for times.",
+      "html": "<table class=\"ds-table\"><thead><tr><th>Date</th><th>Project</th><th>Hours</th></tr></thead><tbody><tr><td class=\"ds-num\">2026-10-20</td><td><span class=\"ds-tdot\"></span>Acme › Website</td><td class=\"ds-num ds-run\">1:24</td></tr><tr><td class=\"ds-num\">2026-10-19</td><td><span class=\"ds-tdot\" style=\"background:var(--project-1,#1a7f95)\"></span>Acme › Support</td><td class=\"ds-num\">2:10</td></tr></tbody></table>",
+      "css": ".ds-table{border-collapse:collapse;font:400 0.875rem/1.45 \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif;color:var(--foreground,#1d2025);font-variant-numeric:tabular-nums}.ds-table thead{background:var(--muted,#f2f3f5)}.ds-table th{height:36px;padding:0 12px;text-align:left;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--muted-foreground,#5d636c);border-bottom:1px solid var(--input,#c8cbd0)}.ds-table td{padding:10px 12px;border-bottom:1px solid var(--border,#e4e5e8);white-space:nowrap}.ds-table tbody tr{transition:background-color 150ms}.ds-table tbody tr:hover{background:color-mix(in oklch,var(--accent,#eef0f3) 50%,transparent)}.ds-tdot{display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:50%;background:var(--project-3,#8c3f9a)}.ds-run{color:var(--primary,#0b63c9)}"
+    },
+    {
+      "name": "Undo Strip",
+      "kind": "card",
+      "description": "The line after every action: Done, the label, an outline Undo.",
+      "html": "<div class=\"ds-undo\" role=\"status\"><p><b>Done:</b> Stopped Website.</p><button class=\"ds-undo-btn\">Undo</button></div>",
+      "css": ".ds-undo{display:flex;align-items:center;gap:16px;max-width:32rem;padding:8px 8px 8px 14px;border:1px solid var(--border,#e4e5e8);border-radius:4px;background:var(--card,#fff);font:400 0.875rem/1.45 \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif;color:var(--foreground,#1d2025)}.ds-undo p{flex:1;margin:0}.ds-undo-btn{height:36px;padding:0 12px;border:1px solid var(--input,#c8cbd0);border-radius:4px;background:var(--card,#fff);font:600 0.875rem \"Public Sans Variable\",sans-serif;color:inherit;cursor:pointer;transition:background-color 150ms ease-out}.ds-undo-btn:hover{background:var(--accent,#eef0f3)}.ds-undo-btn:focus-visible{outline:none;box-shadow:0 0 0 2px var(--ring,#0b63c9)}"
     }
   ],
   "narrative": {
-    "northStar": "The Punch-Clock Time Card",
-    "overview": "The app is a time card in a rack. The ground is pale blue card stock, everything is printed on it in blue-black card ink, and the grid shows as thin printed rules rather than boxes. The shell is the time rack: a deep ink rail on the PC, a slim ink bar on top and an ink navigation bar at the bottom on the phone. The current screen is the card pulled into its slot: the active rail item is filled with card stock and runs flush into the work area.\n\nIt is a working tool for one person, used for seconds on the phone and for long dense sessions on the PC. Rank comes from weight, capitals and rules, not from colour, panels or shadow. Two ribbon inks are held back for meaning: violet for what is live and for the one primary action, red for what is irregular or destructive. Times, dates and durations are punched in a condensed monospace on fixed columns.\n\nIt deliberately is not a grey SaaS dashboard with stat tiles and an indigo accent. Light is the default; dark follows the device setting through `prefers-color-scheme`, so it works without JavaScript.",
+    "northStar": "Kimai, Recognised at a Glance",
+    "overview": "**Creative North Star: \"Kimai, Recognised at a Glance\"**\n\ntime-keep is laid out and dressed like Kimai, the tool its one user already knows: a near-black sidebar on the PC with a blue bar on the current screen, a white header carrying the screen's title and the running timer, near-white ground under white surfaces, neutral cool greys, Public Sans throughout. There is no themed concept over the tool. The visual job is recognition and a timer that is visible and stoppable from every screen.\n\nColour is held back for meaning. One blue marks what is running and the one primary action; red marks only what is irregular or destructive; everything else is neutral grey. The one strong colour in the system belongs to the projects: each project gets one of eight colours and that colour follows its time everywhere it appears. Rank comes from weight, size and thin rules, not from panels or shadow.\n\nIt is a working tool, dense on the PC and thumb-sized on the phone. It refuses the grey SaaS dashboard of stat tiles.",
     "keyCharacteristics": [
-      "Card stock ground, card ink text, every grey a tint of the card ink.",
-      "Rules instead of boxes; a heavy ink rule under each section head, hairlines between lines.",
-      "Printed condensed capitals for section and column heads.",
-      "Condensed monospace on tabular figures for every punched time, date and duration.",
-      "Violet for live or primary, red for irregular or destructive.",
-      "4 px corners, no shadows, colour-only motion at 150 ms."
+      "Kimai's frame: a 232 px near-black sidebar, a 60 px white header, the screen on a near-white ground.",
+      "One blue for running and primary; red only for irregular or destructive; neutral greys.",
+      "Eight project colours, each with an edge, a tinted fill and a readable ink, assigned by creation order.",
+      "Public Sans, tabular figures for every time, date and duration.",
+      "4 px corners, 1 px rules, no shadows except on floating sheets.",
+      "150 ms ease-out colour changes on state only; the elapsed time ticks in place."
     ],
     "rules": [
       {
-        "name": "The Four Inks Rule",
-        "body": "Stock, card ink, violet and red. Any other tone must be a tint of the card ink at hue 236 to 262. No neutral greys.",
+        "name": "The One Blue Rule",
+        "body": "Blue means running or the primary action, and focus. It is never decoration, never a heading, never an icon tint.",
         "section": "colors"
       },
       {
-        "name": "The Ribbon Rule",
-        "body": "Violet means live, the primary action, or where your input is focused. Red means irregular or destructive. Neither colours decoration, headings or icons.",
+        "name": "The Red Means Wrong Rule",
+        "body": "Red appears only for something irregular or destructive. A running timer is blue, never red.",
         "section": "colors"
       },
       {
-        "name": "The Three Sizes Rule",
-        "body": "Working screens use 13, 15 and 22 px. Rank is made with weight, capitals and rules, not new sizes. The only exceptions are 16 px phone inputs and the wordmark.",
+        "name": "The Project Ink Rule",
+        "body": "A project is one colour, used identically wherever its time appears. Today the timer dot uses it; the table dot, calendar block edge and fill, and phone row bar take it as items 12–15 rebuild each screen. No other element borrows a project colour.",
+        "section": "colors"
+      },
+      {
+        "name": "The Figures Rule",
+        "body": "Every time, date and duration is set in `figures`. Columns never move.",
         "section": "typography"
       },
       {
-        "name": "The Punch Rule",
-        "body": "If it is a time, date or duration, it is punched in the condensed mono. Nothing else is.",
+        "name": "The Five Steps Rule",
+        "body": "The ramp is 12, 14, 15, 17 and 21 px. No other size on working screens.",
         "section": "typography"
       },
       {
-        "name": "The Rules-Not-Boxes Rule",
-        "body": "A screen region is a heading on a heavy ink rule followed by hairline-ruled lines. Do not wrap regions in bordered or filled panels. Bordered boxes are for controls and messages only.",
+        "name": "The Caps Are Heads Rule",
+        "body": "`caps` sets a column head, a section head (which is the heading itself, an h2 on a rule), a badge or a state label. Never a kicker above a heading.",
+        "section": "typography"
+      },
+      {
+        "name": "The Floating Only Rule",
+        "body": "A surface at rest has no shadow. Only a sheet or popover that floats over the page casts one.",
         "section": "elevation"
       }
     ],
     "dos": [
-      "**Do** put every screen region under a printed section head on a 1 px card-ink rule.",
-      "**Do** set every time, date and duration in the punch style.",
-      "**Do** keep one violet primary button per form; use outline buttons for the rest.",
-      "**Do** strike through spent or archived items and mark them with a spent badge.",
-      "**Do** keep 44 px targets on the phone and the bottom bar inside thumb reach.",
+      "**Do** keep the shell recognisably Kimai's: the near-black sidebar with a blue bar on the current item, the 60 px white header, the near-white ground.",
+      "**Do** use #262626 for the rail in light and #0f0f10 in dark, with the phone strip a step off the top bar (`sidebar-strip`: darker in light, lighter in dark).",
+      "**Do** keep one blue primary button per form; outline buttons for the rest.",
+      "**Do** carry a project's colour everywhere its time appears, from the creation-order palette, and nowhere else.",
+      "**Do** set every time, date and duration in `figures`.",
+      "**Do** keep 44 px targets on the phone and the navigation inside thumb reach.",
       "**Do** keep motion to 150 ms ease-out colour changes on state, removed under reduced motion."
     ],
     "donts": [
-      "**Don't** use neutral greys; tint the card ink instead.",
-      "**Don't** use violet or red for decoration, headings or icons.",
-      "**Don't** wrap screen regions in cards, panels or shadows.",
-      "**Don't** add text sizes beyond 13, 15 and 22 px on working screens.",
+      "**Don't** use blue or red for decoration, headings or icons; red is never the running state.",
+      "**Don't** store a project's colour or let anything but a project use the project palette.",
+      "**Don't** give a surface at rest a shadow; only floating sheets and popovers cast one.",
+      "**Don't** add text sizes beyond 12, 14, 15, 17 and 21 px on working screens.",
+      "**Don't** set `caps` as a kicker or eyebrow above a heading.",
+      "**Don't** build stat-tile dashboards or put a themed concept over the tool.",
       "**Don't** add entrance animations."
     ]
   }

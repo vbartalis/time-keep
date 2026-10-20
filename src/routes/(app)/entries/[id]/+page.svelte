@@ -73,7 +73,6 @@
 {/snippet}
 
 <div class="flex flex-col gap-1">
-	<h1 class="text-xl font-semibold tracking-[-0.01em]">Edit entry</h1>
 	<p class="text-sm font-semibold text-pretty">{entry.label}</p>
 	<p class="text-sm text-muted-foreground">{zones}</p>
 </div>

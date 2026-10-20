@@ -14,12 +14,10 @@
 	const shown = $derived(data.error === null && data.columnsError === null);
 
 	const link =
-		'rounded-sm font-medium text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring';
+		'rounded-sm font-medium text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:inline-flex max-lg:min-h-11 max-lg:min-w-11 max-lg:items-center';
 </script>
 
 <svelte:head><title>Copy-out · Time Keep</title></svelte:head>
-
-<h1 class="text-xl font-semibold tracking-[-0.01em]">Copy-out</h1>
 
 <section aria-labelledby="filters-heading">
 	<SectionHead id="filters-heading" title="Filters" />
@@ -58,7 +56,7 @@
 			<SectionHead id="result-heading" title="Result">
 				{#snippet aside()}
 					<p class="text-sm">
-						{plural(data.rows.length, 'row', 'rows')}, <span class="punch">{data.total}</span>
+						{plural(data.rows.length, 'row', 'rows')}, <span class="figures">{data.total}</span>
 					</p>
 				{/snippet}
 			</SectionHead>

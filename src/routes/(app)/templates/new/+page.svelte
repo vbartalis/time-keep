@@ -11,8 +11,6 @@
 
 <svelte:head><title>New template · Time Keep</title></svelte:head>
 
-<h1 class="text-xl font-semibold tracking-[-0.01em]">New template</h1>
-
 {#if failure && Object.keys(failure.fields).length === 0}
 	<div
 		role="alert"

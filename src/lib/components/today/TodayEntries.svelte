@@ -8,7 +8,7 @@
 	let { entries, warnings }: { entries: EntryRow[]; warnings: FlashWarning[] } = $props();
 
 	const columns =
-		'grid-cols-[3.5rem_3.5rem_3.5rem_minmax(0,1fr)] lg:grid-cols-[4.5rem_4.5rem_4.5rem_minmax(0,1fr)]';
+		'grid-cols-[3.5rem_3.75rem_3.5rem_minmax(0,1fr)] lg:grid-cols-[4.5rem_4.5rem_4.5rem_minmax(0,1fr)]';
 	const marksOf = (id: string) => warnings.filter((w) => w.subject === id);
 </script>
 
@@ -20,7 +20,7 @@
 		</p>
 	{:else}
 		<div
-			class="grid h-9 divide-x divide-border border-b border-input bg-muted text-xs printed text-muted-foreground {columns}"
+			class="grid h-9 divide-x divide-border border-b border-input bg-muted text-xs caps text-muted-foreground {columns}"
 			aria-hidden="true"
 		>
 			<span class="flex items-center px-3">In</span>
@@ -36,20 +36,22 @@
 						href={resolve('/(app)/entries/[id]', { id: entry.id })}
 						class="grid min-h-11 divide-x divide-border text-sm transition-colors duration-150 ease-out outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset {columns}"
 					>
-						<span class="px-3 py-2.5 punch">{entry.in}</span>
+						<span class="px-3 py-2.5 figures">{entry.in}</span>
 						{#if entry.out}
-							<span class="px-3 py-2.5 punch">{entry.out}</span>
+							<span class="px-3 py-2.5 figures">{entry.out}</span>
 						{:else}
-							<span class="px-3 py-2.5 text-xs leading-5 printed text-live">Running</span>
+							<span class="px-1.5 py-2.5 text-xs leading-5 font-semibold text-live lg:px-3"
+								>Running</span
+							>
 						{/if}
-						<span class="px-3 py-2.5 punch {entry.out ? '' : 'text-live'}">{entry.hours}</span>
+						<span class="px-3 py-2.5 figures {entry.out ? '' : 'text-live'}">{entry.hours}</span>
 						<div class="flex min-w-0 flex-col gap-0.5 px-3 py-2.5">
 							<span class="font-semibold text-pretty"
 								>{entry.customerName} › {entry.projectName}</span
 							>
 							{#if entry.startDate}
 								<span class="text-muted-foreground"
-									>Since <span class="punch">{entry.startDate}</span></span
+									>Since <span class="figures">{entry.startDate}</span></span
 								>
 							{/if}
 							{#if entry.description}

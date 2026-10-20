@@ -4,11 +4,11 @@
 
 	let { columns, rows }: { columns: Column[]; rows: OutputRow[] } = $props();
 
-	/** Dates, times and durations are punched; the text columns wrap. */
-	const PUNCHED = new Set<Column>(['date', 'start', 'end', 'duration']);
+	/** Dates, times and durations set in figures; the text columns wrap. */
+	const FIGURE_COLUMNS = new Set<Column>(['date', 'start', 'end', 'duration']);
 	const cell = (column: Column) =>
-		PUNCHED.has(column)
-			? 'punch'
+		FIGURE_COLUMNS.has(column)
+			? 'figures'
 			: column === 'description'
 				? 'min-w-48 whitespace-normal text-pretty'
 				: 'min-w-28 whitespace-normal';

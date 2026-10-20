@@ -685,7 +685,7 @@ Kimai's does. Approved by the stand-in at revision 2, with one note left open, n
 blocking: a bare number in a duration read as hours goes against every tracker
 studied; item 12 settles it.
 
-### 11. Design direction, round 2
+### 11. Design direction, round 2 — done 2026-10-20
 
 A new look and theme with impeccable, replacing decision 5's punch-clock time card:
 the direction, its tokens in Tailwind and shadcn-svelte, light and dark themes, type,
@@ -696,6 +696,128 @@ rendered options, not descriptions. A decision record supersedes decision 5;
 
 Exit: the stand-in has chosen the direction from rendered options, and the usability
 gate passes the app shell in the new direction on phone and PC, in light and dark.
+
+Done 2026-10-20: Kimai's structure in Kimai's skin (decision 9, superseding decision
+5). The stand-in chose it from three rendered options (`A`, `B`, `C`), and its skin
+was pulled back to Kimai's own (`A2`). The renders are beside the spec. What was built:
+
+- Tokens in `src/routes/layout.css`:
+  - neutral near-white and near-black grounds;
+  - the sidebar `#262626`, `#0f0f10` in dark, and the phone timer strip a step off it;
+  - one blue for running and the primary action, red only for irregular or destructive;
+  - eight project colours with fill and ink;
+  - Public Sans self-hosted, on a five-step type ramp;
+  - `punch` and `printed` renamed `figures` and `caps`.
+- A project's colour comes from its place in the user's projects by creation order
+  (`src/lib/project-colour.ts`), with nothing stored.
+- The shell:
+  - on the PC, a sticky sidebar (Today, Entries, Copy-out, Reports, Templates, Setup,
+    History, Account; Users and Backup for an admin; the user and Sign out at its foot)
+    and a 60 px header with the screen's title as the page's one `h1` and the timer bar;
+  - on the phone, a top bar with the title, the timer strip, and a bottom bar (Today,
+    Entries, Templates, More) whose More is a sheet over the page;
+  - everything works without JavaScript.
+- The timer bar is on every screen. It shows the newest running timer in full (elapsed,
+  the project's colour dot, customer › project, activity and description, Stop) and a
+  "+N" list of the others, or "No timer running". Stop posts to `/timers/stop`, returns
+  to the same URL with its query, and offers Undo there.
+- Today's Timers section is gone.
+- Scroll padding keeps a focused field clear of the sticky bars.
+
+Records: spec `docs/superpowers/specs/2026-10-20-design-direction-design.md`, plan
+`docs/superpowers/plans/2026-10-20-design-direction.md`, decision 9. `PRODUCT.md`,
+`DESIGN.md` and `.impeccable/design.json` are rewritten by impeccable's documenter.
+`docs/app.md` gains a Shell section, and the shell's surface brief in
+`.impeccable/surfaces/` is updated.
+
+Checks:
+
+- 662 unit tests and 168 browser tests (10 skipped: the PC runs of the phone-only
+  tests); check and lint clean.
+- impeccable's detector reported three advisory font-size findings, measured against
+  round 1's type ramp, all resolved by the new ramp.
+- Its finish reviewer returned fix (four items), then ship after one fix round.
+
+Calls made in the operator's place, the stand-in's (spec, "Calls made in the
+operator's place", 1–11):
+
+- **The direction is option A, Kimai's structure.** Source: operator's voice,
+  2026-10-19, and the reference study. Confidence: inferred.
+- **A's skin is Kimai's, not the ledger's.** Source: reference study. Confidence:
+  ungrounded, queued.
+- **The timer bar shows and stops; starting is item 12's.** Confidence: inferred.
+- **The navigation lists only screens that exist.** Confidence: inferred.
+- **The phone's split is the builder's, from the study.** Confidence: inferred.
+- **Light and dark follow the device only.** Confidence: ungrounded, queued.
+- **The screens keep their layouts until item 15.** Confidence: inferred.
+- **The sign-in page is item 15's.** Confidence: grounded.
+- **What makes a look feel wrong.** Confidence: grounded for the quotes, ungrounded
+  beyond, queued.
+- **Project colour shows only in the shell in this item.** Confidence: inferred.
+- **A project's colour is derived, with nothing stored.** Confidence: ungrounded,
+  queued.
+
+The builder's, from the design session (spec calls 12–22):
+
+- impeccable's direction roll bounded by the brief;
+- Calendar and "+ New entry" rendered but not built;
+- the bottom bar's four items;
+- Today's Timers section removed;
+- several timers shown as the newest plus a count;
+- Undo after a stop on every screen;
+- the utility rename;
+- the colour's position rule;
+- the 1024 px breakpoint;
+- the title moved into the shell;
+- the approval's notes.
+
+The builder's, from the build:
+
+- A refused stop shows in the alert strip directly under the bar, not inside the bar.
+- On screens that own an undo strip (Today, Entries, Setup, Templates, History), a
+  stop's Undo or refusal shows in that screen's own strip, where round 1 put it.
+- impeccable's finish reviewer and documenter were dispatched by the controller, not
+  by an implementer.
+- The header's inner row takes `main`'s measure (`max-w-6xl`), so the timer bar ends
+  at the content's edge.
+- The header naming the span in view (e.g. "Entries · October 2026") is deferred to
+  items 13–14; the surface brief records it.
+- The phone timer strip got its own tone (`--sidebar-strip`).
+- The type ramp gained a 17 px step, and `caps` reads `--text-xs`.
+- The phone title is 21 px.
+- Escape in More returns focus to its summary.
+- An earlier-day timer in the "+N" list shows its start date.
+- The browser bar's `theme-color` is the near-black of the bar.
+- Round 1's `punched` and `PUNCHED` names were dropped from the code.
+- After gate attempt 1 failed on phone touch targets inside round 1's screens, every
+  tappable control's own box on the phone (below `lg`) became at least 44×44 px: links
+  and buttons by minimum sizes, checkboxes and radios by a 44 px box around the same
+  20 px square. Layouts and the PC's density are unchanged, and a phone browser test
+  sweeps every screen.
+
+Questions queued in `docs/questions.md`:
+
+- where a project's colour comes from;
+- the skin;
+- light and dark;
+- what makes a look feel wrong.
+
+Deferred minors:
+
+- More has no tap-outside close.
+- The "+N" panel has no Escape or outside close, and can be open together with More.
+- After a Stop with JavaScript, focus falls to the page body.
+- Today's "Running" label is not in caps, as Entries' is.
+- The long-text truncation of the PC timer pill is untested at about 1024 px.
+- An earlier-day timer in the "+N" list is checked by a unit test only; the seed has
+  none.
+- Overlaps show red only in the warnings after a save.
+- The shell's `NavRoute` cast.
+- The theme test checks variable names, not their Tailwind exposure.
+- The PC scroll padding is untested.
+- The touch-target sweep has no guard against finding nothing.
+- The phone's drawn checkboxes are untested in forced-colours mode.
+- Select-all's mixed state draws nothing (as before).
 
 ### 12. The entry and the timer
 

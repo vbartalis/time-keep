@@ -1,107 +1,163 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn-svelte/tailwind.css';
-@import '@fontsource-variable/archivo/wdth.css';
-@import '@fontsource-variable/martian-mono/wdth.css';
+@import '@fontsource-variable/public-sans';
 
 /*
- * The time card. See DESIGN.md.
- * Four inks: card stock (ground), card ink (text, rules), ribbon violet (live and the
- * one primary action), ribbon red (irregular and destructive). Every grey is a tint
- * of the card ink. Dark follows the device setting, so it works without JavaScript.
+ * Kimai's skin. Neutral cool greys, a blue primary for the one action and the live
+ * state, red for irregular and destructive, a dark charcoal rail, and eight project
+ * colours that each carry an edge, a tinted fill and a readable ink. Dark follows the
+ * device setting, so it works without JavaScript.
  */
 @custom-variant dark (@media (prefers-color-scheme: dark));
 
 :root {
 	color-scheme: light dark;
 
-	--background: oklch(0.955 0.016 236);
-	--foreground: oklch(0.255 0.04 262);
-	--card: oklch(0.99 0.005 236);
-	--card-foreground: oklch(0.255 0.04 262);
-	--popover: oklch(0.99 0.005 236);
-	--popover-foreground: oklch(0.255 0.04 262);
-	--primary: oklch(0.46 0.165 308);
-	--primary-foreground: oklch(0.985 0.006 308);
-	--secondary: oklch(0.915 0.022 240);
-	--secondary-foreground: oklch(0.255 0.04 262);
-	--muted: oklch(0.93 0.02 238);
-	--muted-foreground: oklch(0.45 0.035 256);
-	--accent: oklch(0.915 0.025 240);
-	--accent-foreground: oklch(0.255 0.04 262);
-	--destructive: oklch(0.52 0.19 25);
-	--border: oklch(0.83 0.028 245);
-	--input: oklch(0.62 0.035 252);
-	--ring: oklch(0.46 0.165 308);
-	--chart-1: oklch(0.46 0.165 308);
-	--chart-2: oklch(0.255 0.04 262);
-	--chart-3: oklch(0.52 0.19 25);
-	--chart-4: oklch(0.62 0.035 252);
-	--chart-5: oklch(0.83 0.028 245);
+	--background: #f7f7f8;
+	--foreground: #1d2025;
+	--card: #ffffff;
+	--card-foreground: #1d2025;
+	--popover: #ffffff;
+	--popover-foreground: #1d2025;
+	--primary: #0b63c9;
+	--primary-foreground: #ffffff;
+	--secondary: #f2f3f5;
+	--secondary-foreground: #1d2025;
+	--muted: #f2f3f5;
+	--muted-foreground: #5d636c;
+	--accent: #eef0f3;
+	--accent-foreground: #1d2025;
+	--destructive: #c4291c;
+	--border: #e4e5e8;
+	--input: #c8cbd0;
+	--ring: #0b63c9;
+	--chart-1: #0b63c9;
+	--chart-2: var(--project-1);
+	--chart-3: var(--project-2);
+	--chart-4: var(--project-3);
+	--chart-5: var(--project-4);
 	--radius: 0.25rem;
 
-	/* The time rack: the shell's rail. */
-	--sidebar: oklch(0.255 0.045 262);
-	--sidebar-foreground: oklch(0.9 0.018 240);
-	--sidebar-primary: oklch(0.955 0.016 236);
-	--sidebar-primary-foreground: oklch(0.255 0.04 262);
-	--sidebar-accent: oklch(0.32 0.048 262);
-	--sidebar-accent-foreground: oklch(0.97 0.01 240);
-	--sidebar-border: oklch(0.36 0.045 262);
-	--sidebar-ring: oklch(0.8 0.11 308);
+	/* The rail. */
+	--sidebar: #262626;
+	--sidebar-foreground: #c8c8c8;
+	--sidebar-primary: #1b1b1b;
+	--sidebar-primary-foreground: #ffffff;
+	--sidebar-accent: #333333;
+	--sidebar-accent-foreground: #ffffff;
+	--sidebar-border: #333333;
+	--sidebar-strip: #1c1c1c;
+	--sidebar-ring: #3d8bfd;
+
+	/* Project colours: edge, tinted fill, ink on that fill. */
+	--project-1: #1a7f95;
+	--project-1-fill: color-mix(in oklch, var(--project-1) 16%, white);
+	--project-1-ink: color-mix(in oklch, var(--project-1), black 45%);
+	--project-2: #b8680f;
+	--project-2-fill: color-mix(in oklch, var(--project-2) 16%, white);
+	--project-2-ink: color-mix(in oklch, var(--project-2), black 45%);
+	--project-3: #8c3f9a;
+	--project-3-fill: color-mix(in oklch, var(--project-3) 16%, white);
+	--project-3-ink: color-mix(in oklch, var(--project-3), black 45%);
+	--project-4: #2f8a4c;
+	--project-4-fill: color-mix(in oklch, var(--project-4) 16%, white);
+	--project-4-ink: color-mix(in oklch, var(--project-4), black 45%);
+	--project-5: #4f5bd5;
+	--project-5-fill: color-mix(in oklch, var(--project-5) 16%, white);
+	--project-5-ink: color-mix(in oklch, var(--project-5), black 45%);
+	--project-6: #c2417a;
+	--project-6-fill: color-mix(in oklch, var(--project-6) 16%, white);
+	--project-6-ink: color-mix(in oklch, var(--project-6), black 45%);
+	--project-7: #7a7a12;
+	--project-7-fill: color-mix(in oklch, var(--project-7) 16%, white);
+	--project-7-ink: color-mix(in oklch, var(--project-7), black 45%);
+	--project-8: #8a5a3c;
+	--project-8-fill: color-mix(in oklch, var(--project-8) 16%, white);
+	--project-8-ink: color-mix(in oklch, var(--project-8), black 45%);
 }
 
 @media (prefers-color-scheme: dark) {
 	:root {
-		--background: oklch(0.225 0.04 252);
-		--foreground: oklch(0.93 0.014 240);
-		--card: oklch(0.26 0.044 252);
-		--card-foreground: oklch(0.93 0.014 240);
-		--popover: oklch(0.26 0.044 252);
-		--popover-foreground: oklch(0.93 0.014 240);
-		--primary: oklch(0.75 0.11 306);
-		--primary-foreground: oklch(0.2 0.045 305);
-		--secondary: oklch(0.29 0.045 252);
-		--secondary-foreground: oklch(0.93 0.014 240);
-		--muted: oklch(0.275 0.045 252);
-		--muted-foreground: oklch(0.75 0.03 248);
-		--accent: oklch(0.3 0.048 252);
-		--accent-foreground: oklch(0.95 0.012 240);
-		--destructive: oklch(0.73 0.15 25);
-		--border: oklch(0.36 0.045 252);
-		--input: oklch(0.56 0.035 255);
-		--ring: oklch(0.75 0.11 306);
-		--chart-1: oklch(0.75 0.11 306);
-		--chart-2: oklch(0.93 0.014 240);
-		--chart-3: oklch(0.73 0.15 25);
-		--chart-4: oklch(0.56 0.035 255);
-		--chart-5: oklch(0.36 0.045 252);
+		--background: #141516;
+		--foreground: #e6e7e9;
+		--card: #1c1d1f;
+		--card-foreground: #e6e7e9;
+		--popover: #1c1d1f;
+		--popover-foreground: #e6e7e9;
+		--primary: #5aa0ff;
+		--primary-foreground: #08213f;
+		--secondary: #222326;
+		--secondary-foreground: #e6e7e9;
+		--muted: #222326;
+		--muted-foreground: #9a9fa7;
+		--accent: #26282b;
+		--accent-foreground: #e6e7e9;
+		--destructive: #ff7b6e;
+		--border: #2b2d30;
+		--input: #43464b;
+		--ring: #5aa0ff;
+		--chart-1: #5aa0ff;
+		--chart-2: var(--project-1);
+		--chart-3: var(--project-2);
+		--chart-4: var(--project-3);
+		--chart-5: var(--project-4);
 
-		--sidebar: oklch(0.13 0.022 262);
-		--sidebar-foreground: oklch(0.82 0.02 245);
-		--sidebar-primary: oklch(0.225 0.04 252);
-		--sidebar-primary-foreground: oklch(0.97 0.01 240);
-		--sidebar-accent: oklch(0.18 0.028 262);
-		--sidebar-accent-foreground: oklch(0.97 0.01 240);
-		--sidebar-border: oklch(0.25 0.03 262);
-		--sidebar-ring: oklch(0.77 0.12 308);
+		--sidebar: #0f0f10;
+		--sidebar-foreground: #b4b4b4;
+		--sidebar-primary: #1c1d1f;
+		--sidebar-primary-foreground: #ffffff;
+		--sidebar-accent: #1a1b1d;
+		--sidebar-accent-foreground: #ffffff;
+		--sidebar-border: #232427;
+		--sidebar-strip: #18191a;
+		--sidebar-ring: #5aa0ff;
+
+		--project-1: #4fbad0;
+		--project-1-fill: color-mix(in oklch, var(--project-1) 26%, #1c1d1f);
+		--project-1-ink: color-mix(in oklch, var(--project-1), white 75%);
+		--project-2: #e8a052;
+		--project-2-fill: color-mix(in oklch, var(--project-2) 26%, #1c1d1f);
+		--project-2-ink: color-mix(in oklch, var(--project-2), white 75%);
+		--project-3: #c98ad6;
+		--project-3-fill: color-mix(in oklch, var(--project-3) 26%, #1c1d1f);
+		--project-3-ink: color-mix(in oklch, var(--project-3), white 75%);
+		--project-4: #62c283;
+		--project-4-fill: color-mix(in oklch, var(--project-4) 26%, #1c1d1f);
+		--project-4-ink: color-mix(in oklch, var(--project-4), white 75%);
+		--project-5: #8e97f0;
+		--project-5-fill: color-mix(in oklch, var(--project-5) 26%, #1c1d1f);
+		--project-5-ink: color-mix(in oklch, var(--project-5), white 75%);
+		--project-6: #ef86b4;
+		--project-6-fill: color-mix(in oklch, var(--project-6) 26%, #1c1d1f);
+		--project-6-ink: color-mix(in oklch, var(--project-6), white 75%);
+		--project-7: #c3c35a;
+		--project-7-fill: color-mix(in oklch, var(--project-7) 26%, #1c1d1f);
+		--project-7-ink: color-mix(in oklch, var(--project-7), white 75%);
+		--project-8: #c99a7a;
+		--project-8-fill: color-mix(in oklch, var(--project-8) 26%, #1c1d1f);
+		--project-8-ink: color-mix(in oklch, var(--project-8), white 75%);
 	}
 }
 
 @theme inline {
-	--font-sans: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif;
-	--font-mono: 'Martian Mono Variable', ui-monospace, monospace;
+	--font-sans: 'Public Sans Variable', ui-sans-serif, system-ui, sans-serif;
 
-	/* Three working sizes: meta, body, heading. */
-	--text-xs: 0.8125rem;
+	/* Meta and table heads, PC body, phone body, wordmark and phone elapsed time, titles. */
+	--text-xs: 0.75rem;
 	--text-xs--line-height: 1.35;
-	--text-sm: 0.9375rem;
+	--text-sm: 0.875rem;
 	--text-sm--line-height: 1.45;
-	--text-xl: 1.375rem;
-	--text-xl--line-height: 1.2;
+	--text-base: 0.9375rem;
+	--text-base--line-height: 1.45;
+	--text-lg: 1.0625rem;
+	--text-lg--line-height: 1.35;
+	--text-xl: 1.3125rem;
+	--text-xl--line-height: 1.25;
 
 	--color-live: var(--primary);
 	--color-irregular: var(--destructive);
+	--color-sidebar-strip: var(--sidebar-strip);
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -133,6 +189,30 @@
 	--color-card: var(--card);
 	--color-foreground: var(--foreground);
 	--color-background: var(--background);
+	--color-project-1: var(--project-1);
+	--color-project-1-fill: var(--project-1-fill);
+	--color-project-1-ink: var(--project-1-ink);
+	--color-project-2: var(--project-2);
+	--color-project-2-fill: var(--project-2-fill);
+	--color-project-2-ink: var(--project-2-ink);
+	--color-project-3: var(--project-3);
+	--color-project-3-fill: var(--project-3-fill);
+	--color-project-3-ink: var(--project-3-ink);
+	--color-project-4: var(--project-4);
+	--color-project-4-fill: var(--project-4-fill);
+	--color-project-4-ink: var(--project-4-ink);
+	--color-project-5: var(--project-5);
+	--color-project-5-fill: var(--project-5-fill);
+	--color-project-5-ink: var(--project-5-ink);
+	--color-project-6: var(--project-6);
+	--color-project-6-fill: var(--project-6-fill);
+	--color-project-6-ink: var(--project-6-ink);
+	--color-project-7: var(--project-7);
+	--color-project-7-fill: var(--project-7-fill);
+	--color-project-7-ink: var(--project-7-ink);
+	--color-project-8: var(--project-8);
+	--color-project-8-fill: var(--project-8-fill);
+	--color-project-8-ink: var(--project-8-ink);
 	--radius-sm: calc(var(--radius) * 0.5);
 	--radius-md: var(--radius);
 	--radius-lg: calc(var(--radius) * 1.5);
@@ -142,20 +222,17 @@
 	--radius-4xl: calc(var(--radius) * 4);
 }
 
-/* A punched time, date or duration: condensed mono on tabular figures. */
-@utility punch {
-	font-family: var(--font-mono);
-	font-stretch: 75%;
-	font-variant-numeric: tabular-nums slashed-zero;
-	letter-spacing: 0;
+/* A time, date or duration: tabular figures so columns line up. */
+@utility figures {
+	font-variant-numeric: tabular-nums;
 }
 
-/* A printed column head: the card's condensed capitals. */
-@utility printed {
-	font-stretch: 72%;
-	font-weight: 650;
+/* A column head or label: small capitals. */
+@utility caps {
+	font-size: var(--text-xs);
+	font-weight: 600;
 	text-transform: uppercase;
-	letter-spacing: 0.05em;
+	letter-spacing: 0.04em;
 }
 
 @layer base {
@@ -166,6 +243,16 @@
 		@apply font-sans;
 		-webkit-text-size-adjust: 100%;
 		scrollbar-color: var(--input) transparent;
+		/* Focus and anchors clear the sticky top band and the fixed bottom bar (WCAG 2.4.11).
+		 * Measured: band 120px (7.5rem), bottom bar 65px. */
+		scroll-padding-top: 7.5rem;
+		scroll-padding-bottom: calc(4.25rem + env(safe-area-inset-bottom));
+	}
+	@media (min-width: 64rem) {
+		html {
+			scroll-padding-top: 3.75rem;
+			scroll-padding-bottom: 0;
+		}
 	}
 	body {
 		@apply bg-background text-foreground antialiased;
@@ -176,7 +263,7 @@
 		background-color: color-mix(in oklch, var(--primary) 28%, transparent);
 		color: inherit;
 	}
-	/* Unchecked checkboxes keep the ink stroke in both themes. */
+	/* Unchecked checkboxes keep a neutral stroke in both themes. */
 	input[type='checkbox'] {
 		appearance: none;
 		display: inline-grid;
@@ -210,5 +297,69 @@
 			transition-duration: 0ms !important;
 			animation-duration: 0ms !important;
 		}
+	}
+}
+
+/*
+ * Phone touch targets (below `lg`): a checkbox or radio's own box is 44 by 44, with the
+ * visible 20 px square or circle drawn centred inside it. Unlayered, so it wins over
+ * the size utilities the controls carry for the PC.
+ */
+@media (width < 64rem) {
+	input[type='checkbox'],
+	input[type='radio'] {
+		appearance: none;
+		display: inline-grid;
+		place-content: center;
+		flex: none;
+		width: 2.75rem;
+		height: 2.75rem;
+		margin: 0;
+		border: 0;
+		background: transparent;
+		vertical-align: middle;
+	}
+	input[type='checkbox']::before,
+	input[type='radio']::before {
+		content: '';
+		grid-area: 1 / 1;
+		width: 1.25rem;
+		height: 1.25rem;
+		box-sizing: border-box;
+		border: 1px solid var(--input);
+		border-radius: var(--radius-sm);
+		background-color: var(--card);
+	}
+	input[type='radio']::before {
+		border-radius: 50%;
+	}
+	input[type='checkbox']:checked::before {
+		border-color: var(--primary);
+		background-color: var(--primary);
+	}
+	input[type='checkbox']:checked::after {
+		grid-area: 1 / 1;
+		place-self: center;
+	}
+	input[type='radio']:checked::before {
+		border-color: var(--primary);
+	}
+	input[type='radio']:checked::after {
+		content: '';
+		grid-area: 1 / 1;
+		place-self: center;
+		width: 0.625rem;
+		height: 0.625rem;
+		border-radius: 50%;
+		background-color: var(--primary);
+	}
+	input[type='checkbox']:focus-visible,
+	input[type='radio']:focus-visible {
+		outline: none;
+	}
+	input[type='checkbox']:focus-visible::before,
+	input[type='radio']:focus-visible::before {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
 	}
 }

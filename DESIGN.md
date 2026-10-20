@@ -1,545 +1,500 @@
 ---
 name: time-keep
-description: A personal time tracker dressed as a punch-clock time card.
+description: A personal time tracker laid out and dressed like Kimai, one colour per project.
 colors:
-  card-stock: "oklch(0.955 0.016 236)"
-  card-face: "oklch(0.99 0.005 236)"
-  card-ink: "oklch(0.255 0.04 262)"
-  ribbon-violet: "oklch(0.46 0.165 308)"
-  ribbon-violet-paper: "oklch(0.985 0.006 308)"
-  ribbon-red: "oklch(0.52 0.19 25)"
-  ink-faded: "oklch(0.45 0.035 256)"
-  ink-stroke: "oklch(0.62 0.035 252)"
-  ink-hairline: "oklch(0.83 0.028 245)"
-  ink-shade: "oklch(0.93 0.02 238)"
-  ink-wash: "oklch(0.915 0.025 240)"
-  rack-ink: "oklch(0.255 0.045 262)"
-  rack-ink-raised: "oklch(0.32 0.048 262)"
-  rack-text: "oklch(0.9 0.018 240)"
-  rack-focus: "oklch(0.8 0.11 308)"
+  primary: "#0b63c9"
+  primary-foreground: "#ffffff"
+  destructive: "#c4291c"
+  ground: "#f7f7f8"
+  surface: "#ffffff"
+  foreground: "#1d2025"
+  muted: "#f2f3f5"
+  muted-foreground: "#5d636c"
+  accent: "#eef0f3"
+  border: "#e4e5e8"
+  input: "#c8cbd0"
+  sidebar: "#262626"
+  sidebar-foreground: "#c8c8c8"
+  sidebar-primary: "#1b1b1b"
+  sidebar-accent: "#333333"
+  sidebar-border: "#333333"
+  sidebar-strip: "#1c1c1c"
+  sidebar-ring: "#3d8bfd"
+  primary-dark: "#5aa0ff"
+  primary-foreground-dark: "#08213f"
+  destructive-dark: "#ff7b6e"
+  ground-dark: "#141516"
+  surface-dark: "#1c1d1f"
+  foreground-dark: "#e6e7e9"
+  muted-dark: "#222326"
+  muted-foreground-dark: "#9a9fa7"
+  accent-dark: "#26282b"
+  border-dark: "#2b2d30"
+  input-dark: "#43464b"
+  sidebar-dark: "#0f0f10"
+  sidebar-foreground-dark: "#b4b4b4"
+  sidebar-primary-dark: "#1c1d1f"
+  sidebar-accent-dark: "#1a1b1d"
+  sidebar-border-dark: "#232427"
+  sidebar-strip-dark: "#18191a"
+  sidebar-ring-dark: "#5aa0ff"
+  project-1: "#1a7f95"
+  project-1-fill: "color-mix(in oklch, #1a7f95 16%, white)"
+  project-1-ink: "color-mix(in oklch, #1a7f95, black 45%)"
+  project-2: "#b8680f"
+  project-2-fill: "color-mix(in oklch, #b8680f 16%, white)"
+  project-2-ink: "color-mix(in oklch, #b8680f, black 45%)"
+  project-3: "#8c3f9a"
+  project-3-fill: "color-mix(in oklch, #8c3f9a 16%, white)"
+  project-3-ink: "color-mix(in oklch, #8c3f9a, black 45%)"
+  project-4: "#2f8a4c"
+  project-4-fill: "color-mix(in oklch, #2f8a4c 16%, white)"
+  project-4-ink: "color-mix(in oklch, #2f8a4c, black 45%)"
+  project-5: "#4f5bd5"
+  project-5-fill: "color-mix(in oklch, #4f5bd5 16%, white)"
+  project-5-ink: "color-mix(in oklch, #4f5bd5, black 45%)"
+  project-6: "#c2417a"
+  project-6-fill: "color-mix(in oklch, #c2417a 16%, white)"
+  project-6-ink: "color-mix(in oklch, #c2417a, black 45%)"
+  project-7: "#7a7a12"
+  project-7-fill: "color-mix(in oklch, #7a7a12 16%, white)"
+  project-7-ink: "color-mix(in oklch, #7a7a12, black 45%)"
+  project-8: "#8a5a3c"
+  project-8-fill: "color-mix(in oklch, #8a5a3c 16%, white)"
+  project-8-ink: "color-mix(in oklch, #8a5a3c, black 45%)"
+  project-1-dark: "#4fbad0"
+  project-1-fill-dark: "color-mix(in oklch, #4fbad0 26%, #1c1d1f)"
+  project-1-ink-dark: "color-mix(in oklch, #4fbad0, white 75%)"
+  project-2-dark: "#e8a052"
+  project-2-fill-dark: "color-mix(in oklch, #e8a052 26%, #1c1d1f)"
+  project-2-ink-dark: "color-mix(in oklch, #e8a052, white 75%)"
+  project-3-dark: "#c98ad6"
+  project-3-fill-dark: "color-mix(in oklch, #c98ad6 26%, #1c1d1f)"
+  project-3-ink-dark: "color-mix(in oklch, #c98ad6, white 75%)"
+  project-4-dark: "#62c283"
+  project-4-fill-dark: "color-mix(in oklch, #62c283 26%, #1c1d1f)"
+  project-4-ink-dark: "color-mix(in oklch, #62c283, white 75%)"
+  project-5-dark: "#8e97f0"
+  project-5-fill-dark: "color-mix(in oklch, #8e97f0 26%, #1c1d1f)"
+  project-5-ink-dark: "color-mix(in oklch, #8e97f0, white 75%)"
+  project-6-dark: "#ef86b4"
+  project-6-fill-dark: "color-mix(in oklch, #ef86b4 26%, #1c1d1f)"
+  project-6-ink-dark: "color-mix(in oklch, #ef86b4, white 75%)"
+  project-7-dark: "#c3c35a"
+  project-7-fill-dark: "color-mix(in oklch, #c3c35a 26%, #1c1d1f)"
+  project-7-ink-dark: "color-mix(in oklch, #c3c35a, white 75%)"
+  project-8-dark: "#c99a7a"
+  project-8-fill-dark: "color-mix(in oklch, #c99a7a 26%, #1c1d1f)"
+  project-8-ink-dark: "color-mix(in oklch, #c99a7a, white 75%)"
 typography:
   headline:
-    fontFamily: "Archivo Variable, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "1.375rem"
+    fontFamily: "Public Sans Variable, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.3125rem"
     fontWeight: 600
-    lineHeight: 1.2
+    lineHeight: 1.25
     letterSpacing: "-0.01em"
   title:
-    fontFamily: "Archivo Variable, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "0.9375rem"
-    fontWeight: 650
-    lineHeight: 1.45
-    letterSpacing: "0.05em"
-    fontVariation: "'wdth' 72"
+    fontFamily: "Public Sans Variable, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.0625rem"
+    fontWeight: 700
+    lineHeight: 1.35
   body:
-    fontFamily: "Archivo Variable, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Public Sans Variable, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.9375rem"
     fontWeight: 400
     lineHeight: 1.45
-    letterSpacing: "normal"
+  body-pc:
+    fontFamily: "Public Sans Variable, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 400
+    lineHeight: 1.45
   label:
-    fontFamily: "Archivo Variable, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "0.8125rem"
-    fontWeight: 650
-    lineHeight: 1.35
-    letterSpacing: "0.05em"
-    fontVariation: "'wdth' 72"
-  punch:
-    fontFamily: "Martian Mono Variable, ui-monospace, monospace"
-    fontSize: "0.8125rem"
+    fontFamily: "Public Sans Variable, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.75rem"
     fontWeight: 400
     lineHeight: 1.35
-    letterSpacing: "0"
-    fontFeature: "'tnum' 1, 'zero' 1"
-    fontVariation: "'wdth' 75"
+  caps:
+    fontFamily: "Public Sans Variable, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.75rem"
+    fontWeight: 600
+    lineHeight: 1.35
+    letterSpacing: "0.04em"
+  figures:
+    fontFamily: "Public Sans Variable, ui-sans-serif, system-ui, sans-serif"
+    fontFeature: "'tnum' 1"
 rounded:
   sm: "2px"
   md: "4px"
   lg: "6px"
 spacing:
-  cell: "12px"
-  stack: "24px"
-  section: "40px"
   page-phone: "16px"
-  page-pc: "40px"
-  row: "36px"
+  page-pc: "24px"
+  stack: "24px"
+  cell: "12px"
   touch: "44px"
+  control-pc: "36px"
+  nav-item: "40px"
+  sidebar: "232px"
+  header-pc: "60px"
+  topbar-phone: "56px"
+  strip-phone: "64px"
+  content-max: "72rem"
 components:
   button-primary:
-    backgroundColor: "{colors.ribbon-violet}"
-    textColor: "{colors.ribbon-violet-paper}"
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.primary-foreground}"
     rounded: "{rounded.md}"
     padding: "0 16px"
     height: "44px"
   button-primary-hover:
-    backgroundColor: "color-mix(in oklch, oklch(0.46 0.165 308), oklch(0.255 0.04 262) 18%)"
+    backgroundColor: "color-mix(in oklch, #0b63c9, #1d2025 18%)"
   button-outline:
-    backgroundColor: "{colors.card-face}"
-    textColor: "{colors.card-ink}"
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
     rounded: "{rounded.md}"
     padding: "0 16px"
     height: "44px"
   button-outline-hover:
-    backgroundColor: "{colors.ink-wash}"
+    backgroundColor: "{colors.accent}"
   button-destructive:
-    backgroundColor: "{colors.card-face}"
-    textColor: "{colors.ribbon-red}"
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.destructive}"
     rounded: "{rounded.md}"
     padding: "0 16px"
     height: "44px"
   button-destructive-hover:
-    backgroundColor: "{colors.ribbon-red}"
-    textColor: "{colors.ribbon-violet-paper}"
+    backgroundColor: "{colors.destructive}"
+    textColor: "{colors.primary-foreground}"
   input:
-    backgroundColor: "{colors.card-face}"
-    textColor: "{colors.card-ink}"
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
     rounded: "{rounded.md}"
     padding: "4px 12px"
     height: "44px"
-  badge-mark:
-    textColor: "{colors.card-ink}"
-    typography: "{typography.label}"
+  badge:
+    textColor: "{colors.foreground}"
+    typography: "{typography.caps}"
     rounded: "{rounded.sm}"
     padding: "0 6px"
     height: "20px"
   badge-live:
-    textColor: "{colors.ribbon-violet}"
-    typography: "{typography.label}"
+    textColor: "{colors.primary}"
+  sidebar-item:
+    textColor: "{colors.sidebar-foreground}"
     rounded: "{rounded.sm}"
-    padding: "0 6px"
-    height: "20px"
-  badge-spent:
-    textColor: "{colors.ink-faded}"
-    typography: "{typography.label}"
-    rounded: "{rounded.sm}"
-    padding: "0 6px"
-    height: "20px"
-  column-head:
-    backgroundColor: "{colors.ink-shade}"
-    textColor: "{colors.ink-faded}"
-    typography: "{typography.label}"
-    padding: "0 12px"
-    height: "36px"
-  rack:
-    backgroundColor: "{colors.rack-ink}"
-    textColor: "{colors.rack-text}"
-    width: "15rem"
-  rack-item-current:
-    backgroundColor: "{colors.card-stock}"
-    textColor: "{colors.card-ink}"
-    rounded: "{rounded.md}"
     padding: "0 12px"
     height: "40px"
+  sidebar-item-current:
+    backgroundColor: "{colors.sidebar-primary}"
+    textColor: "{colors.primary-foreground}"
+  timer-bar:
+    backgroundColor: "color-mix(in oklch, #0b63c9 8%, #ffffff)"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    height: "40px"
+  timer-strip:
+    backgroundColor: "{colors.sidebar-strip}"
+    textColor: "{colors.primary-foreground}"
+    padding: "0 16px"
+    height: "64px"
+  table-head:
+    backgroundColor: "{colors.muted}"
+    textColor: "{colors.muted-foreground}"
+    typography: "{typography.caps}"
+    padding: "0 12px"
+    height: "36px"
 ---
 
 # Design System: time-keep
 
-Every decision recorded here was an inferred call made in the operator's place. The
-operator handed design over ("as for design we have impeccable, they can do it",
-2026-10-18), so nothing below was chosen or approved by them. This file describes the
-build as shipped on `feat/design-direction`. Where it differs from the direction
-contract in `.impeccable/surfaces/src-routes-app-layout-svelte.md`, the code wins and
-the difference is noted.
+Every decision here was made in the operator's place (autopilot, 2026-10-20) and
+rests on decision 9 (`docs/decisions/009-the-ui-follows-kimais-structure-and-skin.md`)
+and the round 2 spec (`docs/superpowers/specs/2026-10-20-design-direction-design.md`).
+It describes the build on `feat/11-design-direction`. Where the build differs from the
+direction contract (`.impeccable/surfaces/src-routes-app-layout-svelte.md`), the
+build wins and the difference is noted. Light values are the frontmatter's plain keys;
+dark values carry `-dark`. Dark follows the device setting through
+`prefers-color-scheme`, so it works without JavaScript.
 
 ## Overview
 
-**Creative North Star: "The Punch-Clock Time Card"**
+**Creative North Star: "Kimai, Recognised at a Glance"**
 
-The app is a time card in a rack. The ground is pale blue card stock, everything is
-printed on it in blue-black card ink, and the grid shows as thin printed rules rather
-than boxes. The shell is the time rack: a deep ink rail on the PC, a slim ink bar on
-top and an ink navigation bar at the bottom on the phone. The current screen is the
-card pulled into its slot: the active rail item is filled with card stock and runs
-flush into the work area.
+time-keep is laid out and dressed like Kimai, the tool its one user already knows: a
+near-black sidebar on the PC with a blue bar on the current screen, a white header
+carrying the screen's title and the running timer, near-white ground under white
+surfaces, neutral cool greys, Public Sans throughout. There is no themed concept over
+the tool. The visual job is recognition and a timer that is visible and stoppable from
+every screen.
 
-It is a working tool for one person, used for seconds on the phone and for long dense
-sessions on the PC. Rank comes from weight, capitals and rules, not from colour,
-panels or shadow. Two ribbon inks are held back for meaning: violet for what is live
-and for the one primary action, red for what is irregular or destructive. Times,
-dates and durations are punched in a condensed monospace on fixed columns.
+Colour is held back for meaning. One blue marks what is running and the one primary
+action; red marks only what is irregular or destructive; everything else is neutral
+grey. The one strong colour in the system belongs to the projects: each project gets
+one of eight colours and that colour follows its time everywhere it appears. Rank comes
+from weight, size and thin rules, not from panels or shadow.
 
-It deliberately is not a grey SaaS dashboard with stat tiles and an indigo accent.
-Light is the default; dark follows the device setting through
-`prefers-color-scheme`, so it works without JavaScript.
+It is a working tool, dense on the PC and thumb-sized on the phone. It refuses the grey
+SaaS dashboard of stat tiles.
 
 **Key Characteristics:**
-- Card stock ground, card ink text, every grey a tint of the card ink.
-- Rules instead of boxes; a heavy ink rule under each section head, hairlines between lines.
-- Printed condensed capitals for section and column heads.
-- Condensed monospace on tabular figures for every punched time, date and duration.
-- Violet for live or primary, red for irregular or destructive.
-- 4 px corners, no shadows, colour-only motion at 150 ms.
+- Kimai's frame: a 232 px near-black sidebar, a 60 px white header, the screen on a near-white ground.
+- One blue for running and primary; red only for irregular or destructive; neutral greys.
+- Eight project colours, each with an edge, a tinted fill and a readable ink, assigned by creation order.
+- Public Sans, tabular figures for every time, date and duration.
+- 4 px corners, 1 px rules, no shadows except on floating sheets.
+- 150 ms ease-out colour changes on state only; the elapsed time ticks in place.
 
 ## Colors
 
-Four inks on card stock: the stock, the card ink, ribbon violet and ribbon red. All
-other tones are tints of the card ink (hues 236 to 262), never neutral grey.
+Neutral cool greys on a near-white ground, one blue, one red, and a palette of eight
+project colours as the only strong colour.
 
 ### Primary
-- **Ribbon Violet** (`ribbon-violet`): the one primary action per form (Sign in,
-  Change password, Create user) and anything live, such as a running timer (the
-  `live` colour alias and `live` badge exist for this). It is also the focus colour:
-  focus rings, the text caret, the selection tint (28 % violet) and checked boxes.
-  Dark: oklch(0.75 0.11 306), with text on it in oklch(0.2 0.045 305).
-- **Violet Paper** (`ribbon-violet-paper`): text on a violet or red fill.
+- **Kimai Blue** (`primary`; dark `primary-dark`): the running timer (live dot, its
+  ring, "Running" labels and running hours, exposed as `live`), the one primary button
+  per form, the focus ring, the current bottom-bar item, ticked checkboxes, the caret
+  and text selection. On the near-black rail it lifts to **Rail Blue** (`sidebar-ring`)
+  for the current item's bar, the wordmark's ring mark and focus on the rail; the
+  phone strip's live dot uses it too. These are one blue at two lightnesses, not two
+  accents.
 
 ### Secondary
-- **Ribbon Red** (`ribbon-red`): irregular punches and destructive actions only:
-  error alerts, the destructive button, invalid fields. Dark: oklch(0.73 0.15 25).
+- **Signal Red** (`destructive`; dark `destructive-dark`): exposed as `irregular` for
+  warnings (overlaps, long entries) and as `destructive` for delete, revoke and
+  restore and for refusal messages. Destructive buttons and error borders take it at
+  60 %.
+
+### Tertiary: the project palette
+- **Eight project colours** (`project-1` .. `project-8`), each in three parts: the
+  **edge** (the colour itself: dots, block edges, the phone row's bar), the **fill**
+  (16 % of the edge in white; dark 26 % in the dark surface) and the **ink** (the edge
+  mixed 45 % toward black; dark 75 % toward white), readable on that fill. In order:
+  teal, amber, plum, green, indigo, rose, olive, umber. A project's colour is its
+  position in creation order (ties by id), wrapping after eight
+  (`src/lib/project-colour.ts`). It is derived, never stored. In this build the edge
+  reaches only the timer bar's project dot; the fill and ink are defined for the
+  calendar blocks of item 13. `chart-2` .. `chart-5` are projects 1–4; `chart-1` is
+  the blue.
 
 ### Neutral
-- **Card Stock** (`card-stock`): the page ground, and the fill of the current rack
-  slot. Dark: oklch(0.225 0.04 252).
-- **Card Face** (`card-face`): the fill inside controls (inputs, outline buttons,
-  alerts). Dark: oklch(0.26 0.044 252).
-- **Card Ink** (`card-ink`): all text, and the heavy rule under every section head.
-  Dark: oklch(0.93 0.014 240).
-- **Faded Ink** (`ink-faded`): secondary text, column-head text, struck-through
-  spent items. Dark: oklch(0.75 0.03 248).
-- **Ink Stroke** (`ink-stroke`): control borders, the rule under a column-head band,
-  the scrollbar. Dark: oklch(0.56 0.035 255).
-- **Hairline** (`ink-hairline`): the printed rules between lines and column
-  dividers. Dark: oklch(0.36 0.045 252).
-- **Ink Shade** (`ink-shade`): the column-head band. Dark: oklch(0.275 0.045 252).
-- **Ink Wash** (`ink-wash`): hover fills on outline buttons and table rows.
-  Dark: oklch(0.3 0.048 252).
-- **Rack Ink** (`rack-ink`, `rack-ink-raised`, `rack-text`, `rack-focus`): the
-  shell rail and bars, their hover fill, their text and their focus ring. Dark rack:
-  oklch(0.13 0.022 262), raised oklch(0.18 0.028 262), text oklch(0.82 0.02 245),
-  focus oklch(0.77 0.12 308).
+- **Ground** (`ground`; dark `ground-dark`): the page under every screen.
+- **Surface** (`surface`; dark `surface-dark`): the PC header, the bottom bar, sheets,
+  fields, outline buttons, the undo strip and alerts.
+- **Text** (`foreground`): body text and the section-head rule. **Muted text**
+  (`muted-foreground`): secondary lines, empty states, column heads.
+- **Muted** (`muted`): the table head band. **Accent** (`accent`): hover fills and
+  selected rows.
+- **Border** (`border`): hairlines between lines, the header's bottom rule, the bottom
+  bar's top rule. **Input** (`input`): field and outline-button strokes, the rule
+  under a table head, unticked checkboxes, the scrollbar.
+- **The rail** (`sidebar` family): the PC sidebar, the phone top bar and (in its own
+  tone) the phone timer strip. Light: `sidebar` is Kimai's #262626. Dark: the rail is
+  darker than Kimai's, `sidebar-dark` #0f0f10, near-black on the #141516 dark ground,
+  so it still reads as the darkest thing on the screen. `sidebar-primary` fills the
+  current item, `sidebar-accent` is hover, `sidebar-border` divides.
+- **Strip** (`sidebar-strip`; dark `sidebar-strip-dark`): the phone timer strip's own
+  tone, a step off the top bar above it (darker in light, #1c1c1c under #262626; lighter in dark, #18191a
+  under #0f0f10), so what is running reads as its own band rather than as the lower
+  half of the title bar. The strip's "+N" list uses it too.
 
 ### Named Rules
-**The Four Inks Rule.** Stock, card ink, violet and red. Any other tone must be a
-tint of the card ink at hue 236 to 262. No neutral greys.
+**The One Blue Rule.** Blue means running or the primary action, and focus. It is never
+decoration, never a heading, never an icon tint.
 
-**The Ribbon Rule.** Violet means live, the primary action, or where your input is
-focused. Red means irregular or destructive. Neither colours decoration, headings
-or icons.
+**The Red Means Wrong Rule.** Red appears only for something irregular or destructive.
+A running timer is blue, never red.
+
+**The Project Ink Rule.** A project is one colour, used identically wherever its time
+appears. Today the timer dot uses it; the table dot, calendar block edge and fill, and
+phone row bar take it as items 12–15 rebuild each screen. No other element borrows a
+project colour.
 
 ## Typography
 
-**Display Font:** none. The working screens have no display size.
-**Body Font:** Archivo Variable, width axis included (fallback ui-sans-serif, system-ui)
-**Label/Mono Font:** Martian Mono Variable, width axis included (fallback ui-monospace)
+**Body Font:** Public Sans Variable (with ui-sans-serif, system-ui, sans-serif),
+self-hosted. One family for everything.
 
-Both are self-hosted through `@fontsource-variable` and bundled by Vite.
-
-**Character:** Archivo is a plain grotesque that condenses into the printed capitals
-of a card's column heads. Martian Mono, condensed to 75 %, reads as figures stamped by
-a clock.
+**Character:** Kimai's plain, sturdy grotesque. Rank comes from weight and the small
+ramp below, not from a second face.
 
 ### Hierarchy
-- **Headline** (600, 22 px, 1.2, -0.01em): the one screen title per page (Today,
-  Account, Users, Sign in).
-- **Title** (650, 15 px, 72 % width, capitals, 0.05em): section heads, always sitting
-  on a heavy card-ink rule. This is the `printed` style.
-- **Body** (400, 15 px, 1.45): all running text, table cells, nav items (500), form
-  labels (600, line-height 1).
-- **Label** (650, 13 px, 72 % width, capitals, 0.05em): column heads and badges.
-- **Punch** (Martian Mono 400, 13 px, 75 % width, tabular and slashed-zero figures):
-  every time, date and duration. Dates are ISO (2026-10-18), times 24-hour.
-
-Text inputs use 16 px on the phone so the browser does not zoom, dropping to 15 px
-on the PC. The wordmark is the printed style at 16 px with 0.08em tracking.
+- **Headline** (600, 21 px / `text-xl`, 1.25, -0.01em): the screen's title, its one
+  h1, in the PC header and the phone top bar; the login heading.
+- **Title** (700, 17 px / `text-lg`, 1.35): the wordmark and the phone strip's elapsed
+  time.
+- **Body** (400, 15 px / `text-base`, 1.45): phone body and fields, the More sheet's
+  rows, the PC timer bar's elapsed time (bold).
+- **Body PC** (400, 14 px / `text-sm`, 1.45): PC body and fields from 1024 px, buttons,
+  sidebar items, tables, the undo strip.
+- **Label** (400, 12 px / `text-xs`, 1.35): meta lines (a timer's "since 09:00"),
+  bottom-bar labels.
+- **Caps** (`caps`: 600, 12 px, uppercase, 0.04em): column heads, section heads, badges
+  and state labels such as "Running".
+- **Figures** (`figures`: tabular numbers): every time, date and duration, so columns
+  line up and the running time changes in place. Tables get tabular figures by default.
 
 ### Named Rules
-**The Three Sizes Rule.** Working screens use 13, 15 and 22 px. Rank is made with
-weight, capitals and rules, not new sizes. The only exceptions are 16 px phone inputs
-and the wordmark.
+**The Figures Rule.** Every time, date and duration is set in `figures`. Columns never
+move.
 
-**The Punch Rule.** If it is a time, date or duration, it is punched in the condensed
-mono. Nothing else is.
+**The Five Steps Rule.** The ramp is 12, 14, 15, 17 and 21 px. No other size on working
+screens.
+
+**The Caps Are Heads Rule.** `caps` sets a column head, a section head (which is the
+heading itself, an h2 on a rule), a badge or a state label. Never a kicker above a
+heading.
 
 ## Layout
 
-The PC layout is two columns: a 15 rem rack on the left at full height, and the work
-area to its right (max 72 rem, 40 px side padding). Below 1024 px the rack becomes a
-56 px sticky top bar (wordmark, Sign out) and the navigation moves to a fixed bottom
-bar inside thumb reach; the page keeps 6 rem plus the safe area clear underneath it,
-where the phone capture action will dock later.
+On the PC (from 1024 px) the shell is a two-column grid: the 232 px sticky sidebar,
+then a column with the sticky 60 px header (bottom rule) and the screen below. The
+header's row and the main column share one measure (72 rem, left-aligned, 24 px side
+padding), so the timer bar ends where the content ends. The title sits left, the timer
+bar right.
 
-Inside the work area, content stacks with 24 px between the title block and sections,
-and 40 px between sections. On the Today screen a second 19 rem column appears from
-1280 px.
+On the phone the shell is one column: a sticky 56 px top bar in the rail colour with
+the screen's title (the wordmark is the PC's), the 64 px timer strip under it in its
+own tone, the screen (16 px sides, 24 px top), and a fixed bottom bar of four equal
+56 px cells: Today, Entries, Templates and More, whose sheet holds the rest and Sign
+out. Main reserves 80 px plus the safe area at the bottom for the bar.
 
-Tables and forms snap to visible column grids. Ruled lines are 36 px tall with 12 px
-cell padding and hairline column dividers. Forms are ruled lines too: one field per
-line, 12 px above and below, with a 12 rem label column on the PC and the label
-stacked above the field on the phone. The submit button lines up with the field
-column.
+Regions stack 24 px apart. Controls are 44 px on the phone and 36 px on the PC; table
+cells pad 12 px. The screens inside the shell keep round 1's layouts in the new tokens
+until item 15.
 
-Touch targets are 44 px on the phone and shrink to 36 px on the PC.
+The header names the screen with a fixed title. The contract's raise that a view's
+header names the span in view (a date range) is deferred to items 13–14, the calendar
+and table views.
 
 ## Elevation & Depth
 
-Flat. There are no shadows anywhere. Depth is shown by ink weight: the rack is the
-darkest surface, the card stock is the ground, and controls sit on the slightly
-lighter card face. The only box-shadow in the build is the focus ring.
+Flat. Depth comes from tone (the rail darker than the ground, surfaces lighter than it,
+the strip a step off the top bar) and 1 px rules. Shadows exist only on floating
+things that sit over the page.
+
+### Shadow Vocabulary
+- **Sheet up** (`box-shadow: 0 -8px 24px rgb(0 0 0 / 0.12)`): the phone's More sheet
+  above the bottom bar.
+- **Popover down** (`box-shadow: 0 8px 24px rgb(0 0 0 / 0.12)`): the PC timer bar's
+  list of other running timers.
+- **Strip list down** (`box-shadow: 0 8px 24px rgb(0 0 0 / 0.25)`): the phone strip's
+  list of other running timers.
 
 ### Named Rules
-**The Rules-Not-Boxes Rule.** A screen region is a heading on a heavy ink rule
-followed by hairline-ruled lines. Do not wrap regions in bordered or filled panels.
-Bordered boxes are for controls and messages only.
+**The Floating Only Rule.** A surface at rest has no shadow. Only a sheet or popover
+that floats over the page casts one.
 
 ## Shapes
 
-Corners are 4 px on controls, alerts and rack items, 2 px on badges and checkboxes.
-Rack items on the PC are rounded on the left only, so the current slot runs straight
-into the work area. Rules are 1 px: card ink under section heads, ink stroke under
-column-head bands, hairline elsewhere.
+Corners are 4 px (`rounded.md`) on buttons, fields, the timer bar, the undo strip and
+alerts; 2 px (`rounded.sm`) on badges, nav items and the Stop button's live square.
+Dots are round: the 10 px live dot with a 3 px ring at 25 % (30 % on the rail), the
+8 px project dot. Rules are 1 px: the text colour under a section head, `input` under a
+table head, `border` elsewhere. The current sidebar item carries a 3 px Rail Blue bar
+on its left edge.
 
 ## Components
 
 ### Buttons
-Firm, flat and quiet until pressed.
-- **Shape:** 4 px corners, 44 px tall on the phone, 36 px on the PC, semibold 15 px.
-- **Primary:** violet fill, violet-paper text. One per form. Full width on the phone.
-- **Hover / Focus:** primary darkens by mixing in 18 % card ink. Focus is a 2 px
-  violet ring with a 2 px gap. Press moves the button down 1 px. 150 ms ease-out.
-- **Outline:** card-face fill, ink-stroke border, card-ink text; hover darkens the
-  border and fills with ink wash. Used for every secondary action (Set password,
-  Enable, Disable).
-- **Destructive:** card-face fill, red border and text; fills red on hover.
+Flat, firm, quiet until pressed.
+- **Shape:** 4 px corners, semibold 14 px; 44 px tall on the phone, 36 px on the PC.
+- **Primary:** blue fill, white text (dark: dark-blue text). One per form.
+- **Hover / Focus:** primary darkens by mixing in 18 % of the text colour. Focus is a
+  2 px blue ring with a 2 px gap. Press moves the button down 1 px. 150 ms ease-out.
+- **Outline:** surface fill, `input` stroke, text colour; hover darkens the stroke to
+  60 % text and fills with accent. Every secondary action, including Undo.
+- **Destructive:** surface fill, red at 60 % stroke and red text; fills red on hover.
+  Separated by space from its neighbours.
 
 ### Chips (badges)
-- **Style:** printed 13 px capitals, 20 px tall, 2 px corners, a 1 px outline and no
-  fill. They read as printed marks.
-- **State:** mark (card-ink outline, e.g. Admin), outline (ink-stroke outline,
-  e.g. Not built yet), live (violet), spent (faded and struck through, e.g. Disabled),
-  destructive (red). A spent item's own text is struck through as well.
+- **Style:** `caps`, 20 px tall, 2 px corners, a 1 px outline and no fill.
+- **State:** default (text at 70 %, e.g. Admin), outline (`input`), live (blue),
+  spent (muted and struck through, e.g. Disabled), destructive (red).
 
 ### Inputs / Fields
-- **Style:** card-face fill, 1 px ink-stroke border, 4 px corners, 44 px on the
-  phone, 36 px on the PC.
-- **Focus:** the border turns violet with a 2 px violet ring at 35 %.
-- **Error / Disabled:** invalid fields take a red border and a 2 px red ring at 25 %;
-  disabled drops to 50 % opacity.
-
-### Messages (alerts)
-Card-face fill, 4 px corners, 1 px border, 15 px text. Errors use a red border and
-red text.
-
-### In-page links
-Text links inside a page (Reload, Show archived, a template name, a pointer to Setup)
-are card ink, underlined, with the focus ring; never violet. Violet stays with the
-primary action and focus (the Ribbon Rule).
-
-### Undo strip
-A message line under the screen title after every successful action: card-face fill,
-1 px hairline border, 4 px corners. "Done:" in semibold, the action's label, any
-warnings below it in red, and an outline Undo button on the right. It stays until
-the next load; nothing auto-dismisses. One strip serves every screen (Today, Setup,
-Templates, Entries, History). After a refused undo it is the error state: a red border at 60 % and the
-core's message in red in place of "Done:", announced as an alert, with the Undo
-button kept so the press can be tried again.
-
-### Setup list
-Customers and projects as one ruled list under a section head. A customer is a line
-of 44 px (36 px on the PC) in semibold, a card-ink rule above each customer after
-the first; its projects sit beneath indented 16 px (24 px from 640 px) on a hairline
-at the left, each on its own hairline-divided line in regular weight, or "No active
-projects." in faded ink. Archived and spent rows, and projects of an archived
-customer, are struck through in faded ink with an Archived chip. Each line ends in
-outline buttons (Rename, Archive or Unarchive; a customer also Add project). Activities
-and locations are the same lines without the indent, in a second column from 1280 px.
-An add line closes each region: a field and an outline Add button.
-
-### In-place rename
-A line's name is a native disclosure: closed it shows the name and an outline Rename
-button; opened it takes the whole line as a field, Save (primary) and Cancel, and
-focuses the field. Only one is open at a time. A refused rename reopens it with the
-posted name, the field red and focused, the core's message beneath in red; a stale
-row shows its message with an ink underlined Reload link instead. It needs no
-JavaScript.
-
-### Template form
-The ruled form of the template screens (new and edit): a label column of 10 rem (the
-entry edit screen's, not the 12 rem of the other forms) beside the field on the PC,
-stacked on the phone; name, customer, project, activity, location, times, duration,
-time zone with its hint, reference and description, one primary Save and an outline
-Cancel. Archived current choices read "(archived)". Messages sit beneath their
-fields in red; a stale save shows a red-bordered message strip with a Reload button
-above the form, and Delete is a separate section with a two-step confirm.
-
-### Template sheet
-A ruled row per template (56 px, name over customer › project and punched times, a
-printed Timer or Log mark, violet only for Timer) that opens in place into its form:
-the template's filled fields as a two-column list, then ruled form lines and one
-primary button. Only one sheet is open at a time. Works as a native disclosure
-without JavaScript.
-
-### Filter bar
-The Entries screen's search, a `GET` form under a "Filters" section head, closed by
-a hairline. Labels sit over their fields in a grid: one column on the phone, two from
-640 px, four from 1280 px. From and To are punched date fields; Customer and Project
-(grouped by customer, narrowed by the customer with JavaScript), Activity and Location
-are native pickers that start with "Any" (Activity and Location then "None"), archived
-rows marked "(archived)"; Text spans two columns. An outline Search button (full width
-on the phone) and an ink underlined Clear link close it. A date mistake shows beneath
-the dates in red, announced as an alert, and no list is shown. Copy-out uses the same
-bar with its pickers inside it, a primary Show in place of Search (the screen's only
-button that submits), and ink underlined "This month" and "Last month" links after
-Clear.
-
-### Selectable ruled table
-The ruled table with a 44 px checkbox column first. The head checkbox selects every
-row shown (indeterminate when some are) and exists only with JavaScript; without it an
-ink underlined "Select all" link in the section head reloads the search with every row
-checked. The section head ("Found") carries "<n> entries, <h:mm>" ("1 entry"), the
-hours punched. The date is an ink underlined, punched link to the entry; a running
-entry shows a printed violet "Running" and violet hours. Activity and location drop
-below 1280 px; below 1024 px each row stacks beside a 20 px checkbox: date, punched
-in–out and hours, then customer › project in semibold, then reference and description
-in faded ink. Warnings are red chips under customer › project. Over 500 rows a faded
-line says "Showing the first 500 entries; narrow the filters."; none shows "No entries
-match." in faded ink with a Clear link.
-
-### Change form
-Bulk change, under a "Change selected" section head that shows "<n> selected" on the
-right once the script runs. Ruled form lines with the template form's 10 rem label
-column: Project ("Keep" or an active project, grouped by customer), Activity and
-Location ("Keep", "None" or an active row), Reference (a field whose placeholder reads
-"Blank keeps it", with a "Clear the reference" checkbox beside it, beneath it on the
-phone) and Description (Find and Replace with side by side from 640 px, their labels
-in regular faded ink). Then one primary "Apply to selected" and an outline "Delete
-selected", lined up with the field column on the PC and sharing the width on the
-phone; with JavaScript both are disabled while nothing is selected. Field messages
-sit beneath their fields in red. A refusal is a red-bordered message under the form:
-the entry it came from ("2026-10-07 09:00, CompA › ProjC: ") then the core's message,
-with an ink underlined Reload link only when that entry was changed elsewhere. The
-selection and the posted values are kept.
-
-### Delete confirm
-The first press of Delete selected asks on the page, beneath the change form between
-hairlines: "Delete 2 entries?" ("Delete 1 entry?"), a red "Yes, delete them", which
-takes the focus, and an outline "Keep them" that returns to the search. Delete
-selected itself stays outline; only the confirming button is red.
-
-### History list
-The History screen's batches as one ruled list, grouped by day. A day head is the
-date punched beside the weekday printed, on a card-ink rule. Each batch is a
-hairline-divided line: a 3.5 rem column with the punched `HH:mm`, then the label in
-semibold with, after it, a mark chip "Agent" or "System" when the batch was not made
-in the UI and its state in faded ink ("Undone", "Partly undone, 2 of 3"); beneath
-the label an underlined disclosure "3 changes" ("1 change"). Outline Undo and Redo
-buttons (whichever apply, both when partly undone) sit at the line's right from
-640 px, beneath the label on the phone. A fully undone batch mutes its whole line to
-faded ink. Below the list, ink underlined "Newest" and "Older" links page it. None
-shows "Nothing recorded yet." in faded ink on a hairline.
-
-### Change lines
-A batch's disclosure opens into its changes, each a line on a hairline above it: a
-checkbox (18 px, 20 px below 1024 px) beside the change in words, the verb in
-semibold (Created, Changed, Archived, Unarchived, Deleted) then the record, and for
-a change one line per differing field ("Name: Acme → Acme Ltd"), long values
-wrapping. An undone change is faded with a faded "Undone" after it. A batch over 100
-changes drops the checkboxes and ends in a faded "and <n> more; undo or redo the
-whole batch." The whole line is the checkbox's label. A native disclosure; a refusal
-reopens the batches it ticked.
-
-### Selected-changes bar
-Above the History list, closed by a hairline: outline "Undo selected changes" and
-"Redo selected changes", sharing the width on the phone and at their own width from
-640 px, then "<n> selected" once the script runs; with JavaScript both are disabled
-while nothing is ticked. A refusal shows beneath it as a red-bordered message in red,
-announced as an alert, with the ticks kept.
-
-### Column and option pickers
-Copy-out's choices, inside its filter bar after the filters: two fieldsets, each a
-semibold 14 px legend over one wrapping row of native checkboxes and radios (18 px,
-20 px below 1024 px, violet when ticked), each choice a 44 px line on the phone and
-36 px on the PC with its label beside it, 20 px apart. **Columns** lists the ten in
-their fixed order; **Options** holds Round to 5 minutes, Split at midnight, then
-"Duration as" with its two radios, `h:mm` and Decimal hours. No column ticked shows
-"Choose at least one column." beneath the columns in red, announced as an alert.
-
-### Result bar
-Copy-out's result under a "Result" section head carrying "<n> rows, <total>" ("1
-row"), the total punched. Beneath it, closed by a hairline: an outline Copy button
-(only once the script runs) and an outline Download CSV link styled as a button,
-sharing the width on the phone and at their own width from 640 px; Show keeps the
-one primary. The copy's outcome follows on its own line in 14 px ink, announced
-politely ("Copied 4 rows.", or "Copy failed; select the table and copy it."). A
-faded line, closed by a hairline, says "1 running entry left out." when any were.
-None shows "No entries match." in faded ink with a Clear link, as on Entries.
-
-### Totals tables
-Reports' result under a "Result" section head carrying "<n> entries, <total>" ("1
-entry"), the total punched; a faded line, closed by a hairline, says "1 running entry
-left out." when any were. Four tables, each under its own section head (Days, Weeks,
-Customers, Projects): ruled lines of a label and a right-aligned punched duration, each
-on a hairline, then a Total row at the foot under a 1 px ink rule, in semibold. The
-column heads are for screen readers only. Labels wrap; Days and Weeks label their rows with dates, so those are punched (Days
-reads the date beside its weekday), while Customers and Projects are plain names. The result is two columns from 1024 px, Days on the left and Weeks,
-Customers and Projects stacked on the right, 40 px apart; below that one column in the
-order Customers, Projects, Weeks, Days, so the short answers come first.
-
-### Sheet table
-The ruled table as the sheet it pastes into: the chosen columns as the head band, in
-their fixed order, every cell exactly the value copied. Date, Start, End and Duration
-are punched and never wrap; the text columns wrap, at least 7 rem wide, the
-description at least 12 rem. It never stacks: at any width it scrolls sideways inside
-its own box, so the phone shows the first columns and the rest are a swipe away.
-
-### Token list
-Account's Agent access, under its own section head below Change password, in the
-same ruled lines and 12 rem label column on the PC. Each token is a line on a
-hairline: its name in semibold in the label column, then the date it was made and its
-last use punched in 12 px faded ink ("Never used", unpunched, until then),
-and an outline Revoke at the right. On the phone the dates go under the name and
-Revoke stays at the right of both. The first press of Revoke turns the line into the
-question, as the delete confirm does: "Revoke "Laptop"?", a red "Yes, revoke", which
-takes the focus, and an outline Cancel; only the confirming button is red. None shows
-"No tokens yet." in faded ink on a hairline. The add line closes the section: Name in
-the label column, the field, and Create token, the section's one violet primary.
-
-### Shown-once token
-A token just made sits above the list on its own ruled line: its name as the label,
-the token punched (mono) in a read-only field that selects itself on focus, an
-outline Copy beside it once the script runs, and under it "Copy it now: it is not
-shown again." in medium 14 px ink; "Copied" follows in 14 px ink, announced politely.
-No card around it and no colour: the punched token is the mark. Without JavaScript there is no
-Copy button and the field is copied by hand. It is gone on the next load.
-
-### File input and confirm checkbox
-Backup's Restore form, in the same ruled lines and 12 rem label column on the PC: the
-native file input under "Backup file", its button styled as an outline control (36 px
-tall, 4 px corners, card-face fill, 1 px ink-stroke border), and under it an 18 px
-checkbox (accent violet) with "Replace all data with this backup" as its label on a
-ruled line, 56 px tall on the phone. Restore is the one red button; Download backup
-is the one violet primary, a link styled as a button.
+- **Style:** surface fill, 1 px `input` stroke, 4 px corners; 44 px and 15 px text on
+  the phone, 36 px and 14 px on the PC. Hover darkens the stroke.
+- **Focus:** the stroke turns blue with a 2 px blue ring at 35 %.
+- **Error / Disabled:** invalid takes a red stroke and a 2 px red ring at 25 %;
+  disabled drops to 50 % opacity. Checkboxes keep a neutral `input` stroke unticked and
+  fill blue when ticked.
 
 ### Navigation
-- **PC:** the rack. Wordmark at the top, then Today, Entries, Copy-out (a sheet
-  icon), Reports (a column chart icon), Templates, Setup, History, Account (and Users and Backup for an admin), items of 40 px with a 16 px line icon and
-  15 px text, the signed-in user and Sign out at the foot. Hover fills with
-  rack-ink-raised. The current item is filled with card stock and card-ink text; an
-  entry opened from the Entries list keeps Entries current, from Today keeps Today.
-- **Phone:** a 56 px top bar with the wordmark and Sign out, and a fixed bottom bar
-  (Today, Setup, Account and, for an admin, Users; the PC screens Entries,
-  Copy-out, Reports, Templates and History left out) of
-  equal 56 px items (20 px icon above 13 px text). The current item uses the same
-  card-stock fill.
+- **PC sidebar:** the wordmark (17 px bold, with a ring mark in Rail Blue), then Today,
+  Entries, Copy-out, Reports, Templates, Setup, History, Account (and Users and Backup
+  for an admin): 40 px items, a 16 px Lucide line icon, 14 px medium text in
+  `sidebar-foreground`. Hover fills with `sidebar-accent`. The current item fills with
+  `sidebar-primary`, turns white and semibold, and carries the 3 px blue bar. The user
+  and Sign out sit at the foot.
+- **Phone bottom bar:** surface fill, top rule, four 56 px cells of a 20 px icon over a
+  12 px label in muted text; the current cell (and More when the current screen is in
+  its sheet) turns blue and semibold. More is a native disclosure that opens without
+  JavaScript into a sheet of 44 px rows over the page, never pushing it down.
 
-### Ruled Table (signature)
-A column-head band (ink-shade fill, printed 13 px faded capitals, ink-stroke rule
-below), then 36 px lines divided by hairlines. Rows wash on hover. Times and dates
-in cells are punched. On the phone a table may stack each row: name and date on one
-line, actions full width below.
+### Timer bar (signature)
+The running timer on every screen.
+- **PC header pill:** 40 px, 4 px corners, a pale-blue fill (primary at 8 %) with a
+  primary-at-25 % edge: live dot, bold 15 px elapsed time, project dot, customer ›
+  project in semibold, activity and description muted, "since" with the date when the
+  timer began on an earlier day, a "+N" disclosure for the other running timers, and
+  an outline Stop (32 px) with a blue square. Nothing running: "No timer running" in
+  muted text.
+- **Phone strip:** 64 px, `sidebar-strip` with a `sidebar-border` rule above: live
+  dot, project dot and project over "activity · since 09:00", "+N", the 17 px bold
+  elapsed time, and a 44 px Stop on `sidebar-primary` with a 20 % white edge.
+
+### Ruled table
+A muted head band of 36 px `caps` column heads in muted text over an `input` rule,
+then lines divided by `border` hairlines that wash with accent at 50 % on hover;
+selected rows fill with accent. Cells pad 12 px. Times, dates and durations are in
+`figures`. A running entry shows "Running" in blue `caps` and blue hours. On the phone
+a table may stack each row.
+
+### Section head
+An h2 in `caps` on a 1 px rule in the text colour, with an optional aside on the right
+(counts and totals in `figures`, a link).
+
+### Undo strip
+A line under the title after every successful action: surface fill, 1 px `border`, 4 px
+corners, 14 px. "Done:" in semibold and the action's label, warnings below in red, an
+outline Undo on the right. It stays until the next load; nothing auto-dismisses. After
+a refused undo it is the error state: red at 60 % border and the message in red,
+announced as an alert, with Undo kept. A just-changed row stays marked while its undo
+is offered.
+
+### Messages (alerts)
+Surface fill, 1 px `input` stroke, 4 px corners, 14 px. Errors take red at 60 % and
+red text.
+
+### Screen components carried from round 1
+These keep their structure until item 15, now in the tokens above: the filter bar
+(labels over fields, 1/2/4 columns at phone/640/1280 px, an outline Search and an
+underlined Clear link; Copy-out's primary Show), the selectable ruled table (a 44 px
+checkbox column, a "Select all" link without JavaScript), the change form and the
+in-page delete confirm (only the confirming button is red; it takes the focus), the
+History list and its change lines, the template form and sheet (Timer marked in blue
+`caps`, Log muted), Setup's indented customer and project list with in-place rename,
+Reports' totals tables (a semibold Total row under a text-colour rule), Copy-out's
+sheet table (never stacks; scrolls sideways), Account's token list and shown-once
+token, and Backup's file input and confirm checkbox. In-page links are the text colour
+with an `input` underline that darkens on hover; never blue.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** put every screen region under a printed section head on a 1 px card-ink rule.
-- **Do** set every time, date and duration in the punch style.
-- **Do** keep one violet primary button per form; use outline buttons for the rest.
-- **Do** strike through spent or archived items and mark them with a spent badge.
-- **Do** keep 44 px targets on the phone and the bottom bar inside thumb reach.
+- **Do** keep the shell recognisably Kimai's: the near-black sidebar with a blue bar on the current item, the 60 px white header, the near-white ground.
+- **Do** use #262626 for the rail in light and #0f0f10 in dark, with the phone strip a step off the top bar (`sidebar-strip`: darker in light, lighter in dark).
+- **Do** keep one blue primary button per form; outline buttons for the rest.
+- **Do** carry a project's colour everywhere its time appears, from the creation-order palette, and nowhere else.
+- **Do** set every time, date and duration in `figures`.
+- **Do** keep 44 px targets on the phone and the navigation inside thumb reach.
 - **Do** keep motion to 150 ms ease-out colour changes on state, removed under reduced motion.
 
 ### Don't:
-- **Don't** use neutral greys; tint the card ink instead.
-- **Don't** use violet or red for decoration, headings or icons.
-- **Don't** wrap screen regions in cards, panels or shadows.
-- **Don't** add text sizes beyond 13, 15 and 22 px on working screens.
+- **Don't** use blue or red for decoration, headings or icons; red is never the running state.
+- **Don't** store a project's colour or let anything but a project use the project palette.
+- **Don't** give a surface at rest a shadow; only floating sheets and popovers cast one.
+- **Don't** add text sizes beyond 12, 14, 15, 17 and 21 px on working screens.
+- **Don't** set `caps` as a kicker or eyebrow above a heading.
+- **Don't** build stat-tile dashboards or put a themed concept over the tool.
 - **Don't** add entrance animations.
