@@ -2,8 +2,11 @@ export type NavItem = {
 	/** The SvelteKit route id, e.g. `/(app)/entries`. */
 	route: string;
 	label: string;
+	/** Where a link goes when it is not the route itself (the bar's Calendar opens the day). */
+	href?: string;
 	icon:
 		| 'today'
+		| 'calendar'
 		| 'entries'
 		| 'copy-out'
 		| 'reports'
@@ -16,6 +19,7 @@ export type NavItem = {
 };
 
 const TODAY: NavItem = { route: '/(app)', label: 'Today', icon: 'today' };
+const CALENDAR: NavItem = { route: '/(app)/calendar', label: 'Calendar', icon: 'calendar' };
 const ENTRIES: NavItem = { route: '/(app)/entries', label: 'Entries', icon: 'entries' };
 const COPY_OUT: NavItem = { route: '/(app)/copy-out', label: 'Copy-out', icon: 'copy-out' };
 const REPORTS: NavItem = { route: '/(app)/reports', label: 'Reports', icon: 'reports' };
@@ -30,6 +34,7 @@ const BACKUP: NavItem = { route: '/(app)/admin/backup', label: 'Backup', icon: '
 export function sidebarItems(isAdmin: boolean): NavItem[] {
 	return [
 		TODAY,
+		CALENDAR,
 		ENTRIES,
 		COPY_OUT,
 		REPORTS,
@@ -43,7 +48,7 @@ export function sidebarItems(isAdmin: boolean): NavItem[] {
 
 /** The phone bottom bar's items. */
 export function barItems(): NavItem[] {
-	return [TODAY, ENTRIES, TEMPLATES];
+	return [TODAY, { ...CALENDAR, href: '/calendar?view=day' }, ENTRIES, TEMPLATES];
 }
 
 /** The phone's More sheet (Sign out is a form, not an item). */
@@ -53,6 +58,7 @@ export function moreItems(isAdmin: boolean): NavItem[] {
 
 const TITLES: Record<string, string> = {
 	'/(app)': 'Today',
+	'/(app)/calendar': 'Calendar',
 	'/(app)/entries': 'Entries',
 	'/(app)/entries/new': 'New entry',
 	'/(app)/entries/[id]': 'Edit entry',
@@ -93,6 +99,7 @@ export function currentItem(routeId: string | null, back: string | null): string
 export function ownsStrip(routeId: string | null): boolean {
 	return (
 		routeId === '/(app)' ||
+		routeId === '/(app)/calendar' ||
 		routeId === '/(app)/entries' ||
 		routeId === '/(app)/setup' ||
 		routeId === '/(app)/templates' ||

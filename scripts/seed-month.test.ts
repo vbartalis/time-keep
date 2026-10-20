@@ -64,6 +64,56 @@ describe('seedMonth', () => {
 		expect(rows.some((r) => /^T-\d+$/.test(r.reference ?? ''))).toBe(true);
 	});
 
+	it.each(['2026-10-20', '2026-10-19'])(
+		'puts last week\'s late entry and overlap in place when today is %s',
+		async (today) => {
+			const { db, make } = await setup();
+			const id = await make('user-a');
+			seedMonth(db, id, { today, zone: ZONE });
+			const rows = rowsOf(db, id).entries;
+			const local = (at: number) => localParts(at, ZONE);
+			const tuesday = '2026-10-13';
+			const wednesday = '2026-10-14';
+			const thursday = '2026-10-15';
+
+			const crossing = rows.find(
+				(r) =>
+					r.endAt !== null &&
+					local(r.startAt).date === tuesday &&
+					local(r.startAt).time === '23:00' &&
+					local(r.endAt).date === wednesday &&
+					local(r.endAt).time === '01:00'
+			);
+			expect(crossing).toBeDefined();
+
+			const late = rows.find(
+				(r) =>
+					r.endAt !== null &&
+					local(r.startAt).date === wednesday &&
+					local(r.startAt).time === '10:30' &&
+					local(r.endAt).time === '11:30'
+			);
+			expect(late).toBeDefined();
+			const dev = rows.find(
+				(r) =>
+					r.id !== late!.id &&
+					r.endAt !== null &&
+					local(r.startAt).date === wednesday &&
+					local(r.startAt).time === '10:00'
+			);
+			expect(dev).toBeDefined();
+			expect(dev!.startAt < late!.endAt! && late!.startAt < dev!.endAt!).toBe(true);
+
+			const afternoon = rows.filter((r) => {
+				if (local(r.startAt).date !== thursday) return false;
+				const s = local(r.startAt).time;
+				const e = r.endAt === null ? s : local(r.endAt).time;
+				return s < '19:30' && e > '16:00';
+			});
+			expect(afternoon).toEqual([]);
+		}
+	);
+
 	it('creates exactly the listed customers, projects, activities, locations and templates', async () => {
 		const { db, make } = await setup();
 		const id = await make('user-a');

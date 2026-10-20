@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CalendarDays from '@lucide/svelte/icons/calendar-days';
 	import ChartColumn from '@lucide/svelte/icons/chart-column';
 	import Clock from '@lucide/svelte/icons/clock';
 	import DatabaseBackup from '@lucide/svelte/icons/database-backup';
@@ -15,6 +16,7 @@
 
 	const ICONS = {
 		today: Clock,
+		calendar: CalendarDays,
 		entries: List,
 		'copy-out': Sheet,
 		reports: ChartColumn,

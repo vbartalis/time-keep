@@ -113,6 +113,11 @@ export function seedMonth(
 		entries++;
 	};
 
+	// last week's Monday: the late entry and the overlap sit in the week before today's
+	const todayDow = new Date(`${today}T00:00:00Z`).getUTCDay();
+	const thisMonday = addDays(today, -((todayDow + 6) % 7));
+	const lastMonday = addDays(thisMonday, -7);
+
 	let n = 0; // index among the weekdays seeded
 	for (let back = 30; back >= 1; back--) {
 		const date = addDays(today, -back);
@@ -156,7 +161,7 @@ export function seedMonth(
 				description: 'Read up on calendar views'
 			});
 		}
-		if (i === 3) {
+		if (i === 3 || date === addDays(lastMonday, 1)) {
 			// past midnight, into the next day
 			add(
 				date,
@@ -171,7 +176,7 @@ export function seedMonth(
 				addDays(date, 1)
 			);
 		}
-		if (i === 6) {
+		if (i === 6 || date === addDays(lastMonday, 2)) {
 			// logged twice by mistake: overlaps the morning development block
 			add(date, '10:30', '11:30', {
 				projectId: timeKeep,

@@ -57,12 +57,15 @@ is one undo. Kimai has invoicing and no undo; this has undo and no invoicing.
 
 ## Capabilities and Constraints
 
-- Built today: sign-in, account (change password, agent access), admin user
-  management and backup, the core (entries, timers, templates, reference data, history,
-  undo), the MCP server, and the screens Today, Entries, Setup, Templates, History, Copy-out and Reports, inside the
-  shell with its always-visible timer bar; the entry form (new and existing, opened in
-  place over any screen) and starting and restarting timers from the bar.
-- Next, in order (roadmap items 13-15): the calendar views, the table, and every screen
+- Built today: sign-in, account (change password, agent access), admin user management
+  and backup, the core (entries, timers, templates, reference data, history, undo), the
+  MCP server, and the screens Today, Calendar, Entries, Setup, Templates, History,
+  Copy-out and Reports, inside the shell with its always-visible timer bar; the entry
+  form (new and existing, opened in place over any screen) and starting and restarting
+  timers from the bar. The Calendar shows day, week and month on the PC and the phone,
+  colours entries by project, creates one by a tap or drag on empty time, and on the PC
+  moves and resizes one by dragging it.
+- Next, in order (roadmap items 14-15): the table, and every screen
   redone in the shell's direction with the sign-in page.
 - SvelteKit with server-rendered forms; screens work without JavaScript where they do
   today **(inferred as a standing constraint)**.

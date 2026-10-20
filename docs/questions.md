@@ -20,6 +20,18 @@ The operator answers whenever they like, here (under the entry) or in conversati
 An answer is added to [the operator's voice](operator-voice.md) in their words, and if
 it changes built work, it becomes a roadmap item.
 
+## 2026-10-20 — 13
+
+- Question: Should the calendar remember the last view you used (day, week or month)
+  and open on it next time, as Google Calendar does, or always open on the same one?
+- Call made: Always open on the same view, on today: the day view on the phone, the
+  week view on the PC. Within a visit the URL keeps the view and the date, as Kimai's
+  does, so reload and Back return to the same place. Nothing on record says you want
+  it remembered, and remembering it is a stored user setting the vision does not list
+  (the same call as light and dark in item 11).
+- If answered differently: item 13's calendar stores the last view per user (or per
+  device) and opens on it; Account (item 15) may gain the default view as a setting.
+
 ## 2026-10-20 — 12
 
 - Question: On the PC, the header's "+ New entry" is a filled blue button on every

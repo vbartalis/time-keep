@@ -25,6 +25,8 @@
 	--secondary: #f2f3f5;
 	--secondary-foreground: #1d2025;
 	--muted: #f2f3f5;
+	/* The calendar's shading: hours outside 08:00–20:00, days outside the month. */
+	--shade: #f2f3f5;
 	--muted-foreground: #5d636c;
 	--accent: #eef0f3;
 	--accent-foreground: #1d2025;
@@ -90,6 +92,7 @@
 		--secondary: #222326;
 		--secondary-foreground: #e6e7e9;
 		--muted: #222326;
+		--shade: #323438;
 		--muted-foreground: #9a9fa7;
 		--accent: #26282b;
 		--accent-foreground: #e6e7e9;
@@ -179,6 +182,7 @@
 	--color-accent: var(--accent);
 	--color-muted-foreground: var(--muted-foreground);
 	--color-muted: var(--muted);
+	--color-shade: var(--shade);
 	--color-secondary-foreground: var(--secondary-foreground);
 	--color-secondary: var(--secondary);
 	--color-primary-foreground: var(--primary-foreground);

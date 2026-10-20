@@ -29,12 +29,15 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/routes/login`, `logout` | Sign in and out. `/login?restored=1` shows "Restored. Sign in with the backup's passwords." above the form, after a restore. |
 | `src/routes/(app)/admin/backup` | The Backup screen (`+page.svelte`, `+page.server.ts`) and its download route (`download/+server.ts`), admin only. |
 | `src/routes/mcp` | `POST /mcp`, the MCP endpoint, outside the signed-in screens (see [mcp.md](mcp.md)). |
-| `src/routes/(app)/` | Signed-in screens: Today (`/`), `entries` and the entry form (`entries/new`, `entries/[id]`), `copy-out` and its CSV route (`copy-out/csv`), `reports`, `account`, `admin/users`, `admin/backup`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell (see Shell). |
-| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`; `edit.ts`: `withCurrent`, `postedValues`), the entry form's values, pickers, input and refusals (`entry-form.ts`: `valuesFromEntry`, `newValues`, `copyValues`, `templateValues`, `formPickers`, `createInput`, `updateInput`, `previousEnd`, `newEntryValues`, `coreFailure`), the bar's start and restart input (`timer-actions.ts`: `startFromTemplateInput`, `restartInput`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries search and bulk change (`entries.ts`: `readSearch`, `searchInput`, `searchFilters`, `searchPath`, `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`), the copy-out's rows and query (`copy-out.ts`: `outputRows`, `readCopyOut`, `copyOutQuery`, `monthRange`, `csvName`, `sheetFor`, and the pieces and options Reports shares: `outputPieces`, `readOptions`, `optionsQuery`), the reports' totals (`reports.ts`: `isoWeek`, `reportTotals`, `readReport`, `reportFor`, `reportQuery`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`). |
+| `src/routes/(app)/` | Signed-in screens: Today (`/`), `calendar`, `entries` and the entry form (`entries/new`, `entries/[id]`), `copy-out` and its CSV route (`copy-out/csv`), `reports`, `account`, `admin/users`, `admin/backup`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell (see Shell). |
+| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`; `edit.ts`: `withCurrent`, `postedValues`), the entry form's values, pickers, input and refusals (`entry-form.ts`: `valuesFromEntry`, `newValues`, `copyValues`, `templateValues`, `formPickers`, `createInput`, `updateInput`, `previousEnd`, `newEntryValues`, `coreFailure`), the bar's start and restart input (`timer-actions.ts`: `startFromTemplateInput`, `restartInput`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries search and bulk change (`entries.ts`: `readSearch`, `searchInput`, `searchFilters`, `searchPath`, `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`), the copy-out's rows and query (`copy-out.ts`: `outputRows`, `readCopyOut`, `copyOutQuery`, `monthRange`, `csvName`, `sheetFor`, and the pieces and options Reports shares: `outputPieces`, `readOptions`, `optionsQuery`), the reports' totals (`reports.ts`: `isoWeek`, `reportTotals`, `readReport`, `reportFor`, `reportQuery`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`), the Calendar's period, pieces and totals (`calendar.ts`: `calendarFor`, `moveInput`). |
 | `src/lib/components/entries/` | The Entries screen's parts: the filter form (shared with Copy-out), the change form, the selectable table. |
 | `src/lib/components/copy-out/` | The Copy-out screen's parts: the column and option pickers (`OutputFields`), the option pickers alone (`OutputOptions`, shared with Reports), the Copy button and its status (`CopyRows`), the sheet table (`SheetTable`). |
 | `src/lib/components/reports/` | The Reports screen's part: one totals table (`TotalsTable`, a titled section of label and duration rows with a Total row). |
 | `src/lib/components/history/` | The History screen's parts: a batch's line with its changes (`BatchLine`), and the types its load returns. |
+| `src/lib/calendar/` | The Calendar's pure logic, shared by server and browser and unit-tested: `dates.ts` (`readView`, `periodDays`, `shift`, `isoWeek`, `periodTitle`, `dayName`, `calendarHref`, `hm`), `grid.ts` (`localDate`, `localMinutes`, `instantAt`, `piecesOf`, `lanes`, `overlapping`, `dayTotals` in exact ms, `wholeMinutes` and `spanText` truncating a span to whole minutes as every screen does, `snap`, `halfHourSlot`, `dragRange`), `drag.ts` (`dropTimes`, `clampDay`, `keepIn`) and `gestures.svelte.ts` (the `swipe` attachment, `clockOf`). `drawnExtent` and `growInto` are in `src/lib/components/calendar/block.ts`. |
+| `src/lib/components/calendar/` | The Calendar's parts: `CalendarToolbar`, `DatePicker`, `TimeGrid` (day and week), `EntryBlock`, `NewBlock`, `MonthGrid`, `PhoneMonth`; `block.ts` (a block's text and lines), `drag.svelte.ts` (the PC's `BlockDrag`), `now.svelte.ts` (`nowTicker`) and `types.ts`. |
+| `src/lib/keys.ts` | `screenKey`: whether an unmodified key press is the screen's (outside fields, no dialog or open `data-holds-keys` details), shared by the layout and the Calendar. |
 | `src/lib/components/narrowing.svelte.ts` | Customer and project pickers that narrow each other with JavaScript, shared by the template form and the Entries filters. |
 | `src/lib/components/templates/` | The template form shared by the new and edit screens. |
 | `src/lib/components/account/` | The Account screen's Agent access parts: the token list with its revoke confirm (`TokenList`), the shown-once token with its Copy button (`NewToken`). |
@@ -67,7 +70,7 @@ It is the same on every screen; no screen draws its own title or navigation.
 
 - **Sidebar (PC, from 1024 px).** Near-black in both themes (`#262626` in light,
   `#0f0f10` in dark), full height and fixed, scrolling on its own when the window is
-  short. The wordmark, then Today, Entries, Copy-out, Reports, Templates, Setup,
+  short. The wordmark, then Today, Calendar, Entries, Copy-out, Reports, Templates, Setup,
   History, Account, and for an admin Users and Backup; at its foot the signed-in name
   and Sign out. The current item has a blue bar. The route sets the current item; the
   entry edit screen keeps Entries current when its `back` starts with `/entries`, else
@@ -99,8 +102,8 @@ It is the same on every screen; no screen draws its own title or navigation.
   unmodified, outside fields and while no dialog is open. Ctrl+Enter or Cmd+Enter saves
   the form.
 - **Phone (below 1024 px).** A near-black top bar with the same title, the timer strip
-  under it, one column of content, and a fixed bottom bar: Today, Entries, Templates
-  and More. More is a `<details>` sheet over the page, just above the bar, so it works
+  under it, one column of content, and a fixed bottom bar: Today, Calendar (opening
+  `/calendar?view=day`), Entries, Templates and More. More is a `<details>` sheet over the page, just above the bar, so it works
   without JavaScript; choosing an item or pressing Escape closes it (Escape returns
   the focus to More). It lists Setup, Copy-out, Reports, History, Account, for an admin
   Users and Backup, and Sign out. Every screen is within two taps.
@@ -186,6 +189,130 @@ action re-renders the form it came from with the core's field messages beside th
 fields; a message that belongs to no shown field is shown under the fields (the
 template sheet, the edit form) or beside the action; the template sheet and the edit
 form focus the first refused field.
+
+### Calendar (`/calendar`)
+
+In the sidebar after Today and in the phone's bar after Today. The address holds the view and
+the date (`?view=day|week|month&date=YYYY-MM-DD`; the week and today by default). The load
+returns the period from `calendarFor` in the screen's zone, with the flash and `back`. The
+toolbar (`CalendarToolbar`) is links throughout: previous and next, Today, the period's title
+as the `<summary>` of the date picker (`DatePicker`, a month of day links with its own month
+arrows, `&pick=YYYY-MM` keeping it open; today in a text-colour circle; Escape, which returns
+the focus to the title, or a click outside closes it, and the screen's keys wait while it is
+open), the total and Day / Week / Month. On the PC the title is `periodTitle`'s long form
+with the week beside it ("12 – 18 October 2026 Week 42") and the total sits at the right,
+muted labels with semibold text-colour figures ("Week **27:45**", "Day **5:45** · Week
+**27:45**", "Month **72:40**"). Below `lg` it is two rows, the second the arrows around a
+one-line short title over one sub-line, both inside the 44 px row so its height never
+changes: "Wed 14 October" over "Day 5:45 · Week 27:45", "12 – 18 Oct" over "Week 42 ·
+27:45", "October 2026" over "Month 72:40". The default zone gets Today's note. "+ New entry" and the phone's "+" carry the date in view.
+
+The day and week are `TimeGrid`, drawn twice to their own measures with one shown: the
+phone's (hour 56 px for the day; for the week 34 px and `compact`: letter heads with "–" for
+an empty day, colour-only blocks, each column a link to its day) and the PC's (52 px for
+the day, 44 px for the week). The grid fills the viewport below the toolbar (measured after
+hydration; the phone's ends at the bottom bar and keeps 80 px at its foot for the "+") and
+its 24 hours scroll inside it under sticky day heads (weekday, date, today in a filled
+circle, the day's exact total). Rules every hour, dotted at the half hour on the PC;
+shading (the `shade` token, which also marks the month's outside days) before 08:00 and
+from 20:00. Each entry is cut into pieces by day (`piecesOf`) and
+laid side by side where their drawn blocks meet (`lanes` on `drawnExtent`: a block is at
+least a line tall, one sharing its column tall enough for the lines its wrapped project
+name measures, and on the phone's day each grows toward 44 px into the free time after it,
+stopping at the next block so a day block stays full width, the running block excepted: it
+runs to now: `growInto`); an `EntryBlock` is a link to the entry's form
+(`data-entry-form`, opened in place) in its project's fill, edge and ink, with the full text
+as its name and tooltip; in the week the name starts with the column's day ("Tuesday 13
+October, …", `dayName`), which the screen shows only by the column's place. A block under 45 minutes is one line (alone in a day's column and
+drawn two lines tall, it has its times under the name); text is clamped to the lines
+its height holds and drops the description, then the times, as the block narrows (container
+queries). An overlap has a red top edge; the running block a dashed blue foot (only once the
+block reaches now: one drawn taller than its time has none) and "now · Running h:mm", whose
+elapsed time stays whole in a narrow lane (the name, the times before it and then the word
+give way); a piece without the entry's start reads "from the previous day". The line at
+now (`data-now-line`), its dot (`data-now-dot`) and its gutter tag (`data-now-tag`) are in
+the text colour on today's column; the line runs behind the blocks and the dot over them,
+so a block drawn past now (a timer just started, one line tall) keeps its text whole;
+the phone week's gutter is 40 px so the tag fits it. `nowTicker`
+moves now every 30 s, so the running block, the line and the totals follow it; once the
+device's date in the screen's zone passes the server's today, the page reloads its data
+(`invalidateAll`, once per date), so the line, today's circle and the totals move to the
+new day. Durations and totals are exact: the server sends totals in ms (`dayTotals`) and
+every figure is truncated to whole minutes only to be shown (`spanText`), as Today,
+Entries and the timer bar do, so a running block reads 1:40 at 1:40:31. Today is
+`aria-current="date"` on its head's date, the phone week's column and the PC month's
+date, and named ", today" in the phone month and the date picker (whose
+`aria-current="date"` is the chosen day). After
+hydration the grid scrolls to 07:00, earlier for an entry starting earlier in view, with
+now in view on a period holding it; without JavaScript it starts at 00:00. Columns carry
+`data-date`, blocks `data-entry-id`, `data-first` and `data-last`.
+
+The month is `MonthGrid` (from `lg`) and `PhoneMonth` (below it), drawn twice with one shown, over
+the weeks touching the month, Monday first. PC cells hold the date (today in a filled circle) and
+the day's total, up to four entry lines (`data-entry-form`: project dot, start, project name
+ending in an ellipsis; a red outline on an overlap, a blue start when running; named with
+their day first), then "+n more";
+the date, "+n more" and the cell's empty space (a stretched link) open that day's view. ISO week
+numbers stand at the left and each week's total at the right; days outside the month are shaded.
+The phone's cells are links choosing the day (`view=month&date=<day>`) with the total and one
+dot per project; under the grid the chosen day's list, headed by its date and total (a link to
+the day view), has rows in Today's look (start over end, customer › project, activity and
+description, the duration, the project's bar, "Overlaps another entry"). Today's rows are a
+table of columns bound to its own data, so the list draws its own. The page's foot leaves room
+for the "+". The totals follow a running entry; the month's total counts only the month's own days.
+
+Keys, outside fields and while no dialog or the date picker is open (`screenKey` in
+`#lib/keys`, which the layout's `n` and `s` share; a `<details data-holds-keys>` open holds
+them): `←`/`k` and `→`/`j` the previous and next period, `t` today,
+`d` `w` `m` the views. A touch swipe across the view's region in all three views (the
+`swipe` attachment in `#lib/calendar/gestures.svelte`: at least 60 px across and twice its
+vertical travel, listened to passively) moves a period, a right swipe back; with the
+phone's new block pending it drops the block instead, and while one of its handles is held
+it is no swipe.
+
+Creating from empty time (not a block, not a head) opens `/entries/new?date=&start=&end=&back=`
+in place, focus in customer › project. On the PC (`create="drag"`) a press and release
+under 4 px is the half hour, rounded down, for an hour (`halfHourSlot`); a mouse or pen
+drag gives the range dragged in its day (`dragRange`: the press on the 5 minutes under it,
+the moving end rounded to 5) and drawn as it grows
+(`NewBlock`, blue-outlined with its times; `Escape` drops it). On the phone's day
+(`create="tap"`; the phone's week does not create) a tap draws a `NewBlock` with round
+handles at its top and bottom (44 px hit areas, `touch-action: none`) stepping 15 minutes,
+keeping 15 at least and inside the day, and a fixed bar over the bottom bar
+(`data-create-bar`: the times, "Drag the handles to change it" balanced over its lines,
+Cancel, New entry) while
+the "+" hides. New entry or a tap on the block opens the form; Cancel, a swipe, another
+period or a tap anywhere else drops it (a tap on an entry, a head or outside the grid
+still does what it does; one on empty time only drops it). None of this exists without JavaScript.
+
+Moving and resizing on the PC (the `BlockDrag` attachment in
+`#lib/components/calendar/drag.svelte`, on the PC's grid only, a mouse or pen only): a press
+on a finished block that travels 4 px moves it, one on its top or bottom handle stretches
+that end. The handles (`data-handle="start|end"`, 8 px hit strips along the edges with a
+thin grip drawn on hover and focus) sit
+only on the piece holding the entry's real start and the one holding its real end; the
+running block has none and is not dragged. `dropTimes` (`#lib/calendar/drag`) moves by
+wall-clock days and minutes in the screen's zone (`instantAt` in `grid.ts`), the moved
+edge snapped to 5 minutes; a move keeps the duration, a stretch the other end with 5
+minutes at least. Any piece moves the whole entry. While dragging, the block is drawn
+lifted where it would land (`data-lifted`, the popover-down shadow, a 1 px ring in its project's colour), the original keeps a
+dashed outline in its project's colour (`data-ghost`), and a text-colour tag says where
+it lands ("Fri 14:15–15:30", `data-drag-tag`, clear above the lifted block). The pointer is clamped to the period's
+first and last day and to 00:00–24:00, and the drop to the period (`keepIn`: a start from
+the first day's 00:00 to the last day's 23:55, an end to its 24:00, never pushing an entry
+already reaching outside further out); a middle piece of an entry longer than a day has
+no handles; a release above or left of the grid (the toolbar,
+the sidebar), `Escape`, or a drop where it started puts it back. A release submits the
+hidden `use:enhance` form to the `move` action (`id`, `version`, `start`, `end` as ISO
+instants with `Z`, so the entry's zones stay, and `back`): one `entries.update` with the
+drawn version (`moveInput` reads it); done, the flash with Undo ("Done: Edit entry on
+"<project>"."), refused, the flash's `error` ("This entry changed elsewhere. The calendar
+shows it as it is now." for a stale version, "This entry was deleted elsewhere." for a
+gone one, else the core's message), both redirecting to `back`, which the page follows
+with `goto(location, { refreshAll: true, reset: false })`, keeping its scroll. Until
+that returns the grid ignores every press and click, so one release is one update and
+one undo. After a drag its click opens nothing; a press without movement is a click and
+opens the form. Without JavaScript blocks are links only.
 
 ### Setup (`/setup`)
 
@@ -681,6 +808,24 @@ files.
   trip, every refusal leaving the data and the directory unchanged, an older backup
   migrated, a forced failure rolled back, the before-restore copy), and the body limit
   tests in `mcp/http.test.ts`.
+- The Calendar's unit tests: `src/lib/calendar/dates.test.ts` (views, dates, titles and day
+  names from the address, weeks from Monday), `grid.test.ts` (pieces cut by day, lanes,
+  overlaps, exact day totals and whole minutes truncated, the half hour, the dragged
+  range), `drag.test.ts` (the drop times, keeping a drop in the period),
+  `src/lib/components/calendar/block.test.ts` (drawn extents, growing into free time),
+  `src/lib/server/screens/calendar.test.ts` (`calendarFor`: overlaps, midnight crossings,
+  exact totals, running timers, colour, zones; `moveInput`), `src/lib/shell.test.ts` (Calendar in the
+  sidebar and the bar) and `scripts/seed-month.test.ts` (the seeded month).
+- `e2e/calendar.test.ts` covers the Calendar with a user of its own per test
+  (`seedCalendarWeek`, `seedSpan` in `e2e/seed.ts`): the sidebar and bar entries, the toolbar's arrows, Today, views, totals and
+  picker (also without JavaScript), the grids' blocks, overlaps, lanes, the running block and
+  the line at now (crossing no block's text, however young the timer; the elapsed time whole
+  in a narrow lane) and the reload past midnight, blocks and month lines named with their day,
+  a block opening its form over the calendar, the phone's day, week and
+  month, the PC's month, the keys, creating by drag, click, and on the phone by tap, handles
+  and swipe, moving and resizing by drag with Undo and its refusals and limits, and the
+  toolbar's layout and focus order. `touch-targets.test.ts` also checks the calendar's
+  controls.
 - `e2e/backup.test.ts` covers Backup with the seeded admin: a non-admin refused on the
   screen and the download with no Backup in the sidebar; a download (its name, the SQLite
   header), a customer made after it, the restore of that file landing on

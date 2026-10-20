@@ -9,6 +9,7 @@ colors:
   surface: "#ffffff"
   foreground: "#1d2025"
   muted: "#f2f3f5"
+  shade: "#f2f3f5"
   muted-foreground: "#5d636c"
   accent: "#eef0f3"
   border: "#e4e5e8"
@@ -27,6 +28,7 @@ colors:
   surface-dark: "#1c1d1f"
   foreground-dark: "#e6e7e9"
   muted-dark: "#222326"
+  shade-dark: "#323438"
   muted-foreground-dark: "#9a9fa7"
   accent-dark: "#26282b"
   border-dark: "#2b2d30"
@@ -222,6 +224,40 @@ components:
     typography: "{typography.caps}"
     padding: "0 12px"
     height: "36px"
+  view-switch:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    padding: "0 16px"
+    height: "44px"
+  view-switch-current:
+    backgroundColor: "{colors.accent}"
+  calendar-block:
+    backgroundColor: "{colors.project-1-fill}"
+    textColor: "{colors.project-1-ink}"
+    typography: "{typography.label}"
+    rounded: "{rounded.sm}"
+    padding: "2px 6px 0"
+  calendar-today:
+    backgroundColor: "{colors.foreground}"
+    textColor: "{colors.ground}"
+    rounded: "9999px"
+    size: "32px"
+  calendar-now-tag:
+    backgroundColor: "{colors.foreground}"
+    textColor: "{colors.ground}"
+    typography: "{typography.label}"
+    rounded: "{rounded.sm}"
+    padding: "1px 4px"
+  calendar-new-block:
+    backgroundColor: "color-mix(in oklch, #0b63c9 10%, transparent)"
+    textColor: "{colors.foreground}"
+    typography: "{typography.label}"
+    rounded: "{rounded.sm}"
+    padding: "2px 6px 0"
+  calendar-create-bar:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    padding: "10px 16px"
 ---
 
 # Design System: time-keep
@@ -231,7 +267,9 @@ rests on decision 9 (`docs/decisions/009-the-ui-follows-kimais-structure-and-ski
 and the round 2 spec (`docs/superpowers/specs/2026-10-20-design-direction-design.md`).
 It describes the build on `feat/11-design-direction`, with what item 12
 (`feat/12-entry-and-timer`) added: the entry form opened in place, the timer bar's
-Start and start list, Restart, and "New entry". Where the build differs from the
+Start and start list, Restart, and "New entry"; and with what item 13 (`feat/13-calendar-views`) added:
+the Calendar, its day, week and month views, its toolbar and date picker, and creating,
+moving and resizing entries on its grid. Where the build differs from the
 direction contract (`.impeccable/surfaces/src-routes-app-layout-svelte.md`), the
 build wins and the difference is noted. Light values are the frontmatter's plain keys;
 dark values carry `-dark`. Dark follows the device setting through
@@ -262,7 +300,7 @@ SaaS dashboard of stat tiles.
 - One blue for running and primary; red only for irregular or destructive; neutral greys.
 - Eight project colours, each with an edge, a tinted fill and a readable ink, assigned by creation order.
 - Public Sans, tabular figures for every time, date and duration.
-- 4 px corners (6 px on the entry dialog and sheet), 1 px rules, no shadows except on floating sheets, popovers and the dialog.
+- 4 px corners (6 px on the entry dialog and sheet), 1 px rules, no shadows except on floating sheets, popovers, the dialog and a calendar block lifted in a drag.
 - 150 ms ease-out colour changes on state only; the elapsed time ticks in place.
 
 ## Colors
@@ -275,7 +313,10 @@ project colours as the only strong colour.
   ring, "Running" labels and running hours, exposed as `live`, and the live square in
   every Stop), the one primary button per form, the shell's one primary action (the PC
   header's New entry button and the phone's round "+"), the focus ring, the current bottom-bar item, ticked checkboxes, the caret
-  and text selection. On the near-black rail it lifts to **Rail Blue** (`sidebar-ring`)
+  and text selection. In the Calendar it marks the running block (a 2 px dashed foot
+  at now and its "Running" time in semibold blue; a running entry's start in the
+  month) and the pending new entry (a 2 px stroke over blue at 10 %, and the phone's
+  round handles), which the create bar's primary New entry commits. On the near-black rail it lifts to **Rail Blue** (`sidebar-ring`)
   for the current item's bar, the wordmark's ring mark and focus on the rail; the
   phone strip's live dot uses it too. These are one blue at two lightnesses, not two
   accents.
@@ -284,7 +325,8 @@ project colours as the only strong colour.
 - **Signal Red** (`destructive`; dark `destructive-dark`): exposed as `irregular` for
   warnings (overlaps, long entries) and as `destructive` for delete, revoke and
   restore and for refusal messages. Destructive buttons and error borders take it at
-  60 %.
+  60 %. In the Calendar it is an overlapping block's 2 px top edge, the outline round
+  an overlapping month line, and the phone list's "Overlaps another entry".
 
 ### Tertiary: the project palette
 - **Eight project colours** (`project-1` .. `project-8`), each in three parts: the
@@ -297,17 +339,26 @@ project colours as the only strong colour.
   reaches the timer bar's project dot, the start list's template dots, the entry
   form's Fill from buttons and the project picker (its options and the chosen
   project inside the field); a template without a project takes a neutral dot (muted
-  text at 40 %). The fill and ink are defined for the calendar blocks of item 13. `chart-2` .. `chart-5` are projects 1–4; `chart-1` is
+  text at 40 %). The Calendar uses all three: a block is its project's fill with a 3 px edge at its
+  left and its text in the ink; the month's lines carry 8 px edge dots, the phone
+  month's days 6 px ones, and the phone day list's rows a 4 px edge bar. `chart-2` .. `chart-5` are projects 1–4; `chart-1` is
   the blue.
 
 ### Neutral
 - **Ground** (`ground`; dark `ground-dark`): the page under every screen.
 - **Surface** (`surface`; dark `surface-dark`): the PC header, the bottom bar, sheets,
   fields, outline buttons, the undo strip and alerts.
-- **Text** (`foreground`): body text and the section-head rule. **Muted text**
+- **Text** (`foreground`): body text and the section-head rule; in the Calendar,
+  every mark that only points: the line at now and its tag, today's filled circle, the
+  phone month's chosen-day ring, a drag's landing tag and the current view's
+  underline (tags and circles carry `ground` text). **Muted text**
   (`muted-foreground`): secondary lines, empty states, column heads.
 - **Muted** (`muted`): the table head band. **Accent** (`accent`): hover fills and
-  selected rows.
+  selected rows, the current view in the Calendar's switch and the date picker's week
+  in view. **Shade** (`shade`): the calendar's one shading, the hours before 08:00
+  and from 20:00 and the days outside the month; `muted` in light; in dark, where
+  `muted` on the surface does not read, a step lighter than `border`, so the hour rules
+  and day dividers still read on it (muted text on it 4.7:1).
 - **Border** (`border`): hairlines between lines, the header's bottom rule, the bottom
   bar's top rule. **Input** (`input`): field and outline-button strokes, the rule
   under a table head, unticked checkboxes, the scrollbar.
@@ -331,10 +382,15 @@ decoration, never a heading, never an icon tint.
 A running timer is blue, never red.
 
 **The Project Ink Rule.** A project is one colour, used identically wherever its time
-appears. Today the timer dot, the start list, Fill from and the project picker use it;
-the table dot, calendar block edge and fill, and
-phone row bar take it as items 12–15 rebuild each screen. No other element borrows a
-project colour.
+appears. Today the timer dot, the start list, Fill from, the project picker and the
+Calendar (block edge, fill and ink, month dots, the phone day list's bar) use it; the
+table dot and the other screens' phone row bars take it as items 14–15 rebuild them.
+No other element borrows a project colour.
+
+**The Text-Colour Marks Rule.** In the Calendar, what only points is in the text
+colour: the line at now and its tag, today's circle, the chosen day's ring, a drag's
+landing tag. Blue and red already mean running and wrong; these marks never borrow
+them.
 
 ## Typography
 
@@ -346,21 +402,27 @@ ramp below, not from a second face.
 
 ### Hierarchy
 - **Headline** (600, 21 px / `text-xl`, 1.25, -0.01em): the screen's title, its one
-  h1, in the PC header and the phone top bar; the login heading.
+  h1, in the PC header and the phone top bar; the login heading; the date in a
+  calendar day column's head (line height 1).
 - **Title** (700, 17 px / `text-lg`, 1.35): the wordmark, the phone strip's elapsed
-  time and the entry form's heading ("New entry", "Edit entry").
+  time and the entry form's heading ("New entry", "Edit entry"); at semibold, the
+  date in a phone week column's head and the phone create bar's times.
 - **Body** (400, 15 px / `text-base`, 1.45): phone body and fields, the More sheet's
-  rows, the PC timer bar's elapsed time (bold).
+  rows, the PC timer bar's elapsed time (bold), the Calendar's period title
+  (semibold) in its toolbar.
 - **Body PC** (400, 14 px / `text-sm`, 1.45): PC body and fields from 1024 px, buttons,
-  sidebar items, tables, the undo strip.
+  sidebar items, tables, the undo strip; the Calendar's totals (semibold figures) in
+  the toolbar, a day head and the month's week column.
 - **Label** (400, 12 px / `text-xs`, 1.35): meta lines (a timer's "since 09:00"),
   bottom-bar labels, field labels over fields (the phone form, the time row's Start,
   End and Duration) and hints under them, in muted text. On the PC the entry form's
-  left-column labels are 14 px semibold in the text colour.
+  left-column labels are 14 px semibold in the text colour. In the Calendar: a
+  block's text on a 15 px line (the name semibold), the gutter's hours, the phone
+  toolbar's sub-line, the month's lines and the now and landing tags.
 - **Caps** (`caps`: 600, 12 px, uppercase, 0.04em): column heads, section heads, badges,
   state labels such as "Running", and group heads in a list or a row of choices (the
   start list's "Start a timer", the project picker's customers, the form's "Fill
-  from"), in muted text.
+  from"), in muted text; the Calendar's weekday heads.
 - **Figures** (`figures`: tabular numbers): every time, date and duration, so columns
   line up and the running time changes in place. Tables get tabular figures by default.
 
@@ -387,8 +449,8 @@ entry button.
 On the phone the shell is one column: a sticky 56 px top bar in the rail colour with
 the screen's title (the wordmark is the PC's), the 64 px timer strip under it in its
 own tone, the screen (16 px sides, 24 px top), and a fixed bottom bar of four equal
-56 px cells: Today, Entries, Templates and More, whose sheet holds the rest and Sign
-out. A round 56 px "+" floats at the right, 16 px in and 81 px above the bottom edge
+56 px cells: Today, Calendar (which opens the day view), Entries, Templates and More,
+whose sheet holds the rest and Sign out. A round 56 px "+" floats at the right, 16 px in and 81 px above the bottom edge
 (plus the safe area), over the bottom bar's top. Main reserves 156 px plus the safe
 area at its foot, so the last line clears both. Controls at a screen's right edge
 move out of the "+"'s column on the phone (a row's ▶ leads the row or sits under its
@@ -406,8 +468,19 @@ cells pad 12 px. The screens inside the shell keep round 1's layouts in the new 
 until item 15.
 
 The header names the screen with a fixed title. The contract's raise that a view's
-header names the span in view (a date range) is deferred to items 13–14, the calendar
-and table views.
+header names the span in view was settled by item 13: the Calendar's header keeps
+"Calendar" and its toolbar names the span ("12–18 October 2026").
+
+The Calendar's day and week grid fills the viewport under its toolbar (above the
+phone's bottom bar; 320 px at least) and scrolls inside itself, the day heads and the
+gutter sticky. On the PC it is a panel; on the phone it runs edge to edge and keeps
+80 px at its foot so the last hours clear the "+". An hour is 52 px in the PC day,
+44 px in the PC week, 56 px in the phone day and 34 px in the phone week; the gutter
+is 52, 56 and (phone week) 40 px. It opens with 07:00 at the top (earlier for an
+entry starting earlier) and now in view when the period holds it. The PC month is a
+40 px week-number column, seven days and a 72 px week-total column, each week at
+least 140 px tall; the phone month is seven columns of 56 px cells over the chosen
+day's list.
 
 ## Elevation & Depth
 
@@ -422,13 +495,15 @@ start sheet) also dim the page with the 40 % black scrim.
 - **Popover down** (`box-shadow: 0 8px 24px rgb(0 0 0 / 0.12)`): the PC timer bar's
   list of other running timers, the PC start popover, the project picker's list and
   the PC entry dialog, and the undo strip while it is pinned under the bars (scrolled
-  past its place at the top of the screen, it stays in view over the page).
+  past its place at the top of the screen, it stays in view over the page); the
+  Calendar's date picker, and a calendar block lifted in a drag.
 - **Strip list down** (`box-shadow: 0 8px 24px rgb(0 0 0 / 0.25)`): the phone strip's
   list of other running timers.
 
 ### Named Rules
 **The Floating Only Rule.** A surface at rest has no shadow. Only a sheet, popover or
-dialog that floats over the page casts one.
+dialog that floats over the page casts one, and a calendar block only while it is
+lifted in a drag.
 
 ## Shapes
 
@@ -441,6 +516,12 @@ Dots are round: the 10 px live dot with a 3 px ring at 25 % (30 % on the rail), 
 8 px project dot. Rules are 1 px: the text colour under a section head, `input` under a
 table head, `border` elsewhere. The current sidebar item carries a 3 px Rail Blue bar
 on its left edge.
+
+In the Calendar, blocks have 2 px corners and a 3 px project edge at the left; the
+line at now is 2 px with an 8 px dot; today's date sits in a full circle (32 px in the
+PC grid, 28 px on the phone and in the month); the date picker's days are circles
+(36 px, phone 44 px); the phone month's cells have 4 px corners, the chosen one a 2 px
+ring. The phone's new block has 14 px round handles.
 
 ## Components
 
@@ -484,12 +565,12 @@ Flat, firm, quiet until pressed.
 
 ### Navigation
 - **PC sidebar:** the wordmark (17 px bold, with a ring mark in Rail Blue), then Today,
-  Entries, Copy-out, Reports, Templates, Setup, History, Account (and Users and Backup
+  Calendar, Entries, Copy-out, Reports, Templates, Setup, History, Account (and Users and Backup
   for an admin): 40 px items, a 16 px Lucide line icon, 14 px medium text in
   `sidebar-foreground`. Hover fills with `sidebar-accent`. The current item fills with
   `sidebar-primary`, turns white and semibold, and carries the 3 px blue bar. The user
   and Sign out sit at the foot.
-- **Phone bottom bar:** surface fill, top rule, four 56 px cells of a 20 px icon over a
+- **Phone bottom bar:** surface fill, top rule, five 56 px cells of a 20 px icon over a
   12 px label in muted text; the current cell (and More when the current screen is in
   its sheet) turns blue and semibold. More is a native disclosure that opens without
   JavaScript into a sheet of 44 px rows over the page, never pushing it down.
@@ -550,6 +631,82 @@ One form for a new entry and an existing one, opened in place.
 - **Refusal:** field errors as in Inputs; a form-wide refusal is an alert (surface,
   red at 60 % stroke, red 14 px text) with an outline Reload or Back beside it.
 
+### Calendar (signature)
+Time laid out as blocks: Kimai's calendar in this system's colours.
+- **Toolbar:** on the PC one row: outline ‹, Today and › (36 px), the period's title
+  (15 px semibold, "12–18 October 2026") with a 14 px muted sub ("Week 42") and a
+  muted chevron, then at the right the totals as muted labels with semibold figures
+  in the text colour ("Day 0:04 · Week 5:49"), then the view switch. On the phone two
+  rows of 44 px controls: the view switch with Today, then ‹, the short title ("Sat 17
+  October") over one 12 px muted sub-line of totals ("Day 0:00 · Week 25:15"; the
+  week's "Week 42 · 27:45"), and ›.
+- **View switch:** Day, Week and Month as joined outline segments (surface, `input`
+  stroke, 14 px semibold, 4 px outer corners); the current one fills with accent and
+  carries a 2 px text-colour underline inside its foot. Hover fills with accent.
+- **Date picker:** the title is the summary of a disclosure that opens without
+  JavaScript; its panel hangs under the toolbar (surface, `border` stroke, 4 px
+  corners, popover-down shadow, 280 px wide on the PC, 308 px on the phone): ‹ and ›
+  around the month's 14 px semibold name, two-letter `caps` heads, then round days in
+  figures. Days outside the month are muted, the week in view fills with accent,
+  today is the filled text-colour circle.
+- **Time grid:** a surface panel; hour rules in `border`, the half hours dotted on the
+  PC; the hours before 08:00 and from 20:00 in `shade`. The gutter's hours are 12 px
+  muted figures ("07:00"; the phone week's bare "7"). Each day's head is sticky over an
+  `input` rule: the `caps` weekday ("TUE"; the phone week's letter), the date (today in
+  its filled text-colour circle) and the day's total in semibold figures (muted when
+  none; "–" on the phone week).
+- **The line at now:** a 2 px text-colour line across today's column with an 8 px dot
+  at its left, and the time ("14:24") in a semibold tag, `ground` on the text colour,
+  in the gutter; an hour label it would cover gives way. The line runs behind the
+  blocks (their fills are opaque), so a block drawn past now, such as a timer just
+  started at its one-line minimum, keeps its text whole; the dot sits over the blocks.
+- **Block:** an entry drawn from its start to its end, a link to its form: the
+  project's fill, a 3 px edge at the left, ink text, 2 px corners, 1 px apart. The
+  customer › project is semibold (the customer dropped when narrow), then the times
+  ("10:00–12:30"; the day adds " · 2:30", the week a reference), then on the day
+  activity · location · reference, then the description; lines give way from the
+  bottom as the block shortens. Hover darkens it 3 % (dark: brightens 10 %); focus is
+  the 2 px blue ring. Blocks that meet sit side by side; an overlapping entry has a
+  2 px red top edge. A block under 45 minutes is one line, the project then the start
+  ("ClientY – Proj… 09:30"). A piece continued past midnight reads "from the previous
+  day" where its start would be. On the phone week a block is colour only and the
+  column is the link to its day; on the phone day a block grows toward 44 px into the
+  free time under it.
+- **Running block:** from its start to now, growing, with a 2 px dashed blue foot at
+  now and "now · Running 1:40" in semibold blue where the end would be; a one-line
+  block shows "Running 0:04" after the name. In a narrow lane the name gives way first,
+  then the word ("R… 0:04"); the elapsed time is never cut.
+- **Moving and resizing (PC):** a dragged block is lifted where it would land
+  (popover-down shadow, a 1 px ring in its project's edge, its grips shown), a dashed
+  outline in the project's edge marks where it was, and a semibold tag, `ground` on
+  the text colour, over it names where it lands ("Thu 14:40–15:25"). On hover and
+  focus a finished block shows 24 × 3 px grips in its ink at 60 % on the ends it holds.
+- **New block:** empty time pressed or dragged draws the new entry with a 2 px blue
+  stroke over blue at 10 %, 2 px corners, text in the text colour; the PC's drag shows
+  its times in semibold over the duration. On the phone a tap places a one-hour block
+  ("13:00–14:00 · 1:00" over "New entry") with two round handles (14 px, a 2 px blue
+  stroke on the surface, 44 px hit areas) at its top right and bottom left, moving in
+  15-minute steps; a tap on it opens the form.
+- **Create bar (phone):** while a new block is pending, a bar over the bottom bar
+  (surface, a top `border` rule): the times in 17 px semibold figures over "Drag the
+  handles to change it" in 12 px muted text, then outline Cancel and primary New
+  entry. The "+" gives way to it.
+- **Month (PC):** a surface panel of weeks under `caps` heads on an `input` rule: a
+  muted week number, seven day cells between `border` rules, and the week's total in
+  14 px semibold figures. A cell has its date at the left (today in its filled circle;
+  outside the month, muted on `shade`) and its total at the right in 12 px semibold
+  figures, then up to four 18 px lines of an 8 px project dot, the start in figures
+  (running: semibold blue) and the project name, then "+n more" muted. An overlapping
+  line takes a red outline. The cell's empty space links to its day and washes with
+  accent at 40 % on hover.
+- **Month (phone):** letter heads over cells with 4 px corners: the date (today's
+  filled circle), the day's total in 12 px figures and a row of 6 px dots, one per
+  project worked. Days outside the month are muted on `shade`; the chosen day has a
+  2 px text-colour ring. Under the grid its list: a section head (the date in `caps`,
+  its total in 14 px semibold figures, on a text-colour rule) over 44 px rows with a
+  4 px project-edge bar: start over end (a running one's "now" in blue), customer ›
+  project in semibold, activity · description muted, the duration at the right.
+
 ### Ruled table
 A muted head band of 36 px `caps` column heads in muted text over an `input` rule,
 then lines divided by `border` hairlines that wash with accent at 50 % on hover;
@@ -601,11 +758,13 @@ with an `input` underline that darkens on hover; never blue.
 - **Do** open an entry's form in place: a dialog on the PC, a sheet on the phone, with Cancel and Save always on screen.
 - **Do** keep every control at a phone screen's right edge out of the "+"'s column.
 - **Do** keep motion to 150 ms ease-out colour changes on state, removed under reduced motion.
+- **Do** mark now, today, the chosen day and a drag's landing in the text colour.
+- **Do** draw a calendar block in its project's fill, edge and ink, with red only for an overlap and blue only for running or a new entry.
 
 ### Don't:
 - **Don't** use blue or red for decoration, headings or icons; red is never the running state.
 - **Don't** store a project's colour or let anything but a project use the project palette.
-- **Don't** give a surface at rest a shadow; only floating sheets, popovers and dialogs cast one.
+- **Don't** give a surface at rest a shadow; only floating sheets, popovers and dialogs, and a calendar block while lifted in a drag, cast one.
 - **Don't** add text sizes beyond 12, 14, 15, 17 and 21 px on working screens.
 - **Don't** set `caps` as a kicker or eyebrow above a heading.
 - **Don't** build stat-tile dashboards or put a themed concept over the tool.

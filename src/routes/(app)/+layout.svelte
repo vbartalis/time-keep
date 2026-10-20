@@ -4,6 +4,7 @@
 	import { page } from '$app/state';
 	import { tick } from 'svelte';
 	import Plus from '@lucide/svelte/icons/plus';
+	import { readView } from '#lib/calendar/dates.js';
 	import EntryOverlay from '#lib/components/entry/EntryOverlay.svelte';
 	import BottomBar from '#lib/components/shell/BottomBar.svelte';
 	import Sidebar from '#lib/components/shell/Sidebar.svelte';
@@ -11,6 +12,7 @@
 	import UndoStrip from '#lib/components/UndoStrip.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { openForm, openInPlace } from '#lib/entry-link.js';
+	import { screenKey } from '#lib/keys.js';
 	import { currentItem, screenTitle } from '#lib/shell.js';
 	import type { LayoutProps } from './$types';
 
@@ -25,7 +27,15 @@
 	let barsHeight = $state(0);
 	/** The phone's start sheet is open: the page behind it takes no focus or taps. */
 	let sheetOpen = $state(false);
-	const newEntry = $derived(`${resolve('/(app)/entries/new')}?back=${encodeURIComponent(back)}`);
+	/** On the Calendar, the date in view (the form over it keeps the screen's address in `back`). */
+	const viewDate = $derived.by(() => {
+		if (!back.startsWith('/calendar')) return null;
+		const today = (page.data as { today?: string }).today;
+		return today ? readView(new URL(back, 'http://x').searchParams, today).date : null;
+	});
+	const newEntry = $derived(
+		`${resolve('/(app)/entries/new')}?back=${encodeURIComponent(back)}${viewDate ? `&date=${viewDate}` : ''}`
+	);
 
 	/**
 	 * The device's zone: remembered in the `tz` cookie (read by the server when a form
@@ -72,8 +82,6 @@
 		return () => document.removeEventListener('click', onclick, true);
 	});
 
-	const FIELDS = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])';
-
 	/** The Stop of the timer the bar shows in full, never one in the "+N" list. */
 	function shownStop(): HTMLButtonElement | null {
 		for (const bar of document.querySelectorAll<HTMLElement>('section[aria-label="Timer"]')) {
@@ -85,12 +93,7 @@
 
 	/** `n` opens a new entry, `s` stops the shown timer: outside fields and dialogs, unmodified. */
 	function onkeydown(e: KeyboardEvent) {
-		if (e.key !== 'n' && e.key !== 's') return;
-		if (e.defaultPrevented || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
-		const target = e.target instanceof Element ? e.target : null;
-		if (target?.closest(FIELDS) || (target instanceof HTMLElement && target.isContentEditable))
-			return;
-		if (document.querySelector('dialog[open]')) return;
+		if ((e.key !== 'n' && e.key !== 's') || !screenKey(e)) return;
 		if (e.key === 'n') {
 			e.preventDefault();
 			void openForm(newEntry);
@@ -106,7 +109,7 @@
 <svelte:window {onkeydown} />
 
 <div
-	class="min-h-dvh lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)]"
+	class="group/shell min-h-dvh lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)]"
 	style:--bars-height={barsHeight ? `${barsHeight}px` : undefined}
 >
 	<Sidebar username={data.user.username} isAdmin={data.user.isAdmin} {current} />
@@ -171,14 +174,15 @@
 		<BottomBar isAdmin={data.user.isAdmin} {current} />
 	</div>
 
-	<!-- The phone's "+", above the bottom bar; main's foot leaves it room. -->
+	<!-- The phone's "+", above the bottom bar; main's foot leaves it room. It gives way to the
+		Calendar's create bar, whose New entry is then the one primary. -->
 	<!-- eslint-disable svelte/no-navigation-without-resolve -- newEntry resolves it -->
 	<a
 		href={newEntry}
 		data-entry-form
 		aria-label="New entry"
 		inert={sheetOpen}
-		class="fixed right-4 bottom-[calc(5.0625rem+env(safe-area-inset-bottom))] z-30 inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors duration-150 ease-out outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:hidden"
+		class="fixed right-4 bottom-[calc(5.0625rem+env(safe-area-inset-bottom))] z-30 inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors duration-150 ease-out outline-none group-has-[[data-create-bar]]/shell:hidden hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:hidden"
 	>
 		<Plus class="size-6" aria-hidden="true" />
 	</a>

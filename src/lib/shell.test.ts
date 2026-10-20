@@ -7,6 +7,7 @@ describe('navigation lists', () => {
 	it('lists the sidebar, with Users and Backup last for an admin', () => {
 		const base = [
 			'Today',
+			'Calendar',
 			'Entries',
 			'Copy-out',
 			'Reports',
@@ -20,7 +21,8 @@ describe('navigation lists', () => {
 	});
 
 	it('lists the phone bar and More', () => {
-		expect(labels(barItems())).toEqual(['Today', 'Entries', 'Templates']);
+		expect(labels(barItems())).toEqual(['Today', 'Calendar', 'Entries', 'Templates']);
+		expect(barItems()[1].href).toBe('/calendar?view=day');
 		expect(labels(moreItems(false))).toEqual([
 			'Setup',
 			'Copy-out',
@@ -48,6 +50,7 @@ describe('navigation lists', () => {
 describe('screenTitle', () => {
 	it.each([
 		['/(app)', 'Today'],
+		['/(app)/calendar', 'Calendar'],
 		['/(app)/entries', 'Entries'],
 		['/(app)/entries/new', 'New entry'],
 		['/(app)/entries/[id]', 'Edit entry'],
@@ -72,6 +75,7 @@ describe('currentItem', () => {
 	it('marks an item itself', () => {
 		expect(currentItem('/(app)', null)).toBe('/(app)');
 		expect(currentItem('/(app)/admin/users', null)).toBe('/(app)/admin/users');
+		expect(currentItem('/(app)/calendar', null)).toBe('/(app)/calendar');
 	});
 
 	it('marks the item owning a sub-screen', () => {
@@ -98,9 +102,10 @@ describe('currentItem', () => {
 });
 
 describe('ownsStrip', () => {
-	it('is true for the five strip screens only', () => {
+	it('is true for the six strip screens only', () => {
 		for (const id of [
 			'/(app)',
+			'/(app)/calendar',
 			'/(app)/entries',
 			'/(app)/setup',
 			'/(app)/templates',

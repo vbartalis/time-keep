@@ -39,11 +39,12 @@
 	aria-label="Main"
 	class="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card px-2 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))] lg:hidden"
 >
-	<ul class="mx-auto grid max-w-md grid-cols-4 gap-1">
+	<ul class="mx-auto grid max-w-md grid-cols-5 gap-1">
 		{#each bar as item (item.route)}
+			<!-- eslint-disable svelte/no-navigation-without-resolve -- an item's own address, else resolved -->
 			<li>
 				<a
-					href={resolve(item.route as NavRoute)}
+					href={item.href ?? resolve(item.route as NavRoute)}
 					aria-current={current === item.route ? 'page' : undefined}
 					class={cell}
 				>
@@ -51,6 +52,7 @@
 					{item.label}
 				</a>
 			</li>
+			<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		{/each}
 		<li>
 			<details bind:this={details}>

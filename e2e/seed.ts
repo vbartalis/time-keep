@@ -238,6 +238,86 @@ export async function seedMonth(prefix: string, zone: string) {
 
 export type Month = Awaited<ReturnType<typeof seedMonth>>;
 
+/**
+ * A user for the calendar (in `zone`), shaped like the usability seed: CompX ›
+ * ClientY – ProjectZ, CompX › CompY – Support and Myself › time-keep, and last week's
+ * Monday to Friday. Each day has the Standup (09:30–09:45), a morning of development
+ * (10:00–12:00) and a support ticket from 13:30 (to 14:30; Tuesday's runs to 15:00, the
+ * entry the drag test moves); Tuesday and Thursday end with 19:30–21:00 on time-keep,
+ * Friday has 15:00–16:00 on time-keep. Tuesday 23:00 to Wednesday 01:00 crosses
+ * midnight, and Wednesday's 10:30–11:30 overlaps its development block.
+ */
+export async function seedCalendarWeek(prefix: string, zone: string) {
+	const user = await newUser(prefix);
+	const core = asUi(user.id);
+	const today = dateIn(zone);
+	const dow = new Date(`${today}T00:00:00Z`).getUTCDay();
+	const day = (n: number) =>
+		new Date(Date.parse(`${today}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+	const thisMonday = day(-((dow + 6) % 7));
+	const at = (monday: string, n: number) =>
+		new Date(Date.parse(`${monday}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+	const lastMonday = at(thisMonday, -7);
+
+	const compX = value(core.customers.create({ name: 'CompX' })).id;
+	const myself = value(core.customers.create({ name: 'Myself' })).id;
+	const projectZ = value(
+		core.projects.create({ customerId: compX, name: 'ClientY – ProjectZ' })
+	).id;
+	const support = value(core.projects.create({ customerId: compX, name: 'CompY – Support' })).id;
+	const timeKeep = value(core.projects.create({ customerId: myself, name: 'time-keep' })).id;
+
+	const entry = (start: string, end: string, projectId: string, description: string) =>
+		value(core.entries.create({ projectId, description, start, end, timeZone: zone })).id;
+
+	const ids: Record<string, string> = {};
+	const names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+	for (const [n, name] of names.entries()) {
+		const date = at(lastMonday, n);
+		ids[`${name}Standup`] = entry(`${date}T09:30`, `${date}T09:45`, projectZ, 'Standup');
+		ids[`${name}Development`] = entry(
+			`${date}T10:00`,
+			`${date}T12:00`,
+			projectZ,
+			`Development on ${name}`
+		);
+		ids[`${name}Support`] = entry(
+			`${date}T13:30`,
+			`${date}T${n === 1 ? '15:00' : '14:30'}`,
+			support,
+			`Support on ${name}`
+		);
+		if (n === 1 || n === 3)
+			ids[`${name}Evening`] = entry(`${date}T19:30`, `${date}T21:00`, timeKeep, `Evening ${name}`);
+		if (n === 4) ids.fridayReading = entry(`${date}T15:00`, `${date}T16:00`, timeKeep, 'Reading');
+	}
+	ids.late = entry(
+		`${at(lastMonday, 1)}T23:00`,
+		`${at(lastMonday, 2)}T01:00`,
+		timeKeep,
+		'Late fix for the sync bug'
+	);
+	ids.overlap = entry(
+		`${at(lastMonday, 2)}T10:30`,
+		`${at(lastMonday, 2)}T11:30`,
+		timeKeep,
+		'Looked into the overlap warning'
+	);
+
+	return {
+		...user,
+		today,
+		thisMonday,
+		lastMonday,
+		/** Last week's day `n` (0 is Monday), `YYYY-MM-DD`. */
+		lastWeekDay: (n: number) => at(lastMonday, n),
+		projects: { projectZ, support, timeKeep },
+		entries: ids
+	};
+}
+
+export type CalendarWeek = Awaited<ReturnType<typeof seedCalendarWeek>>;
+
 /** A description with a comma, a quote and a line break, which must stay one value. */
 export const QUOTED = 'Met Anna, said "ship it"\nthen left';
 
@@ -351,6 +431,19 @@ export function startElsewhere(
 	).id;
 }
 
+/** An entry from one local `YYYY-MM-DDTHH:mm` to another, across days if need be. */
+export function seedSpan(
+	userId: string,
+	zone: string,
+	projectId: string,
+	start: string,
+	end: string,
+	description: string
+) {
+	return value(asUi(userId).entries.create({ projectId, start, end, timeZone: zone, description }))
+		.id;
+}
+
 /** Deletes an entry the way another device would. */
 export function deleteElsewhere(userId: string, entryId: string) {
 	value(asUi(userId).entries.delete({ id: entryId }));
@@ -430,7 +523,7 @@ export const seedActivity = (userId: string, name: string) =>
 export const seedLocation = (userId: string, name: string) =>
 	value(asUi(userId).locations.create({ name })).id;
 
-/** A finished entry today in `zone`, from `start` to `end` (`HH:mm`). */
+/** A finished entry on `date` (today when absent) in `zone`, from `start` to `end` (`HH:mm`). */
 export const seedEntry = (
 	userId: string,
 	zone: string,
@@ -440,14 +533,15 @@ export const seedEntry = (
 		end: string;
 		description: string;
 		activityId?: string;
+		date?: string;
 	}
 ) =>
 	value(
 		asUi(userId).entries.create({
 			projectId: input.projectId,
 			...(input.activityId === undefined ? {} : { activityId: input.activityId }),
-			start: `${dateIn(zone)}T${input.start}`,
-			end: `${dateIn(zone)}T${input.end}`,
+			start: `${input.date ?? dateIn(zone)}T${input.start}`,
+			end: `${input.date ?? dateIn(zone)}T${input.end}`,
 			timeZone: zone,
 			description: input.description
 		})

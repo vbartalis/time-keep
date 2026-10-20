@@ -2,6 +2,7 @@ import { colourOf } from '#lib/project-colour.js';
 import {
 	durationText,
 	endAfter,
+	minutesBetween,
 	readClock,
 	readDate,
 	readDuration,
@@ -359,7 +360,7 @@ export function previousEnd(
 
 /**
  * The new-entry form for the page's query: `copy=<id>` holds every field of that entry;
- * `template=<id>` is filled from it; `date` and `start` set those (read forgivingly,
+ * `template=<id>` is filled from it; `date`, `start` and `end` (with a start) set those (read forgivingly,
  * dropped when unreadable). `timer=1` starts now, today in `zone`, with no end, the
  * template's times ignored. Null when the entry or template to copy is gone.
  */
@@ -378,18 +379,32 @@ export function newEntryValues(
 	const timer = query.get('timer') === '1';
 	const date = readDate(query.get('date') ?? '', here.date);
 	const start = readClock(query.get('start') ?? '');
+	const end = readClock(query.get('end') ?? '');
+	// An end needs a start; one not after it falls on the next day.
+	const withEnd = (v: EntryFormValues): EntryFormValues =>
+		start.ok && end.ok
+			? {
+					...v,
+					start: start.value,
+					end: end.value,
+					duration: durationText(minutesBetween(start.value, end.value)),
+					endDays: end.value <= start.value ? 1 : 0
+				}
+			: v;
 	const base = timer
 		? newValues({ date: here.date, zone, start: here.time })
-		: newValues({
-				date: date.ok ? date.value : here.date,
-				zone,
-				...(start.ok ? { start: start.value } : {})
-			});
+		: withEnd(
+				newValues({
+					date: date.ok ? date.value : here.date,
+					zone,
+					...(start.ok ? { start: start.value } : {})
+				})
+			);
 	const templateId = query.get('template');
 	if (templateId === null) return base;
 	const t = core.templates.get({ id: templateId });
 	if (!t.ok) return null;
-	if (!timer) return templateValues(t.value, base);
+	if (!timer) return withEnd(templateValues(t.value, base));
 	return {
 		...templateValues(t.value, base),
 		date: base.date,

@@ -88,6 +88,9 @@ async function offenders(page: Page) {
 
 const screens = (u: Month) => [
 	'/',
+	'/calendar',
+	'/calendar?view=day',
+	'/calendar?view=month',
 	'/entries',
 	`/entries/${u.entries.login}`,
 	'/copy-out',

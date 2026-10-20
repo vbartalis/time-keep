@@ -982,7 +982,7 @@ Deferred minors:
   - route tests for `/entries/new` and `/entries/previous-end`;
   - waits on `networkidle` and hard-coded click points.
 
-### 13. Calendar views
+### 13. Calendar views — done 2026-10-20
 
 Day, week and month views of the user's entries, in the manner of a good phone
 calendar: entries as blocks on a time grid, the running timer shown live, a line at
@@ -992,6 +992,137 @@ moved and resized by dragging. Overlaps show as overlaps.
 
 Exit: the usability gate, on a seeded month, reads, creates and corrects a week of
 entries in the calendar on phone and PC.
+
+Done 2026-10-20: a Calendar screen (`/calendar?view=day|week|month&date=`) with day,
+week and month views on the PC and the phone. No core, MCP or database change. What
+was built:
+
+- Pure, browser-safe modules in `src/lib/calendar/`: dates and periods (`dates.ts`),
+  the grid's geometry (`grid.ts`: pieces per day cut at local midnight, lanes,
+  overlaps by the core's rule, day totals, snapping, the half-hour slot, the drag
+  range), and the drag's arithmetic (`drag.ts`: moves by wall-clock days, a 5-minute
+  floor, a move kept inside the period shown).
+- The server shaper `src/lib/server/screens/calendar.ts` (`calendarFor` over
+  `entries.list`, `moveInput`) and the page's `?/move` action: one `entries.update`
+  per drag, the strip's Undo, a stale version refused with "This entry changed
+  elsewhere. The calendar shows it as it is now."
+- Navigation: Calendar after Today in the sidebar; the phone's bottom bar is Today,
+  Calendar (`view=day`), Entries, Templates, More. "+ New entry" and the phone's "+"
+  carry the day in view.
+- The toolbar: ‹ Today ›, the period's title opening a date picker (a month of day
+  links, no JavaScript needed), the totals and Day / Week / Month. One arrangement per
+  layout, each in its visual order; on the phone a short one-line title and one
+  totals line.
+- The day and week grid: all 24 hours, shading before 08:00 and from 20:00, opened at
+  07:00 (earlier for an earlier start, now in view on a period holding now); blocks in
+  their project's colours, text ending on whole lines; overlaps side by side with a
+  red top edge, names wrapped whole; a midnight crossing on every day it covers, "from
+  the previous day" on the next, counted on its start day; the running block growing to
+  now with "now · Running h:mm" and a dashed blue foot; the line at now in the text
+  colour; today in a filled text-colour circle. The phone's week is seven colour-only
+  columns, each a link to its day.
+- The month: on the PC, cells with the day's total, up to four entry lines and "+n
+  more", the ISO week and its total, outside days shaded; on the phone, cells with the
+  total and a dot per project, then the chosen day's list.
+- Keys `←`/`k`, `→`/`j`, `t`, `d`, `w`, `m`; a horizontal swipe in all three views.
+- Creating: on the PC a click makes the hour from the half hour, a drag the range
+  snapped to 5 minutes; on the phone's day a tap makes a block with round handles
+  stepping 15 minutes and a bar with Cancel and New entry. All open item 12's form.
+- Moving and resizing by drag on the PC, snapped to 5 minutes, with a lifted block, a
+  dashed outline where it was and a landing tag; handles only where an entry really
+  starts and ends; Escape cancels; one release is one update and one undo.
+- Durations are exact and truncated to the minute, as everywhere else. Blocks and month
+  lines name their day for assistive technology; today carries `aria-current="date"`.
+  The page refetches when the date rolls over with it open.
+- The seed (`scripts/seed-month.ts`) gains a second overlap and a second midnight
+  crossing in last week; `e2e/seed.ts` gains `seedCalendarWeek`.
+
+Records: spec `docs/superpowers/specs/2026-10-20-calendar-views-design.md`, plan
+`docs/superpowers/plans/2026-10-20-calendar-views.md`. `docs/app.md` and `PRODUCT.md`
+are updated. `DESIGN.md`, `.impeccable/design.json` (the new `shade` token, the
+Calendar components, the Text-Colour Marks rule) were updated by impeccable's
+documenter; the shell's surface brief is resolved. No new decision record.
+
+Checks:
+
+- 924 unit tests and 280 browser tests (56 skipped); check and lint clean.
+- impeccable's critique and audit found 0 P0, 1 P1, 4 P2 and 6 P3; all were fixed (one
+  in part: see the builder's calls), reviewed and re-reviewed.
+- The final whole-branch review found 2 Important (rounded durations; blocks not naming
+  their day); both were fixed with five of its Minors and re-reviewed.
+
+Calls made in the operator's place, the stand-in's: spec calls 1–14a and 30–31, as
+recorded in the spec (sources and confidence there). From the build's critique:
+
+- **The phone month's chosen day is ringed in the text colour, not blue.** Source: the
+  spec ("Red or blue used for anything but …" rejected), DESIGN.md's One Blue Rule.
+  Confidence: inferred.
+- **The phone toolbar follows `ph-day`:** a short one-line title, one totals line, no
+  week-number line on the phone. Source: the spec's toolbar, the `ph-day` mockup,
+  operator's voice 2026-10-18 (the phone for quick access). Confidence: inferred.
+- **The critique's fix pass took every finding.** Source: the roadmap (small and in
+  scope is fixed in the item), operator's voice 2026-10-19. Confidence: inferred.
+
+The builder's, from the design session: spec calls 15–29.
+
+The builder's, from the build:
+
+- The scroll on open counts only pieces that hold an entry's real start; a
+  continuation from 00:00 does not pull the grid to midnight.
+- The toolbar renders its controls once per layout, each in its visual order, since
+  one DOM order cannot match both and CSS order breaks the focus order.
+- While a new block is pending on the phone, a swipe drops it and does not change the
+  day; any tap elsewhere drops it too.
+- Short blocks are laid out by their drawn height, so back-to-back short entries sit
+  side by side; a block sharing its column is drawn tall enough for its whole name.
+- On the phone's day, a block grows toward 44 px only into free time before the next
+  one (a running block never); a short block right before another stays shorter, and
+  WCAG 2.5.8 holds by its spacing exception. A hard 44 px floor would push full-width
+  day blocks side by side.
+- The lifted block has the popover-down shadow and a project-colour edge, not a blue
+  ring.
+- A drag-create floors its start to the 5 minutes under the press.
+- A new `shade` token (light `#f2f3f5`, dark `#323438`) shades the grid's off hours and
+  the month's outside days, a step away from the border in both themes.
+- The single-character keys (`j k t d w m`, and item 12's `n s`) have no off switch, a
+  known exception to WCAG 2.1.4 (level A), kept because the spec asks for them.
+- Tasks 1 and 2 were built and reviewed together.
+- After gate attempt 1 failed (the line at now struck through a young running
+  block's text and a neighbour's, and a narrow lane cut "Running …"), the line runs
+  behind the blocks, whose fills are opaque, with the dot and the gutter tag on top;
+  inside the lane that covers now the line is hidden. In the narrowest lanes the name,
+  then the word give way, so the elapsed time always reads ("R… 0:10").
+
+Questions queued in `docs/questions.md`:
+
+- whether the calendar remembers the last view.
+
+Deferred minors:
+
+- A three-lane PC week at 1440 px breaks names mid-word; they show whole.
+- A grown phone-day block next to another reads longer than its time; its times are in
+  its name and tooltip.
+- The `short` one-line exception also applies on the PC day.
+- The drag tag covers the lifted block near the top of the day.
+- While a move saves, a toolbar navigation goes through and the save returns to the
+  original period.
+- A swallowed click can stay pending if a drag ends with no click event.
+- A press on a block does not focus its link.
+- A PC create drag released over the toolbar or sidebar still opens the form.
+- No auto-scroll at the grid's edges during a drag.
+- `screenKey` treats only `dialog[open]` as a dialog.
+- The toolbar's week total stops ticking when the running entry's day is not in view.
+- A grid newly shown after crossing 1024 px is not scrolled on open.
+- The grid's fit is tied to the shell's bottom bar and a fixed margin.
+- The picker's 44 px cells overflow its panel slightly; `lg:left-24` places it.
+- The phone's tap on an outside-month cell moves to that month.
+- A seconds-only day shows "0:00" rather than "–".
+- The midnight refetch may disturb a pending block or a drag at exactly midnight.
+- Both layouts' DOM is rendered and hydrated.
+- Test gaps: Escape on a create drag, a create drag over another column, swipe in the
+  week and month, the dashed foot and red edge, scroll after an invalidate, a DST day
+  and an end with a template in `calendarFor`, Saturday and Sunday as the seed's
+  today, the Sunday-below-grid drop.
 
 ### 14. The timesheet table
 

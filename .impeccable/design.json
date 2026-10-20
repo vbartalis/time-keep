@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-20T12:00:00+00:00",
+  "generatedAt": "2026-10-20T18:00:00+00:00",
   "title": "Design System: time-keep",
   "extensions": {
     "colorMeta": {
@@ -105,6 +105,23 @@
         "displayName": "Muted",
         "canonical": "#f2f3f5",
         "dark": "#222326",
+        "tonalRamp": [
+          "oklch(0.15 0.003 265)",
+          "oklch(0.26 0.003 265)",
+          "oklch(0.38 0.003 265)",
+          "oklch(0.49 0.003 265)",
+          "oklch(0.61 0.003 265)",
+          "oklch(0.72 0.003 265)",
+          "oklch(0.84 0.003 265)",
+          "oklch(0.95 0.003 265)"
+        ]
+      },
+      "shade": {
+        "role": "neutral",
+        "displayName": "Shade",
+        "canonical": "#f2f3f5",
+        "dark": "#323438",
+        "purpose": "The Calendar's one shading: hours before 08:00 and from 20:00, days outside the month. Equal to muted in light; in dark a step lighter than border, so the hour rules and day dividers still read on it.",
         "tonalRamp": [
           "oklch(0.15 0.003 265)",
           "oklch(0.26 0.003 265)",
@@ -454,7 +471,7 @@
       {
         "name": "popover-down",
         "value": "0 8px 24px rgb(0 0 0 / 0.12)",
-        "purpose": "The PC other-timers list, the start popover, the project picker's list and the entry dialog."
+        "purpose": "The PC other-timers list, the start popover, the project picker's list, the entry dialog, the pinned undo strip, the Calendar's date picker, and a calendar block lifted in a drag."
       },
       {
         "name": "strip-list-down",
@@ -601,6 +618,46 @@
       "description": "The line after every action: Done, the label, an outline Undo.",
       "html": "<div class=\"ds-undo\" role=\"status\"><p><b>Done:</b> Stopped Website.</p><button class=\"ds-undo-btn\">Undo</button></div>",
       "css": ".ds-undo{display:flex;align-items:center;gap:16px;max-width:32rem;padding:8px 8px 8px 14px;border:1px solid var(--border,#e4e5e8);border-radius:4px;background:var(--card,#fff);font:400 0.875rem/1.45 \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif;color:var(--foreground,#1d2025)}.ds-undo p{flex:1;margin:0}.ds-undo-btn{height:36px;padding:0 12px;border:1px solid var(--input,#c8cbd0);border-radius:4px;background:var(--card,#fff);font:600 0.875rem \"Public Sans Variable\",sans-serif;color:inherit;cursor:pointer;transition:background-color 150ms ease-out}.ds-undo-btn:hover{background:var(--accent,#eef0f3)}.ds-undo-btn:focus-visible{outline:none;box-shadow:0 0 0 2px var(--ring,#0b63c9)}"
+    },
+    {
+      "name": "Calendar Block",
+      "kind": "custom",
+      "refersTo": "calendar-block",
+      "description": "An entry on the day and week grid: project fill, 3 px edge, ink text; red top edge for an overlap, dashed blue foot and blue Running for the running block, a one-line short block.",
+      "html": "<div class=\"ds-cal\"><a class=\"ds-blk\" href=\"#\" style=\"top:0;height:74px\"><b>ClientY › ProjectZ</b><span class=\"ds-n\">10:00–12:30</span><span>Refactored the report query</span></a><a class=\"ds-blk ds-ovl\" href=\"#\" style=\"top:80px;height:34px;--edge:var(--project-3,#8c3f9a);--fill:var(--project-3-fill,#ecdfee);--ink:var(--project-3-ink,#4f2456)\"><b>time-keep</b><span class=\"ds-n\">13:30–14:15</span></a><a class=\"ds-blk\" href=\"#\" style=\"top:120px;height:17px;--edge:var(--project-2,#b8680f);--fill:var(--project-2-fill,#f3e6d8);--ink:var(--project-2-ink,#6a3b08)\"><span class=\"ds-one\"><b>CompY › Support</b><span class=\"ds-n\">13:30</span></span></a><a class=\"ds-blk ds-live\" href=\"#\" style=\"top:143px;height:34px\"><b>ClientY › ProjectZ</b><span class=\"ds-n\">14:00–<b class=\"ds-run\">now · Running 0:40</b></span></a></div>",
+      "css": ".ds-cal{position:relative;width:260px;height:180px;background:var(--card,#fff);font:400 0.75rem/15px \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif}.ds-blk{--edge:var(--project-1,#1a7f95);--fill:var(--project-1-fill,#dcecef);--ink:var(--project-1-ink,#0d4552);position:absolute;left:1px;right:1px;box-sizing:border-box;overflow:hidden;padding:2px 6px 0;border-left:3px solid var(--edge);border-radius:2px;background:var(--fill);color:var(--ink);text-decoration:none;outline:none}.ds-blk b{font-weight:600}.ds-blk>span,.ds-blk>b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ds-blk:hover{filter:brightness(0.97)}.ds-blk:focus-visible{z-index:3;box-shadow:0 0 0 2px var(--ring,#0b63c9)}.ds-ovl{border-top:2px solid var(--destructive,#c4291c)}.ds-live{border-bottom:2px dashed var(--primary,#0b63c9)}.ds-run{color:var(--primary,#0b63c9);font-weight:600}.ds-one{display:flex!important;gap:6px}.ds-n{font-variant-numeric:tabular-nums}"
+    },
+    {
+      "name": "Line at Now and Today",
+      "kind": "custom",
+      "refersTo": "calendar-now-tag",
+      "description": "Text-colour marks only: today's filled circle in the day head, the 2 px line at now with its dot, and the gutter tag.",
+      "html": "<div class=\"ds-now\"><div class=\"ds-head\"><span class=\"ds-wd\">Tue</span><span class=\"ds-today\">20</span><span class=\"ds-tot\">5:49</span></div><div class=\"ds-body\"><span class=\"ds-tag\">14:24</span><div class=\"ds-line\"></div></div></div>",
+      "css": ".ds-now{width:260px;background:var(--card,#fff);font:400 0.75rem/1.35 \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif;color:var(--foreground,#1d2025);font-variant-numeric:tabular-nums}.ds-head{display:flex;align-items:flex-end;gap:8px;height:54px;padding:0 6px 6px 52px;border-bottom:1px solid var(--input,#c8cbd0);position:relative}.ds-wd{position:absolute;top:8px;left:58px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--muted-foreground,#5d636c)}.ds-today{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;border-radius:9999px;background:var(--foreground,#1d2025);color:var(--background,#f7f7f8);font-size:1.3125rem;font-weight:600;line-height:1}.ds-tot{margin-left:auto;font-size:0.875rem;font-weight:600}.ds-body{position:relative;height:60px}.ds-tag{position:absolute;top:30px;right:calc(100% - 50px);transform:translateY(-50%);padding:1px 4px;border-radius:2px;background:var(--foreground,#1d2025);color:var(--background,#f7f7f8);font-weight:600;line-height:1}.ds-line{position:absolute;top:29px;left:52px;right:0;height:2px;background:var(--foreground,#1d2025)}.ds-line::before{content:'';position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:inherit}"
+    },
+    {
+      "name": "Calendar Toolbar",
+      "kind": "nav",
+      "refersTo": "view-switch",
+      "description": "PC row: arrows and Today, the period title with its muted sub, muted totals with semibold figures, the Day/Week/Month switch (current: accent with a text-colour underline).",
+      "html": "<div class=\"ds-tb\"><button class=\"ds-ob\" aria-label=\"Previous week\">‹</button><button class=\"ds-ob\">Today</button><button class=\"ds-ob\" aria-label=\"Next week\">›</button><span class=\"ds-title\">12–18 October 2026 <small>Week 42</small></span><span class=\"ds-tots\">Week <b>25:15</b></span><span class=\"ds-vs\"><a href=\"#\">Day</a><a href=\"#\" aria-current=\"page\">Week</a><a href=\"#\">Month</a></span></div>",
+      "css": ".ds-tb{display:flex;align-items:center;gap:8px;width:720px;font:400 0.875rem/1.45 \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif;color:var(--foreground,#1d2025);font-variant-numeric:tabular-nums}.ds-ob{height:36px;min-width:36px;padding:0 12px;border:1px solid var(--input,#c8cbd0);border-radius:4px;background:var(--card,#fff);font:600 0.875rem \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif;color:inherit;cursor:pointer;transition:background-color 150ms ease-out}.ds-ob:hover{background:var(--accent,#eef0f3)}.ds-ob:focus-visible{outline:none;box-shadow:0 0 0 2px var(--ring,#0b63c9)}.ds-title{padding:0 8px;font-size:0.9375rem;font-weight:600}.ds-title small{font-size:0.875rem;font-weight:400;color:var(--muted-foreground,#5d636c)}.ds-tots{margin:0 8px 0 auto;color:var(--muted-foreground,#5d636c)}.ds-tots b{font-weight:600;color:var(--foreground,#1d2025)}.ds-vs{display:flex}.ds-vs a{display:flex;align-items:center;height:36px;padding:0 16px;border:1px solid var(--input,#c8cbd0);background:var(--card,#fff);color:inherit;font-weight:600;text-decoration:none;transition:background-color 150ms ease-out}.ds-vs a+a{margin-left:-1px}.ds-vs a:first-child{border-radius:4px 0 0 4px}.ds-vs a:last-child{border-radius:0 4px 4px 0}.ds-vs a:hover{background:var(--accent,#eef0f3)}.ds-vs a[aria-current=page]{background:var(--accent,#eef0f3);box-shadow:inset 0 -2px 0 var(--foreground,#1d2025)}.ds-vs a:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--ring,#0b63c9)}"
+    },
+    {
+      "name": "Phone Month Cell",
+      "kind": "custom",
+      "refersTo": "calendar-today",
+      "description": "The phone month: date (today's filled circle), the day's total, one 6 px dot per project; outside days on shade, the chosen day ringed in the text colour.",
+      "html": "<div class=\"ds-pm\"><a class=\"ds-pc ds-out\" href=\"#\"><span class=\"ds-d\">30</span><span class=\"ds-t\">3:30</span><span class=\"ds-dots\"><i style=\"background:var(--project-1,#1a7f95)\"></i><i style=\"background:var(--project-2,#b8680f)\"></i></span></a><a class=\"ds-pc ds-chosen\" href=\"#\"><span class=\"ds-d\">14</span><span class=\"ds-t\">5:15</span><span class=\"ds-dots\"><i style=\"background:var(--project-1,#1a7f95)\"></i><i style=\"background:var(--project-3,#8c3f9a)\"></i><i style=\"background:var(--project-2,#b8680f)\"></i></span></a><a class=\"ds-pc\" href=\"#\"><span class=\"ds-d ds-tod\">20</span><span class=\"ds-t\"></span><span class=\"ds-dots\"></span></a></div>",
+      "css": ".ds-pm{display:grid;grid-template-columns:repeat(3,52px);gap:4px;background:var(--card,#fff);padding:4px;font:400 0.75rem/1rem \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif;color:var(--foreground,#1d2025);font-variant-numeric:tabular-nums}.ds-pc{display:flex;flex-direction:column;align-items:center;gap:2px;min-height:56px;padding:4px 0;border-radius:4px;color:inherit;text-decoration:none;outline:none}.ds-pc:focus-visible{box-shadow:0 0 0 2px var(--ring,#0b63c9)}.ds-out{background:var(--shade,#f2f3f5);color:var(--muted-foreground,#5d636c)}.ds-chosen{box-shadow:0 0 0 2px var(--foreground,#1d2025)}.ds-d{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:9999px;font-size:0.875rem;font-weight:600;line-height:1}.ds-tod{background:var(--foreground,#1d2025);color:var(--background,#f7f7f8)}.ds-t{height:16px}.ds-dots{display:flex;gap:2px;height:8px}.ds-dots i{width:6px;height:6px;border-radius:50%}"
+    },
+    {
+      "name": "New Block and Create Bar (phone)",
+      "kind": "custom",
+      "refersTo": "calendar-new-block",
+      "description": "A pending new entry: blue 2 px stroke over blue at 10 %, round handles; the create bar with its times, Cancel and the primary New entry.",
+      "html": "<div class=\"ds-nb-wrap\"><div class=\"ds-nb\"><button class=\"ds-nbb\"><span><b>13:00–14:00</b> · 1:00</span><span>New entry</span></button><i class=\"ds-h ds-h1\"></i><i class=\"ds-h ds-h2\"></i></div><div class=\"ds-bar\"><div class=\"ds-bt\"><p class=\"ds-big\">13:00 – 14:00</p><p class=\"ds-hint\">Drag the handles to change it</p></div><button class=\"ds-o\">Cancel</button><button class=\"ds-p\">New entry</button></div></div>",
+      "css": ".ds-nb-wrap{width:390px;background:var(--card,#fff);font:400 0.75rem/15px \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif;color:var(--foreground,#1d2025);font-variant-numeric:tabular-nums}.ds-nb{position:relative;height:55px;margin:16px 1px 24px 41px}.ds-nbb{display:block;width:100%;height:100%;box-sizing:border-box;padding:2px 6px 0;border:2px solid var(--primary,#0b63c9);border-radius:2px;background:color-mix(in oklch,var(--primary,#0b63c9) 10%,transparent);font:inherit;color:inherit;text-align:left;cursor:pointer}.ds-nbb span{display:block}.ds-nbb b{font-weight:600}.ds-nbb:focus-visible{outline:none;box-shadow:0 0 0 1px var(--card,#fff),0 0 0 3px var(--ring,#0b63c9)}.ds-h{position:absolute;width:14px;height:14px;box-sizing:border-box;border:2px solid var(--primary,#0b63c9);border-radius:50%;background:var(--card,#fff)}.ds-h1{top:-7px;right:17px}.ds-h2{bottom:-7px;left:17px}.ds-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid var(--border,#e4e5e8)}.ds-bt{flex:1;min-width:0}.ds-bt p{margin:0}.ds-big{font-size:1.0625rem;line-height:1.35;font-weight:600}.ds-hint{color:var(--muted-foreground,#5d636c);line-height:1.35}.ds-o,.ds-p{height:44px;padding:0 16px;border-radius:4px;font:600 0.9375rem \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background-color 150ms ease-out}.ds-o{border:1px solid var(--input,#c8cbd0);background:var(--card,#fff);color:inherit}.ds-o:hover{background:var(--accent,#eef0f3)}.ds-p{border:1px solid transparent;background:var(--primary,#0b63c9);color:var(--primary-foreground,#fff)}.ds-p:hover{background:color-mix(in oklch,var(--primary,#0b63c9),var(--foreground,#1d2025) 18%)}"
     }
   ],
   "narrative": {
@@ -611,7 +668,7 @@
       "One blue for running and primary; red only for irregular or destructive; neutral greys.",
       "Eight project colours, each with an edge, a tinted fill and a readable ink, assigned by creation order.",
       "Public Sans, tabular figures for every time, date and duration.",
-      "4 px corners (6 px on the entry dialog and sheet), 1 px rules, no shadows except on floating sheets, popovers and the dialog.",
+      "4 px corners (6 px on the entry dialog and sheet), 1 px rules, no shadows except on floating sheets, popovers, the dialog and a calendar block lifted in a drag.",
       "150 ms ease-out colour changes on state only; the elapsed time ticks in place."
     ],
     "rules": [
@@ -627,7 +684,12 @@
       },
       {
         "name": "The Project Ink Rule",
-        "body": "A project is one colour, used identically wherever its time appears. Today the timer dot, the start list, Fill from and the project picker use it; the table dot, calendar block edge and fill, and phone row bar take it as items 12–15 rebuild each screen. No other element borrows a project colour.",
+        "body": "A project is one colour, used identically wherever its time appears. Today the timer dot, the start list, Fill from, the project picker and the Calendar (block edge, fill and ink, month dots, the phone day list's bar) use it; the table dot and the other screens' phone row bars take it as items 14–15 rebuild them. No other element borrows a project colour.",
+        "section": "colors"
+      },
+      {
+        "name": "The Text-Colour Marks Rule",
+        "body": "In the Calendar, what only points is in the text colour: the line at now and its tag, today's circle, the chosen day's ring, a drag's landing tag. Blue and red already mean running and wrong; these marks never borrow them.",
         "section": "colors"
       },
       {
@@ -647,7 +709,7 @@
       },
       {
         "name": "The Floating Only Rule",
-        "body": "A surface at rest has no shadow. Only a sheet, popover or dialog that floats over the page casts one.",
+        "body": "A surface at rest has no shadow. Only a sheet, popover or dialog that floats over the page casts one, and a calendar block only while it is lifted in a drag.",
         "section": "elevation"
       }
     ],
@@ -660,12 +722,14 @@
       "**Do** keep 44 px targets on the phone and the navigation inside thumb reach.",
       "**Do** open an entry's form in place: a dialog on the PC, a sheet on the phone, with Cancel and Save always on screen.",
       "**Do** keep every control at a phone screen's right edge out of the \"+\"'s column.",
-      "**Do** keep motion to 150 ms ease-out colour changes on state, removed under reduced motion."
+      "**Do** keep motion to 150 ms ease-out colour changes on state, removed under reduced motion.",
+      "**Do** mark now, today, the chosen day and a drag's landing in the text colour.",
+      "**Do** draw a calendar block in its project's fill, edge and ink, with red only for an overlap and blue only for running or a new entry."
     ],
     "donts": [
       "**Don't** use blue or red for decoration, headings or icons; red is never the running state.",
       "**Don't** store a project's colour or let anything but a project use the project palette.",
-      "**Don't** give a surface at rest a shadow; only floating sheets, popovers and dialogs cast one.",
+      "**Don't** give a surface at rest a shadow; only floating sheets, popovers and dialogs, and a calendar block while lifted in a drag, cast one.",
       "**Don't** add text sizes beyond 12, 14, 15, 17 and 21 px on working screens.",
       "**Don't** set `caps` as a kicker or eyebrow above a heading.",
       "**Don't** build stat-tile dashboards or put a themed concept over the tool.",

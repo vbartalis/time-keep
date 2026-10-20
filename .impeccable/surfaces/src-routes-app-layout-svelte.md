@@ -127,7 +127,6 @@ measures.
 ## Unresolved
 
 - A chosen colour per project in Setup (now assigned automatically).
-- Item 13 adds Calendar to both navigations.
 - From item 12's critique, left for the operator: the `input` stroke (1.63:1 light,
   1.78:1 dark) is under 3:1 for field boundaries; the header's filled New entry beside
   the start list's filled Start shows two blues.

@@ -610,6 +610,31 @@ describe('newEntryValues', () => {
 			start: ''
 		});
 	});
+	it('reads an end with the start and fills the duration', () => {
+		const { core } = setup();
+		expect(
+			newEntryValues(core, q('date=2026-10-15&start=16:00&end=17:30'), zone, NOW)
+		).toMatchObject({
+			start: '16:00',
+			end: '17:30',
+			duration: '1:30',
+			endDays: 0
+		});
+		expect(newEntryValues(core, q('start=23:00&end=01:00'), zone, NOW)).toMatchObject({
+			end: '01:00',
+			duration: '2:00',
+			endDays: 1
+		});
+	});
+	it('ignores a bad end, and an end without a start', () => {
+		const { core } = setup();
+		expect(newEntryValues(core, q('start=16:00&end=nope'), zone, NOW)).toMatchObject({
+			start: '16:00',
+			end: '',
+			duration: ''
+		});
+		expect(newEntryValues(core, q('end=17:00'), zone, NOW)).toMatchObject({ end: '' });
+	});
 	it('starts a timer now, today in the zone, with no end', () => {
 		const { core } = setup();
 		expect(newEntryValues(core, q('timer=1&date=2026-10-01&start=8'), zone, NOW)).toMatchObject({
