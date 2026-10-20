@@ -1124,7 +1124,7 @@ Deferred minors:
   and an end with a template in `calendarFor`, Saturday and Sunday as the seed's
   today, the Sunday-below-grid drop.
 
-### 14. The timesheet table
+### 14. The timesheet table — done 2026-10-20
 
 Kimai's table view, done better: entries newest first, grouped by day with daily
 totals, the columns that matter on each surface, a row opening the entry form, a row
@@ -1136,6 +1136,171 @@ is decided by item 10's study.
 
 Exit: the usability gate, on a seeded month, finds, reads and reorganises the month's
 entries from the table, on PC and phone.
+
+Done 2026-10-20: Entries (`/entries`) rebuilt as the timesheet table, and the
+Calendar given the same filter. The core's search widened to activity and location
+names (for the agent too); no MCP or database change. What was built:
+
+- A browser-safe filter model in `src/lib/filter/filter.ts`: presets (Today,
+  Yesterday, This week, Last week, This month, Last month, Custom range), their short
+  ISO hints, the scope (customer › project, activity, location, `none`), the address
+  (`range`, `from`, `to`, `customer`, `project`, `activity`, `location`, `q`; `select=1`
+  and `all=1` without JavaScript) and the chips' count.
+- The server shaper `src/lib/server/screens/timesheet.ts`: the range's entries grouped
+  by day (the start date in the entry's start zone), newest first, with day and range
+  totals (exact, truncated to the minute, a running entry ticking to now), capped at
+  the newest 500 with a message, overlaps judged against all entries, a refused read
+  (a search over 200 characters) shown as an error, and the filter's options with
+  archived ones marked.
+- The preset is kept per device in the `entries_range` cookie (400 days); a custom
+  range lasts for the visit.
+- The PC table: a ruled table of day heads ("Tue 2026-10-20", the day's total) and rows
+  (tick box, start, end, hours, Customer › project at a fixed 224 px with its dot,
+  activity, location and reference from 1280 px, description, ▶ Restart and ⋯); "+1"
+  on an entry past midnight; red top edges on overlaps; "Running" in blue. A row click
+  opens item 12's form over the table.
+- The toolbar: Filter (a popover naming the range, with the presets, the scope and
+  a "+n" badge), one live search across customer, project, activity, location,
+  reference and description (`/` focuses it), the count and total; chips under it with
+  Clear filters.
+- The row menu: Restart (disabled with "Already running" on a running row, still
+  reachable by keyboard), Copy, Edit, Delete at once with Undo.
+- Ticking: row boxes, day-head boxes (mixed when some are), shift-click runs; the bulk
+  bar takes the toolbar's place with "n selected · h:mm", the set it acts on, Edit…,
+  Delete, Clear selection. "Edit n entries" sets customer › project, activity,
+  location, reference (or clears it) and finds and replaces in the description, as one
+  batch with one undo; a stale entry is refused in the dialog by name. Ticks clear when
+  the shown set changes and after a done action; ticked rows take the accent fill;
+  focus goes to Undo after an action and back to the head box or Select after a clear.
+- The phone: a list of 64 px rows with the 4 px project bar, a leading ⋯, start over
+  end, the project wrapping to two lines and the duration clear of the "+"; bottom
+  sheets on native `<dialog>` (scrim, Escape, Back) for the filter (each choice applied
+  at once, "Show n entries" closing it), the row menu (headed by its row) and the bulk
+  edit (Cancel and Apply pinned); Select switches ⋯ to tick boxes and hides the "+".
+- Without JavaScript the screen is plain pages: the filter a GET form, row boxes and
+  the bulk bar always shown, Select a link, the row menu a `<details>`. A `js` class set
+  before first paint hides the no-JS-only parts, so nothing moves on hydration.
+- The Calendar's filter (`calendarFor` takes a scope): only matching blocks, every
+  total counting only them with "(filtered)", overlaps still judged against all, the
+  chips under the toolbar, the filter kept by ‹ › Today, the views and the date picker.
+  On the phone Filter is a 44 px icon button and the title has its own row.
+- A `--checkbox` stroke (≥3:1, both themes) for every checkbox in the app; `--input`
+  is unchanged.
+- `e2e/seed.ts` gains `seedMonthEdges`.
+
+Records: spec `docs/superpowers/specs/2026-10-20-timesheet-table-design.md`, plan
+`docs/superpowers/plans/2026-10-20-timesheet-table.md`. `docs/app.md`, `docs/core.md`
+and `docs/mcp.md` are updated; `DESIGN.md` and `.impeccable/design.json` were updated
+by impeccable's documenter. No new decision record. Kimai's weekly hours grid is not
+built (the study rejected it, §4).
+
+Checks:
+
+- 980 unit tests and 317 browser tests; check and lint clean.
+- impeccable's critique and audit found 0 P0, 3 P1, 6 P2 and 3 P3 (and two detector
+  hits on the 4 px project bar, false positives); all were fixed, reviewed and
+  re-reviewed.
+- The final whole-branch review found 1 Important (the no-JS bulk bar shown until
+  hydration, then the table jumping); it was fixed with five of its Minors and
+  re-reviewed.
+
+Calls made in the operator's place, the stand-in's: spec calls 1–25, as recorded in
+the spec (sources and confidence there). From the build's critique:
+
+- **The phone Calendar toolbar:** views, Filter as a 44 px icon button with its count
+  badge, Today in the first row; ‹ title › in their own row. Source: item 13's done
+  note, operator's voice 2026-10-19. Confidence: inferred.
+- **The phone bulk edit sheet pins Cancel and Apply** to its foot, as the filter
+  sheet's foot. Source: spec call 20, the spec's anti-goal (bulk actions out of sight).
+  Confidence: inferred.
+- **Project names read in full:** on the PC a fixed, wider Customer › project column
+  inside the shell's measure; on the phone the project line wraps to two lines.
+  Source: operator's voice 2026-10-18 (the chain lives in the project name), the
+  `pc-table` mockup. Confidence: inferred.
+- **Checkboxes alone get a stroke of at least 3:1;** `--input` stays. Source: the
+  roadmap's deferral of the unchecked box's grey (item 3), `docs/questions.md` (item
+  12). Confidence: inferred.
+- **Ticked rows take the accent fill.** Source: the `pc-selected` and `ph-select`
+  mockups, DESIGN.md's Accent. Confidence: inferred.
+- **Focus after a done action goes to Undo; after a clear to the head box or Select.**
+  Source: vision principle 2, operator's voice 2026-10-18, the spec's menu focus
+  return. Confidence: inferred.
+- **The critique's fix pass took every finding.** Source: item 13's done note, the
+  roadmap, operator's voice 2026-10-19. Confidence: inferred.
+
+The builder's, from the design session: spec calls 26–41.
+
+The builder's, from the build:
+
+- `searchPath` and its test were dropped in task 4, when Entries stopped using it,
+  not in task 3.
+- Round 1's `ChangeForm.svelte` was reshaped into the bulk form from `main`, since an
+  earlier task had deleted it; task 4 deleted it and `EntryTable.svelte` early.
+- An unknown `range` reads as no range (the kept preset, then This month).
+- `any` reads as not set in the scope; the no-JS `scope=` select applies only when
+  neither customer nor project is given; a kept `custom` falls back to This month.
+- The cookie is written on a first visit with no range too (This month).
+- Clear filters keeps the search and the range; the search has its own clear.
+- Live navigation uses SvelteKit's `reset: false` and `replace`, the repo's
+  SvelteKit having deprecated the plan's options.
+- While ticks are up, the bulk bar's set line ("This month · “printer”") stands in
+  for the search (call 18).
+- The page swaps the toolbar for the bulk bar; the bulk form keeps its refusal in the
+  dialog; singular copy "Edit 1 entry", "Apply to 1 entry", "One undo puts it back.";
+  without JavaScript the bulk bar sits under the toolbar and is left out with no rows.
+- Back closes a sheet by cancelling the navigation; with JavaScript only one of the
+  table and the phone list is rendered, by width; the phone's toolbar and row links
+  keep a 56 px right margin clear of the "+".
+- The phone bulk bar's Edit… and Delete are off until a row is ticked.
+- The date picker's browser-test locators were narrowed, since Filter is a `summary`
+  too.
+- The project column is 224 px (Activity and Location each 16 px narrower); the phone
+  presets' hints sit under their names; the phone Calendar's Filter is named "Filter
+  +1 more filters" when on; the no-JS phone Calendar's filter panel hangs under the
+  toolbar over the page; the bulk form's pinned foot applies on the PC dialog too.
+- `components/entries/` stays (Copy-out and Reports still use its filter bar until
+  item 15).
+- The final fix wave took the review's Important and Minors 1, 3, 5, 6 and 7.
+- After gate attempt 1 failed (the bulk bar scrolled out of sight with the toolbar;
+  phone rows cut the activity · location · reference line, hiding every reference),
+  the bulk bar and the chips stay pinned under the header while rows are ticked (PC)
+  or Select is on (phone), with the undo strip inside that band above the bar; the
+  phone row's lines, its description and the bar's set line wrap instead of being
+  cut, and the phone list runs edge to edge. Clear selection and Done focus the head
+  box or Select only when it is in view, else the last-ticked row's control, so the
+  page never jumps.
+
+Questions queued in `docs/questions.md`:
+
+- whether the bulk edit should also move times;
+- whether the screen is called Entries, Timesheet or My times.
+
+Deferred minors:
+
+- The overlap read is unbounded for an open range and compares every pair; a partner
+  lasting past the range's end plus two days can lose a mark.
+- Projects are read three times per Entries load.
+- The project-dot table, the Filter trigger and PhoneList's helpers are duplicated.
+- The Calendar month's "Show n entries" counts the neighbouring months' days.
+- Undo brings a deleted ticked row back ticked.
+- The aria-live count announces every tick change.
+- Without JavaScript `select=1` keeps the toolbar above the bulk bar, and select mode
+  ends after a bulk Delete; a JavaScript user on such an address sees a swap on
+  hydration; with the bundle failing, the no-JS bulk controls are hidden.
+- A tap on a sheet's uncovered background (the safe-area strip) closes it.
+- "01:00+1" on a phone row against "01:00 +1" in its sheet.
+- A phone row's right margin and ⋯ cell do not open the form.
+- Description is about 100 px wide between 1024 and 1279 px.
+- On a refused list read the toolbar still shows "0 entries · 0:00".
+- Focus drops when the last row is unticked while on Edit… or Delete.
+- DESIGN.md's `project-column`, `phone-entry-row` and `sheet-row` tokens have no CSS
+  variable.
+- Test gaps: a refused no-JS Apply and a refused bulk Delete, a stale `delete` and
+  `range=bogus` route tests, the overlap edge's colour, the phone Filter in the focus
+  order, `calendarFor` with an activity, location or `none` scope, and the tick
+  lookup's reuse, the clear focus's fallbacks, the pinned strip on the phone. One
+  flaky run of the phone Calendar's focus-order test was seen.
+- Phone day heads are about 13 px taller in Select, so rows shift slightly at Done.
 
 ### 15. The rest of the screens
 

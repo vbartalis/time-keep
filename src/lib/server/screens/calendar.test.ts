@@ -37,8 +37,10 @@ function setup() {
 	return { core, project, log };
 }
 
+const none = { customer: '', project: '', activity: '', location: '' };
+
 const week = (core: ReturnType<typeof setup>['core'], date = '2026-10-14') =>
-	calendarFor(core, { view: 'week', date, zone, now: NOW });
+	calendarFor(core, { view: 'week', date, zone, now: NOW, scope: none });
 
 describe('calendarFor', () => {
 	it('marks both entries of an overlap', () => {
@@ -53,7 +55,7 @@ describe('calendarFor', () => {
 	it('brings a midnight crossing into the week of the next day, counted on its start day', () => {
 		const { core, log } = setup();
 		log('2026-10-13T23:00', '2026-10-14T01:00');
-		const r = calendarFor(core, { view: 'week', date: '2026-10-14', zone, now: NOW });
+		const r = calendarFor(core, { view: 'week', date: '2026-10-14', zone, now: NOW, scope: none });
 		expect(r.entries).toHaveLength(1);
 		expect(r.totals['2026-10-13']).toBe(120 * MIN);
 		expect(r.entries[0]).toMatchObject({
@@ -61,7 +63,7 @@ describe('calendarFor', () => {
 			startTime: '23:00',
 			endTime: '01:00'
 		});
-		const day = calendarFor(core, { view: 'day', date: '2026-10-14', zone, now: NOW });
+		const day = calendarFor(core, { view: 'day', date: '2026-10-14', zone, now: NOW, scope: none });
 		expect(day.entries).toHaveLength(1);
 	});
 
@@ -69,7 +71,7 @@ describe('calendarFor', () => {
 		const { core, log } = setup();
 		log('2026-09-30T09:00', '2026-09-30T10:00');
 		log('2026-10-02T09:00', '2026-10-02T11:00');
-		const r = calendarFor(core, { view: 'month', date: '2026-10-15', zone, now: NOW });
+		const r = calendarFor(core, { view: 'month', date: '2026-10-15', zone, now: NOW, scope: none });
 		expect(r.days[0]).toBe('2026-09-28');
 		expect(r.totals['2026-09-30']).toBe(60 * MIN);
 		expect(r.periodTotal).toBe(120 * MIN);
@@ -80,7 +82,7 @@ describe('calendarFor', () => {
 		const { core, log } = setup();
 		log('2026-10-12T09:00', '2026-10-12T10:00');
 		log('2026-10-14T09:00', '2026-10-14T11:00');
-		const r = calendarFor(core, { view: 'day', date: '2026-10-14', zone, now: NOW });
+		const r = calendarFor(core, { view: 'day', date: '2026-10-14', zone, now: NOW, scope: none });
 		expect(r.periodTotal).toBe(120 * MIN);
 		expect(r.weekTotal).toBe(180 * MIN);
 		expect(r.entries).toHaveLength(1);
@@ -89,10 +91,16 @@ describe('calendarFor', () => {
 	it('runs a timer to now, from an earlier start', () => {
 		const { core, log } = setup();
 		log('2026-10-20T10:00'); // 08:00 UTC, two hours before NOW
-		const r = calendarFor(core, { view: 'day', date: '2026-10-20', zone, now: NOW });
+		const r = calendarFor(core, { view: 'day', date: '2026-10-20', zone, now: NOW, scope: none });
 		expect(r.entries[0]).toMatchObject({ running: true, endTime: null, endAt: null });
 		expect(r.totals['2026-10-20']).toBe(120 * MIN);
-		const next = calendarFor(core, { view: 'week', date: '2026-10-20', zone, now: NOW });
+		const next = calendarFor(core, {
+			view: 'week',
+			date: '2026-10-20',
+			zone,
+			now: NOW,
+			scope: none
+		});
 		expect(next.entries).toHaveLength(1);
 		expect(next.now).toBe(NOW);
 	});
@@ -102,7 +110,7 @@ describe('calendarFor', () => {
 		log('2026-10-20T09:00', '2026-10-20T09:30');
 		log('2026-10-20T10:00'); // 08:00 UTC
 		const now = NOW + 31_000;
-		const r = calendarFor(core, { view: 'week', date: '2026-10-20', zone, now });
+		const r = calendarFor(core, { view: 'week', date: '2026-10-20', zone, now, scope: none });
 		expect(r.totals['2026-10-20']).toBe(150 * MIN + 31_000);
 		expect(r.periodTotal).toBe(150 * MIN + 31_000);
 		expect(r.weekTotal).toBe(150 * MIN + 31_000);
@@ -135,7 +143,7 @@ describe('calendarFor', () => {
 	it("counts a timer from the previous day on that day, not the day's", () => {
 		const { core, log } = setup();
 		log('2026-10-19T22:00');
-		const r = calendarFor(core, { view: 'day', date: '2026-10-20', zone, now: NOW });
+		const r = calendarFor(core, { view: 'day', date: '2026-10-20', zone, now: NOW, scope: none });
 		expect(r.entries).toHaveLength(1);
 		expect(r.entries[0]).toMatchObject({ running: true, date: '2026-10-19', endTime: null });
 		expect(r.totals['2026-10-20']).toBeUndefined();
@@ -197,5 +205,72 @@ describe('moveInput', () => {
 		expect(moved).toMatchObject({ startZone: zone, endZone: zone });
 		const [shown] = week(core, '2026-10-16').entries;
 		expect(shown).toMatchObject({ date: '2026-10-16', startTime: '14:15', endTime: '15:45' });
+	});
+});
+
+describe('calendarFor with a scope', () => {
+	function two() {
+		const { core, project, log } = setup();
+		const customer = val(core.customers.create({ name: 'Beta' }));
+		const other = val(core.projects.create({ customerId: customer.id, name: 'Site' }));
+		const logOther = (start: string, end: string) =>
+			val(core.entries.create({ projectId: other.id, timeZone: zone, start, end }));
+		return { core, project, other, log, logOther };
+	}
+
+	it('lists only the matching entries and counts only them', () => {
+		const { core, project, log, logOther } = two();
+		const mine = log('2026-10-13T09:00', '2026-10-13T10:00');
+		logOther('2026-10-14T09:00', '2026-10-14T12:00');
+		const r = calendarFor(core, {
+			view: 'week',
+			date: '2026-10-14',
+			zone,
+			now: NOW,
+			scope: { ...none, project: project.id }
+		});
+		expect(r.entries.map((e) => e.id)).toEqual([mine.id]);
+		expect(r.totals).toEqual({ '2026-10-13': 60 * MIN });
+		expect(r.periodTotal).toBe(60 * MIN);
+		expect(r.weekTotal).toBe(60 * MIN);
+		expect(r.filtered).toBe(true);
+		expect(r.scopeQuery).toBe(`project=${project.id}`);
+	});
+
+	it('counts the month and the week from the matching ones only', () => {
+		const { core, other, log, logOther } = two();
+		log('2026-10-02T09:00', '2026-10-02T10:00');
+		logOther('2026-10-14T09:00', '2026-10-14T11:00');
+		const r = calendarFor(core, {
+			view: 'month',
+			date: '2026-10-14',
+			zone,
+			now: NOW,
+			scope: { ...none, project: other.id }
+		});
+		expect(r.periodTotal).toBe(120 * MIN);
+		expect(r.weekTotal).toBe(120 * MIN);
+	});
+
+	it('keeps overlaps from a partner the filter hides (call 38)', () => {
+		const { core, project, log, logOther } = two();
+		const shown = log('2026-10-14T09:00', '2026-10-14T11:00');
+		logOther('2026-10-14T10:00', '2026-10-14T12:00');
+		const r = calendarFor(core, {
+			view: 'week',
+			date: '2026-10-14',
+			zone,
+			now: NOW,
+			scope: { ...none, project: project.id }
+		});
+		expect(r.entries).toHaveLength(1);
+		expect(r.entries[0]).toMatchObject({ id: shown.id, overlaps: true });
+	});
+
+	it('is not filtered with no scope', () => {
+		const { core } = two();
+		const r = week(core);
+		expect(r.filtered).toBe(false);
+		expect(r.scopeQuery).toBe('');
 	});
 });

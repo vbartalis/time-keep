@@ -139,6 +139,13 @@ describe('calendarHref', () => {
 	it('builds the url', () => {
 		expect(calendarHref('week', '2026-10-14')).toBe('/calendar?view=week&date=2026-10-14');
 	});
+
+	it('carries a scope after the date', () => {
+		expect(calendarHref('day', '2026-10-14', 'project=p1&activity=none')).toBe(
+			'/calendar?view=day&date=2026-10-14&project=p1&activity=none'
+		);
+		expect(calendarHref('day', '2026-10-14', '')).toBe('/calendar?view=day&date=2026-10-14');
+	});
 });
 
 describe('hm', () => {

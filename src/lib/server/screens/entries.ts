@@ -113,17 +113,6 @@ export function searchInput(search: Search, zone: string): Record<string, unknow
 	return input;
 }
 
-/** The screen's address for a search, without `all`; the `back` of every action. */
-export function searchPath(search: Search): string {
-	const query = new URLSearchParams({ from: search.from, to: search.to });
-	if (search.customerId !== '') query.set('customerId', search.customerId);
-	if (search.projectId !== '') query.set('projectId', search.projectId);
-	if (search.activity !== 'any') query.set('activity', search.activity);
-	if (search.location !== 'any') query.set('location', search.location);
-	if (search.text !== '') query.set('text', search.text);
-	return `/entries?${query}`;
-}
-
 /** What Change selected sets; `keep` and blank leave a field as it is. */
 export type BulkForm = {
 	projectId: string;

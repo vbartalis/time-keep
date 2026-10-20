@@ -14,6 +14,7 @@ colors:
   accent: "#eef0f3"
   border: "#e4e5e8"
   input: "#c8cbd0"
+  checkbox: "#80858e"
   sidebar: "#262626"
   sidebar-foreground: "#c8c8c8"
   sidebar-primary: "#1b1b1b"
@@ -33,6 +34,7 @@ colors:
   accent-dark: "#26282b"
   border-dark: "#2b2d30"
   input-dark: "#43464b"
+  checkbox-dark: "#73787f"
   sidebar-dark: "#0f0f10"
   sidebar-foreground-dark: "#b4b4b4"
   sidebar-primary-dark: "#1c1d1f"
@@ -141,6 +143,9 @@ spacing:
   topbar-phone: "56px"
   strip-phone: "64px"
   content-max: "72rem"
+  project-column: "224px"
+  phone-entry-row: "64px"
+  sheet-row: "48px"
 components:
   button-primary:
     backgroundColor: "{colors.primary}"
@@ -258,6 +263,67 @@ components:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.foreground}"
     padding: "10px 16px"
+  filter-button:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    padding: "0 12px"
+    height: "44px"
+  filter-button-open:
+    backgroundColor: "{colors.accent}"
+  filter-button-icon:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    size: "44px"
+  filter-count:
+    backgroundColor: "{colors.foreground}"
+    textColor: "{colors.ground}"
+    typography: "{typography.label}"
+    rounded: "9999px"
+    padding: "0 6px"
+    height: "20px"
+  filter-chip:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    padding: "0 0 0 12px"
+    height: "44px"
+  table-day-head:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    typography: "{typography.body-pc}"
+    padding: "8px 12px"
+  table-row-ticked:
+    backgroundColor: "{colors.accent}"
+  phone-entry-row:
+    textColor: "{colors.foreground}"
+    height: "64px"
+  row-menu:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    padding: "4px"
+    width: "208px"
+  bulk-bar:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    padding: "6px 8px"
+  bottom-sheet:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.lg}"
+  sheet-row:
+    textColor: "{colors.foreground}"
+    typography: "{typography.body}"
+    padding: "0 16px"
+    height: "48px"
+  bulk-dialog:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.lg}"
+    width: "620px"
 ---
 
 # Design System: time-keep
@@ -269,7 +335,10 @@ It describes the build on `feat/11-design-direction`, with what item 12
 (`feat/12-entry-and-timer`) added: the entry form opened in place, the timer bar's
 Start and start list, Restart, and "New entry"; and with what item 13 (`feat/13-calendar-views`) added:
 the Calendar, its day, week and month views, its toolbar and date picker, and creating,
-moving and resizing entries on its grid. Where the build differs from the
+moving and resizing entries on its grid; and with what item 14
+(`feat/14-timesheet-table`) added: Entries as a timesheet table grouped by day, its
+Filter and chips (shared with the Calendar), the row menu, ticking rows, the bulk bar
+and bulk edit, the phone's bottom sheets, and the `checkbox` stroke. Where the build differs from the
 direction contract (`.impeccable/surfaces/src-routes-app-layout-svelte.md`), the
 build wins and the difference is noted. Light values are the frontmatter's plain keys;
 dark values carry `-dark`. Dark follows the device setting through
@@ -312,8 +381,10 @@ project colours as the only strong colour.
 - **Kimai Blue** (`primary`; dark `primary-dark`): the running timer (live dot, its
   ring, "Running" labels and running hours, exposed as `live`, and the live square in
   every Stop), the one primary button per form, the shell's one primary action (the PC
-  header's New entry button and the phone's round "+"), the focus ring, the current bottom-bar item, ticked checkboxes, the caret
-  and text selection. In the Calendar it marks the running block (a 2 px dashed foot
+  header's New entry button and the phone's round "+"), the focus ring, the current bottom-bar item, ticked checkboxes (and
+  a mixed one, a day's box with some of its rows ticked, filled blue with a white
+  dash), the caret and text selection. A sheet's one primary action is blue: the
+  filter sheet's "Show n entries" and the bulk form's "Apply to n entries". In the Calendar it marks the running block (a 2 px dashed foot
   at now and its "Running" time in semibold blue; a running entry's start in the
   month) and the pending new entry (a 2 px stroke over blue at 10 %, and the phone's
   round handles), which the create bar's primary New entry commits. On the near-black rail it lifts to **Rail Blue** (`sidebar-ring`)
@@ -326,7 +397,9 @@ project colours as the only strong colour.
   warnings (overlaps, long entries) and as `destructive` for delete, revoke and
   restore and for refusal messages. Destructive buttons and error borders take it at
   60 %. In the Calendar it is an overlapping block's 2 px top edge, the outline round
-  an overlapping month line, and the phone list's "Overlaps another entry".
+  an overlapping month line, and the phone list's "Overlaps another entry". In the
+  timesheet table it is an overlapping row's 2 px top edge (PC and phone), Delete in
+  the row menu and the row sheet, and the bulk bar's Delete.
 
 ### Tertiary: the project palette
 - **Eight project colours** (`project-1` .. `project-8`), each in three parts: the
@@ -351,24 +424,34 @@ project colours as the only strong colour.
 - **Text** (`foreground`): body text and the section-head rule; in the Calendar,
   every mark that only points: the line at now and its tag, today's filled circle, the
   phone month's chosen-day ring, a drag's landing tag and the current view's
-  underline (tags and circles carry `ground` text). **Muted text**
+  underline (tags and circles carry `ground` text); the Filter's count badge
+  (`ground` figures on a text-colour pill, "+2"), the phone day head's rule in the
+  timesheet, and the PC bulk bar's frame (the text colour at 80 %). **Muted text**
   (`muted-foreground`): secondary lines, empty states, column heads.
-- **Muted** (`muted`): the table head band. **Accent** (`accent`): hover fills and
-  selected rows, the current view in the Calendar's switch and the date picker's week
+- **Muted** (`muted`): the table head band. **Accent** (`accent`): hover fills, ticked
+  rows (every ticked row in the timesheet fills with it, PC and phone, so a selection
+  across days reads at a glance), a just-changed row while its undo is offered, an
+  open Filter button, the current view in the Calendar's switch and the date picker's week
   in view. **Shade** (`shade`): the calendar's one shading, the hours before 08:00
   and from 20:00 and the days outside the month; `muted` in light; in dark, where
   `muted` on the surface does not read, a step lighter than `border`, so the hour rules
   and day dividers still read on it (muted text on it 4.7:1).
 - **Border** (`border`): hairlines between lines, the header's bottom rule, the bottom
   bar's top rule. **Input** (`input`): field and outline-button strokes, the rule
-  under a table head, unticked checkboxes, the scrollbar.
+  under a table head, filter chips' outline, the scrollbar.
+- **Checkbox** (`checkbox`; dark `checkbox-dark`): the stroke of every unticked
+  checkbox in the app (Entries, Copy-out, History, Users, Backup), one base rule. It
+  holds 3:1 on the surface and on a shaded or ticked row (light 3.7:1 on the surface,
+  3.3:1 on `accent`; dark 3.8:1 and 3.3:1), where `input` (1.6:1) did not. `input` is
+  unchanged for fields and buttons; only checkboxes take `checkbox`.
 - **The rail** (`sidebar` family): the PC sidebar, the phone top bar and (in its own
   tone) the phone timer strip. Light: `sidebar` is Kimai's #262626. Dark: the rail is
   darker than Kimai's, `sidebar-dark` #0f0f10, near-black on the #141516 dark ground,
   so it still reads as the darkest thing on the screen. `sidebar-primary` fills the
   current item, `sidebar-accent` is hover, `sidebar-border` divides.
 - **Scrim** (black at 40 %, not a token): dims the page under the entry dialog, the
-  entry sheet and the phone start sheet.
+  entry sheet, the phone start sheet, and every bottom sheet and the bulk dialog
+  (filter, row actions, bulk edit).
 - **Strip** (`sidebar-strip`; dark `sidebar-strip-dark`): the phone timer strip's own
   tone, a step off the top bar above it (darker in light, #1c1c1c under #262626; lighter in dark, #18191a
   under #0f0f10), so what is running reads as its own band rather than as the lower
@@ -382,15 +465,17 @@ decoration, never a heading, never an icon tint.
 A running timer is blue, never red.
 
 **The Project Ink Rule.** A project is one colour, used identically wherever its time
-appears. Today the timer dot, the start list, Fill from, the project picker and the
-Calendar (block edge, fill and ink, month dots, the phone day list's bar) use it; the
-table dot and the other screens' phone row bars take it as items 14–15 rebuild them.
-No other element borrows a project colour.
+appears. Today the timer dot, the start list, Fill from, the project picker, the
+Calendar (block edge, fill and ink, month dots, the phone day list's bar) and Entries
+(the table's 8 px dot, the project chip's dot, the phone row's 4 px bar) use it; the
+other screens' tables and phone rows take it as item 15 rebuilds them. No other
+element borrows a project colour.
 
 **The Text-Colour Marks Rule.** In the Calendar, what only points is in the text
 colour: the line at now and its tag, today's circle, the chosen day's ring, a drag's
 landing tag. Blue and red already mean running and wrong; these marks never borrow
-them.
+them. The Filter's count badge is such a mark: it counts, so it is a text-colour pill,
+never blue.
 
 ## Typography
 
@@ -405,13 +490,16 @@ ramp below, not from a second face.
   h1, in the PC header and the phone top bar; the login heading; the date in a
   calendar day column's head (line height 1).
 - **Title** (700, 17 px / `text-lg`, 1.35): the wordmark, the phone strip's elapsed
-  time and the entry form's heading ("New entry", "Edit entry"); at semibold, the
+  time and the entry form's heading ("New entry", "Edit entry") and a sheet's or the
+  bulk dialog's heading ("Filter", "Edit 5 entries"); at semibold, the
   date in a phone week column's head and the phone create bar's times.
 - **Body** (400, 15 px / `text-base`, 1.45): phone body and fields, the More sheet's
-  rows, the PC timer bar's elapsed time (bold), the Calendar's period title
+  rows, the row sheet's items and its semibold head, the phone timesheet row's start
+  and (semibold) duration, the PC timer bar's elapsed time (bold), the Calendar's period title
   (semibold) in its toolbar.
 - **Body PC** (400, 14 px / `text-sm`, 1.45): PC body and fields from 1024 px, buttons,
-  sidebar items, tables, the undo strip; the Calendar's totals (semibold figures) in
+  sidebar items, tables (the timesheet's day heads in semibold figures), the undo
+  strip, filter chips; the Calendar's totals (semibold figures) in
   the toolbar, a day head and the month's week column.
 - **Label** (400, 12 px / `text-xs`, 1.35): meta lines (a timer's "since 09:00"),
   bottom-bar labels, field labels over fields (the phone form, the time row's Start,
@@ -422,7 +510,8 @@ ramp below, not from a second face.
 - **Caps** (`caps`: 600, 12 px, uppercase, 0.04em): column heads, section heads, badges,
   state labels such as "Running", and group heads in a list or a row of choices (the
   start list's "Start a timer", the project picker's customers, the form's "Fill
-  from"), in muted text; the Calendar's weekday heads.
+  from"), in muted text; the Calendar's weekday heads; the phone timesheet's day heads
+  ("MON 2026-10-19") in the text colour.
 - **Figures** (`figures`: tabular numbers): every time, date and duration, so columns
   line up and the running time changes in place. Tables get tabular figures by default.
 
@@ -465,7 +554,36 @@ page behind it is inert.
 
 Regions stack 24 px apart. Controls are 44 px on the phone and 36 px on the PC; table
 cells pad 12 px. The screens inside the shell keep round 1's layouts in the new tokens
-until item 15.
+until item 15, except Entries (item 14) and the Calendar (item 13).
+
+Entries (item 14) stacks 12 px apart: the toolbar, the filter chips while a filter
+other than the range is on, then the table. On the PC the toolbar is one row: Filter
+naming the range, the search (at most 384 px), and at the right the shown count and
+total ("52 entries · 64:15"); once a row is ticked the bulk bar takes the toolbar's
+place, the chips staying under it, and the two stay pinned under the header while the
+page scrolls (an opaque band on the ground, 8 px above the bar and 12 px under the
+chips). The table is a surface panel inside the 72 rem
+measure, `table-fixed`: a 44 px tick column, Start 72, End 80, Hours 64 (right),
+Customer › project fixed at 224 px (`project-column`) so the project never cuts at
+1440 px, Activity 128, Location 112 and Reference 96 (both hidden under 1280 px),
+Description the rest, then 44 px columns for ▶ and ⋯. On the phone the toolbar keeps
+out of the "+"'s column (56 px right padding): Filter taking the free width beside
+Select, the search under them, the count under that; the list runs to the screen's
+edges in day sections (the day heads keep the 16 px margin). While selecting on the
+phone the bulk bar replaces the toolbar and the "+" gives way; the bar is pinned under
+the timer strip as a surface band edge to edge on a `border` rule, above the rows and
+clear of the bottom bar. While the band is up the undo strip rides inside it, over the
+bar, so its Undo stays in view too.
+
+The Calendar's phone toolbar is two rows: the view switch (taking the free width),
+the 44 px icon Filter and Today; then ‹, the title and ›, so the title is never
+squeezed. On the PC Filter sits in its one row.
+
+A bottom sheet rises from the bottom edge at full width, at most 85 % of the dynamic
+viewport tall, with the safe area under it; its head and foot stay put and its body
+scrolls. The bulk form is the same sheet below 1024 px and a centred dialog from
+there (620 px wide at most, the viewport less 32 px; at most the viewport less 64 px
+tall).
 
 The header names the screen with a fixed title. The contract's raise that a view's
 header names the span in view was settled by item 13: the Calendar's header keeps
@@ -491,16 +609,22 @@ start sheet) also dim the page with the 40 % black scrim.
 
 ### Shadow Vocabulary
 - **Sheet up** (`box-shadow: 0 -8px 24px rgb(0 0 0 / 0.12)`): the phone's sheets: More
-  above the bottom bar, the start sheet and the entry sheet.
+  above the bottom bar, the start sheet and the entry sheet; every bottom sheet (the
+  filter sheet, the row sheet, the bulk sheet).
 - **Popover down** (`box-shadow: 0 8px 24px rgb(0 0 0 / 0.12)`): the PC timer bar's
   list of other running timers, the PC start popover, the project picker's list and
   the PC entry dialog, and the undo strip while it is pinned under the bars (scrolled
   past its place at the top of the screen, it stays in view over the page); the
-  Calendar's date picker, and a calendar block lifted in a drag.
+  Calendar's date picker, and a calendar block lifted in a drag; the Filter popover
+  (and the phone Calendar's no-JavaScript filter panel), the row menu, the filter's
+  project list and the PC bulk dialog.
 - **Strip list down** (`box-shadow: 0 8px 24px rgb(0 0 0 / 0.25)`): the phone strip's
   list of other running timers.
 
 ### Named Rules
+An overlapping timesheet row's 2 px red top edge on the PC is drawn with an inset
+`box-shadow` across its cells (a rule, not depth; the phone row uses a border).
+
 **The Floating Only Rule.** A surface at rest has no shadow. Only a sheet, popover or
 dialog that floats over the page casts one, and a calendar block only while it is
 lifted in a drag.
@@ -510,7 +634,10 @@ lifted in a drag.
 Corners are 4 px (`rounded.md`) on buttons, fields, the timer bar, popovers, the undo
 strip and alerts; 2 px (`rounded.sm`) on badges, nav items, list rows and the Stop
 button's live square; 6 px (`rounded.lg`) on the entry dialog and the entry sheet's top
-corners. The phone's "+" is the one full circle among the controls. ▶ (start,
+corners. The phone's "+" is the one full circle among the controls; the Filter's 20 px count
+badge is a full pill. Filter chips, the bulk bar and the row menu take 4 px; bottom
+sheets round their top corners 6 px, the bulk dialog all four. Checkboxes are 18 px
+with 2 px corners. ▶ (start,
 restart) is Lucide's play, filled in its button's text colour.
 Dots are round: the 10 px live dot with a 3 px ring at 25 % (30 % on the rail), the
 8 px project dot. Rules are 1 px: the text colour under a section head, `input` under a
@@ -522,6 +649,10 @@ line at now is 2 px with an 8 px dot; today's date sits in a full circle (32 px 
 PC grid, 28 px on the phone and in the month); the date picker's days are circles
 (36 px, phone 44 px); the phone month's cells have 4 px corners, the chosen one a 2 px
 ring. The phone's new block has 14 px round handles.
+
+In Entries, a phone row carries its project as a 4 px bar the full height of its left
+edge; the phone day head sits on a 1 px text-colour rule; the PC table's rows divide
+on `border` hairlines.
 
 ## Components
 
@@ -542,6 +673,15 @@ Flat, firm, quiet until pressed.
 - **New entry:** the PC header's primary button at the row's end (title "New entry
   (n)"); on the phone a round 56 px primary "+" with a 24 px plus icon, fixed above the
   bottom bar, with no shadow. Both open the entry form in place.
+- **Filter:** an outline button (44 px, PC 36 px, 12 px sides, semibold 14 px): a
+  16 px funnel, the range in view in figures ("This month"), the count badge when other
+  filters are on, and a muted chevron; it fills with accent while open. On Entries'
+  phone toolbar it takes the free width beside Select (its chevron at the right end).
+  On the phone Calendar it is a 44 px icon button: the funnel and the badge, no
+  chevron, "Filter" for screen readers. On the PC Calendar it is the text form without
+  a range. Its name reads "Filter", then the range, then "+2 more filters".
+- **Count badge:** 20 px high, at least 20 px wide, a full pill in the text colour with
+  12 px semibold `ground` figures ("+2"); it counts the filters on besides the range.
 
 ### Chips (badges)
 - **Style:** `caps`, 20 px tall, 2 px corners, a 1 px outline and no fill. A chip never
@@ -549,13 +689,31 @@ Flat, firm, quiet until pressed.
 - **State:** default (text at 70 %, e.g. Admin), outline (`input`), live (blue),
   spent (muted and struck through, e.g. Disabled), destructive (red).
 
+### Filter chips
+The filters on besides the range, one removable chip each, under the toolbar (Entries
+and the PC Calendar). The range has no chip; the Filter button names it.
+- **Style:** surface fill, 1 px `input` stroke, 4 px corners, 14 px text; 44 px tall
+  on the phone, 36 px on the PC. A project chip leads with its 8 px project dot and
+  reads "CompX › CompY – Support"; the others "Activity: Support ticket".
+- **Remove:** a × (14 px icon, muted, the text colour on hover) on a square hit area
+  the chip's height, a link to the address without that filter.
+- **Clear filters:** an in-page link at the row's end (text colour, `input`
+  underline), at the chips' height.
+
 ### Inputs / Fields
 - **Style:** surface fill, 1 px `input` stroke, 4 px corners; 44 px and 15 px text on
   the phone, 36 px and 14 px on the PC. Hover darkens the stroke.
 - **Focus:** the stroke turns blue with a 2 px blue ring at 35 %.
 - **Error / Disabled:** invalid takes a red stroke and a 2 px red ring at 25 %, with
   its reason in red under it (14 px; 12 px in the time row); disabled drops to 50 %
-  opacity. Checkboxes keep a neutral `input` stroke unticked and fill blue when ticked.
+  opacity.
+- **Checkboxes:** 18 px, 2 px corners, a 1 px `checkbox` stroke on the surface
+  unticked; ticked, blue fill and stroke with a white tick; mixed, blue with a white
+  dash. Focus is the 2 px blue outline with a 2 px gap. One base rule styles every
+  checkbox in the app.
+- **Search:** a field with a 16 px muted magnifier at the left, "Search entries"
+  placeholder, a × clear button at the right, and on the PC a muted `/` key hint in a
+  2 px-cornered `input` outline.
 - **Selects and the project picker:** a native select is dressed as a field. The
   project picker is a field with a muted chevron at the right and the chosen project's
   dot inside at the left; typing filters a list below it (surface fill, `input`
@@ -710,11 +868,88 @@ Time laid out as blocks: Kimai's calendar in this system's colours.
 ### Ruled table
 A muted head band of 36 px `caps` column heads in muted text over an `input` rule,
 then lines divided by `border` hairlines that wash with accent at 50 % on hover;
-selected rows fill with accent. Cells pad 12 px. Times, dates and durations are in
+ticked rows fill with accent. Cells pad 12 px. Times, dates and durations are in
 `figures`. A running entry shows "Running" in blue `caps` and blue hours. On the phone
 a table may stack each row. A finished entry's row carries an icon ▶ Restart outside
 the row's link (the PC's last column; on the phone leading the row or under its
 checkbox), and a click on the row opens its form in place.
+
+### Timesheet table (signature)
+Entries, newest first, grouped by day: Kimai's timesheet in this system's ruled table.
+- **PC:** a surface panel with 4 px corners and a `border` stroke holding one ruled
+  table. The muted head band carries the head tick box ("Select all shown"; without
+  JavaScript a "Select all" link) and the `caps` column heads. Each day opens with a
+  head row: its tick box (mixed when some of its rows are), the date ("Mon
+  2026-10-19") and the day's total in semibold figures under Hours. Rows: a tick box,
+  Start, End (a running row's "Running" in blue `caps`; "+1" muted past midnight),
+  Hours (right, blue when running), the project's 8 px dot then the customer in muted
+  text, "›", and the project in the text colour (the whole a link to the form, cut only
+  past 224 px), Activity, Location, Reference, Description (cut with a tooltip), the
+  icon ▶ Restart and the ⋯ menu button (both 36 px, muted). A click anywhere off the
+  controls opens the form in place. Hover washes the row with accent at 50 %; a ticked
+  or just-changed row fills with accent; an overlapping row has a 2 px red top edge.
+- **Phone:** a section per day: the date in `caps` and its total in 14 px semibold
+  figures on a 1 px text-colour rule, then rows of at least 64 px divided by `border`
+  hairlines. A row: the project's 4 px bar at its left edge, a leading 44 px ⋯, start
+  (15 px figures) over end (12 px muted), customer › project in 14 px semibold
+  wrapping to two lines at most (never cut to one), then activity · location ·
+  reference and then the description in 12 px muted text, each wrapping as long as it
+  needs (never cut, so the row says what the entry was; the row grows), and the duration at the
+  right in 15 px semibold figures, all clear of the "+"'s column. The columns: the
+  44 px ⋯, 60 px times (the width of "RUNNING"), the text, the duration, 8 px apart,
+  then 72 px kept clear of the "+" at the screen's edge. A tap opens the form. While
+  selecting, tick boxes take the ⋯'s place and each day head gains one.
+
+### Row menu
+A row's ⋯: Restart (▶ filled), Copy, Edit, a `border` rule, Delete in red, each with a
+14 px Lucide icon. On the PC a 208 px popover under the ⋯, right-aligned (surface,
+`border` stroke, 4 px corners, 4 px padding, popover-down shadow) of 36 px items with
+2 px corners that fill with accent on hover and focus; it follows the menu-button
+pattern (arrows, Home, End; Escape closes it and returns to ⋯). A running row's
+Restart is off at 50 % with "Already running" muted at the right. Without JavaScript it
+is a disclosure. On the phone it is the **row sheet**: a head naming the row (customer
+› project in 15 px semibold over "Mon 2026-10-19 · 13:30–14:30 · Support ticket" in
+12 px muted figures), then the same items as 48 px rows at 15 px, each on a `border`
+rule, Delete in red.
+
+### Bulk bar
+The ticked rows' bar, in the toolbar's place once a box is ticked, pinned under the
+header (the phone: under the timer strip) while the page scrolls, so the count and its
+actions stay in view wherever the ticks are; keyboard focus on a row lands clear of it.
+Without JavaScript it stays in its place. On the PC a surface
+band with 4 px corners and a 1 px frame in the text colour at 80 %: "5 selected · 6:45"
+in semibold figures over the set it acts on ("This month · “printer”", wrapping, never cut) in 12 px muted
+text, outline Edit… (pencil), destructive Delete (trash), and at the right a "Clear
+selection" link. On the phone, no frame: "5 selected" over the total and the set,
+Edit…, Delete and an outline Done, which leaves selecting. With nothing ticked, Edit…
+and Delete are off.
+
+### Bulk edit
+"Edit 5 entries" as a sheet on the phone and a centred dialog from 1024 px (surface,
+6 px corners, popover-down shadow on the PC). A head row with the 17 px bold title
+and a 44 px (PC 36 px) ghost × over a `border` rule; fields on `border`-ruled lines,
+each starting at "Keep as it is" (Customer › project, Activity, Location, Reference
+with a "Clear it" checkbox, Description as Find and Replace with), a 12 px muted note
+("Only what you set changes. One undo puts all 5 back."). The foot is pinned: outline
+Cancel and primary "Apply to 5 entries" on the surface over a `border` rule, two equal
+halves on the phone and right-aligned from 640 px; only the fields scroll. A refusal is
+an alert at the top of the fields naming the entry, with Reload on a conflict.
+
+### Bottom sheet
+How the phone shows a choice over the page: the filter, a row's actions and the bulk
+form. A native modal dialog: surface, a `border` top rule, 6 px top corners, the
+sheet-up shadow, the 40 % black scrim behind it, at most 85 % of the viewport tall. It
+traps focus and returns it to its opener; Escape, a tap on the scrim and the browser's
+Back close it (Back stays on the screen under it). The filter sheet's head is "Filter"
+(17 px bold) with a Clear filters link; every choice applies at once, and its foot's
+full-width primary "Show 52 entries" closes it. The presets sit two to a row, each name
+over its dates, Custom range across both.
+
+### Focus returns
+After an action the focus lands where the next step is, never on the page. A done
+Delete (row menu, row sheet or bulk bar) or bulk Apply moves it to the undo strip's
+Undo. Clear selection returns it to the head tick box (PC); Done returns it to Select
+(phone). A closed sheet, menu or popover returns it to its opener.
 
 ### Section head
 An h2 in `caps` on a 1 px rule in the text colour, with an optional aside on the right
@@ -734,10 +969,11 @@ Surface fill, 1 px `input` stroke, 4 px corners, 14 px. Errors take red at 60 % 
 red text.
 
 ### Screen components carried from round 1
-These keep their structure until item 15, now in the tokens above: the filter bar
-(labels over fields, 1/2/4 columns at phone/640/1280 px, an outline Search and an
-underlined Clear link; Copy-out's primary Show), the selectable ruled table (a 44 px
-checkbox column, a "Select all" link without JavaScript), the change form and the
+These keep their structure until item 15, now in the tokens above: the filter bar on
+Copy-out and Reports (labels over fields, 1/2/4 columns at phone/640/1280 px, an outline
+Search and an underlined Clear link; Copy-out's primary Show; Entries replaced it with
+Filter and chips), the selectable ruled table (a 44 px checkbox column, a "Select all"
+link without JavaScript), the change form and the
 in-page delete confirm (only the confirming button is red; it takes the focus), the
 History list and its change lines, the template form and sheet (Timer marked in blue
 `caps`, Log muted), Setup's indented customer and project list with in-place rename,
@@ -760,6 +996,11 @@ with an `input` underline that darkens on hover; never blue.
 - **Do** keep motion to 150 ms ease-out colour changes on state, removed under reduced motion.
 - **Do** mark now, today, the chosen day and a drag's landing in the text colour.
 - **Do** draw a calendar block in its project's fill, edge and ink, with red only for an overlap and blue only for running or a new entry.
+- **Do** give Customer › project room to read in full: a fixed 224 px column in the PC table, two lines on a phone row.
+- **Do** fill every ticked row with `accent`, not only its box.
+- **Do** show a phone choice over the page as a native modal bottom sheet over the scrim, closed by Escape, the scrim and Back, with its primary action pinned in view.
+- **Do** stroke every checkbox with `checkbox` and keep `input` for fields and buttons.
+- **Do** return focus after an action: to Undo after a done change, to the head tick box or Select after a clear (when in view; else to the last ticked row, never scrolling the page).
 
 ### Don't:
 - **Don't** use blue or red for decoration, headings or icons; red is never the running state.
@@ -769,3 +1010,4 @@ with an `input` underline that darkens on hover; never blue.
 - **Don't** set `caps` as a kicker or eyebrow above a heading.
 - **Don't** build stat-tile dashboards or put a themed concept over the tool.
 - **Don't** add entrance animations.
+- **Don't** cut a project to one line on the phone or let a pinned foot scroll out of a sheet.

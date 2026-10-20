@@ -2,6 +2,10 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
+		<!-- Before the first paint: the script will run, so the no-JS-only parts never show. -->
+		<script>
+			document.documentElement.classList.add('js');
+		</script>
 		<meta
 			name="viewport"
 			content="width=device-width, initial-scale=1, interactive-widget=resizes-content"

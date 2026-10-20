@@ -17,7 +17,7 @@
 	const row = 'flex flex-wrap gap-x-5 gap-y-0';
 	const choice = 'flex h-11 items-center gap-2 text-sm lg:h-9';
 	const box =
-		'size-4.5 rounded-sm border-input align-middle accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring max-lg:size-5';
+		'size-4.5 rounded-sm align-middle accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring max-lg:size-5';
 </script>
 
 <!-- The form says which columns and switches were sent; without it they are the defaults. -->

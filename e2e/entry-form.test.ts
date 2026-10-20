@@ -57,6 +57,17 @@ const startButton = (page: Page) => page.locator('[data-start-list]:visible > su
 const startList = (page: Page) => page.locator('[data-start-list][open]:visible');
 /** The timer the bar shows in full: its time and name, a link to its form. */
 const shown = (page: Page) => bar(page).getByRole('link').first();
+/** Entries' rows: the PC table's, or the phone list's. */
+const entryRows = (page: Page) => page.locator('tbody tr:visible, [data-phone-list] li:visible');
+/** Restarts the row holding `text`: its ▶ on the PC, its ⋯ sheet's Restart on the phone. */
+async function restartRow(page: Page, text: string, where: string) {
+	const row = entryRows(page).filter({ hasText: text }).first();
+	// ▶ is named "Restart <date> <start>, <where>".
+	if (isPc())
+		return row.getByRole('button', { name: new RegExp(`^Restart .*, ${where}$`) }).click();
+	await row.getByRole('button', { name: /^Actions for/ }).click();
+	await page.getByRole('dialog', { name: where }).getByRole('button', { name: 'Restart' }).click();
+}
 /** The Stop of the timer the bar shows in full. */
 const shownStop = (page: Page) => bar(page).locator('[data-shown-stop]');
 
@@ -186,7 +197,7 @@ test('gate 2: an entry corrected over Entries, and undone', async ({ page }) => 
 	await signIn(page, user.username);
 	await open(page, '/entries', 'Entries');
 
-	const row = page.getByRole('row').filter({ hasText: 'Gate task 2' });
+	const row = entryRows(page).filter({ hasText: 'Gate task 2' });
 	await row.getByRole('link').first().click();
 	// The form opens over Entries: the address is the form's, the screen stays under it.
 	await expect(dialog(page, 'Edit entry')).toBeVisible();
@@ -204,13 +215,13 @@ test('gate 2: an entry corrected over Entries, and undone', async ({ page }) => 
 
 	await expect(page.getByRole('heading', { name: 'Entries', level: 1 })).toBeVisible();
 	await expect(page).toHaveURL(/\/entries(\?|$)/);
-	const saved = page.getByRole('row').filter({ hasText: 'Gate task 2' });
+	const saved = entryRows(page).filter({ hasText: 'Gate task 2' });
 	await expect(saved).toContainText('09:30');
 	await expect(saved).toContainText('11:30');
 
 	await done(page).getByRole('button', { name: 'Undo' }).click();
 	await expect(page.getByRole('status').filter({ hasText: 'Undone.' })).toBeVisible();
-	await expect(page.getByRole('row').filter({ hasText: 'Gate task 2' })).toContainText('09:00');
+	await expect(entryRows(page).filter({ hasText: 'Gate task 2' })).toContainText('09:00');
 });
 
 test('a save and its Undo keep the screen where it was scrolled to', async ({ page }) => {
@@ -219,7 +230,7 @@ test('a save and its Undo keep the screen where it was scrolled to', async ({ pa
 	await signIn(page, user.username);
 	await open(page, '/entries', 'Entries');
 
-	const row = () => page.getByRole('row').filter({ hasText: 'Bulk 40' });
+	const row = () => entryRows(page).filter({ hasText: 'Bulk 40' });
 	await row().evaluate((el) => el.scrollIntoView({ block: 'center' }));
 	const scrollY = () => page.evaluate(() => window.scrollY);
 	const rowTop = () => row().evaluate((el) => el.getBoundingClientRect().top);
@@ -266,7 +277,7 @@ test('a row saved just under the bars is not left under the pinned undo strip', 
 	await signIn(page, user.username);
 	await open(page, '/entries', 'Entries');
 
-	const row = page.getByRole('row').filter({ hasText: 'Bulk 40' });
+	const row = entryRows(page).filter({ hasText: 'Bulk 40' });
 	// The row's top just under the sticky bars, where the strip will pin.
 	await row.evaluate((el) => {
 		const bars = document.querySelector('header')?.parentElement?.getBoundingClientRect();
@@ -293,7 +304,7 @@ test('focus moved up the rows after a save is never under the pinned undo strip'
 	await signIn(page, user.username);
 	await open(page, '/entries', 'Entries');
 
-	const row = page.getByRole('row').filter({ hasText: 'Bulk 40' });
+	const row = entryRows(page).filter({ hasText: 'Bulk 40' });
 	await row.evaluate((el) => el.scrollIntoView({ block: 'center' }));
 	await row.getByRole('link').first().click();
 	await expect(dialog(page, 'Edit entry')).toBeVisible();
@@ -309,7 +320,7 @@ test('focus moved up the rows after a save is never under the pinned undo strip'
 		await page.keyboard.press('Shift+Tab');
 		const top = await page.evaluate(() => {
 			const el = document.activeElement;
-			return el?.closest('tbody tr') ? el.getBoundingClientRect().top : null;
+			return el?.closest('tbody tr, [data-phone-list] li') ? el.getBoundingClientRect().top : null;
 		});
 		if (top === null) continue;
 		expect(top).toBeGreaterThanOrEqual((await stripBottom(page)) - 1);
@@ -324,7 +335,7 @@ test('focus in the bars or the form leaves the page under a pinned strip where i
 	await signIn(page, user.username);
 	await open(page, '/entries', 'Entries');
 
-	const row = page.getByRole('row').filter({ hasText: 'Bulk 40' });
+	const row = entryRows(page).filter({ hasText: 'Bulk 40' });
 	await row.evaluate((el) => el.scrollIntoView({ block: 'center' }));
 	await row.getByRole('link').first().click();
 	await expect(dialog(page, 'Edit entry')).toBeVisible();
@@ -409,12 +420,10 @@ test('a new entry from an entry form opened as a page saves the new entry', asyn
 	await expect(done(page)).toContainText('Create entry');
 
 	await open(page, '/entries', 'Entries');
-	await expect(page.getByRole('row').filter({ hasText: 'Made over the page form' })).toContainText(
+	await expect(entryRows(page).filter({ hasText: 'Made over the page form' })).toContainText(
 		'11:30'
 	);
-	await expect(page.getByRole('row').filter({ hasText: 'Edited on its page' })).toContainText(
-		'10:00'
-	);
+	await expect(entryRows(page).filter({ hasText: 'Edited on its page' })).toContainText('10:00');
 });
 
 test('gate 3: start plus duration on the phone, Save always on screen', async ({ page }) => {
@@ -556,7 +565,7 @@ test('the phone "+" covers no control at the top or the end of Today and Entries
 	}
 
 	// With the undo strip showing (Restart and Undo) and a running row.
-	await page.getByRole('button', { name: 'Restart Northwind › Mobile app' }).first().click();
+	await restartRow(page, 'Under the plus', 'Northwind › Mobile app');
 	await expect(done(page).getByRole('button', { name: 'Undo' })).toBeVisible();
 	await check();
 	await done(page).getByRole('button', { name: 'Undo' }).click();
@@ -575,7 +584,7 @@ test('an existing entry opens on the phone without the keyboard, on the PC in it
 	});
 	await signIn(page, user.username);
 	await open(page, '/entries', 'Entries');
-	await page.getByRole('row').filter({ hasText: 'Focus task' }).getByRole('link').first().click();
+	await entryRows(page).filter({ hasText: 'Focus task' }).getByRole('link').first().click();
 	await expect(dialog(page, 'Edit entry')).toBeVisible();
 	const project = page.getByRole('combobox', { name: 'Customer › project' });
 	if (isPc()) {
@@ -694,7 +703,7 @@ test('gate 10: delete, copy and save as template', async ({ page }) => {
 	});
 	await signIn(page, user.username);
 	await open(page, '/entries', 'Entries');
-	const row = () => page.getByRole('row').filter({ hasText: 'Gate task 10' });
+	const row = () => entryRows(page).filter({ hasText: 'Gate task 10' });
 
 	await row().getByRole('link').first().click();
 	// The form opens over Entries: the address is the form's, the screen stays under it.
@@ -836,12 +845,8 @@ test('gate 9: a past entry restarted, and a running one that cannot be', async (
 	await signIn(page, user.username);
 	await open(page, '/entries', 'Entries');
 
-	// Restarted from its row's ▶.
-	await page
-		.getByRole('row')
-		.filter({ hasText: 'Gate task 9' })
-		.getByRole('button', { name: 'Restart Northwind › Mobile app' })
-		.click();
+	// Restarted from its row: ▶ on the PC, the ⋯ sheet on the phone (item 14's call 17).
+	await restartRow(page, 'Gate task 9', 'Northwind › Mobile app');
 	await expect(page.getByRole('heading', { name: 'Entries', level: 1 })).toBeVisible();
 	await expect(page).toHaveURL(/\/entries(\?|$)/);
 	await expect(shown(page)).toContainText('Northwind › Mobile app');
@@ -908,7 +913,7 @@ test('gate 11: the keyboard on the PC', async ({ page }) => {
 	await expect(dialog(page)).toBeHidden();
 	await expect(page.getByRole('heading', { name: 'Entries', level: 1 })).toBeVisible();
 	await expect(done(page)).toContainText('Create entry');
-	await expect(page.getByRole('row').filter({ hasText: 'Northwind › Mobile app' })).toContainText(
+	await expect(entryRows(page).filter({ hasText: 'Northwind › Mobile app' })).toContainText(
 		'10:30'
 	);
 
@@ -933,7 +938,7 @@ test('n and s typed into a field change nothing else', async ({ page }) => {
 	await open(page, '/entries', 'Entries');
 
 	// A screen's own field.
-	const search = page.getByPlaceholder('Reference, description, customer or project');
+	const search = page.getByRole('searchbox', { name: 'Search entries' });
 	await search.focus();
 	await page.keyboard.type('ns');
 	await expect(search).toHaveValue('ns');

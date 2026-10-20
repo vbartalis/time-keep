@@ -1,174 +1,365 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { onMount, tick, untrack } from 'svelte';
+	import { MediaQuery } from 'svelte/reactivity';
 	import { resolve } from '$app/paths';
-	import { onMount } from 'svelte';
+	import { spanText } from '#lib/calendar/grid.js';
+	import { nowTicker } from '#lib/components/calendar/now.svelte.js';
+	import BulkBar from '#lib/components/timesheet/BulkBar.svelte';
+	import BulkDialog from '#lib/components/timesheet/BulkDialog.svelte';
+	import BulkForm from '#lib/components/timesheet/BulkForm.svelte';
+	import DayTable from '#lib/components/timesheet/DayTable.svelte';
+	import FilterChips from '#lib/components/timesheet/FilterChips.svelte';
+	import PhoneList from '#lib/components/timesheet/PhoneList.svelte';
+	import Toolbar from '#lib/components/timesheet/Toolbar.svelte';
 	import UndoStrip from '#lib/components/UndoStrip.svelte';
-	import ChangeForm from '#lib/components/entries/ChangeForm.svelte';
-	import EntryFilters from '#lib/components/entries/EntryFilters.svelte';
-	import EntryTable from '#lib/components/entries/EntryTable.svelte';
-	import type { BulkFailure, DeleteConfirm } from '#lib/components/entries/types.js';
-	import SectionHead from '#lib/components/today/SectionHead.svelte';
-	import { Button } from '#lib/components/ui/button/index.js';
+	import { clearOf } from '#lib/components/focus-clear.js';
+	import { focusUndo } from '#lib/components/timesheet/live.js';
+	import { rowRefusal } from '#lib/components/timesheet/refusal.svelte.js';
+	import { createSelection } from '#lib/components/timesheet/selection.svelte.js';
+	import type { BulkEdit, BulkFailure, Chosen } from '#lib/components/timesheet/types.js';
+	import { afterNavigate, goto } from '$app/navigation';
+	import { filterQuery, rangeLabel, scopeCount, type Scope } from '#lib/filter/filter.js';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
 
-	const failure = $derived(form && 'error' in form ? (form as BulkFailure) : null);
-	const confirm = $derived(form && 'confirm' in form ? (form as DeleteConfirm) : null);
-	// `back` is `/entries?<query>`; actions carry the query so a refusal renders this search.
-	const query = $derived(data.back.slice(data.back.indexOf('?') + 1));
-	const entries = (n: number) => `${n} ${n === 1 ? 'entry' : 'entries'}`;
+	// The server's now until mounted; the device's clock from then on, never behind it.
+	const clock = nowTicker(untrack(() => data.now));
+	const now = $derived(Math.max(clock.now, data.now));
+
+	const running = $derived(
+		data.sheet.days.reduce((n, d) => n + d.rows.filter((r) => r.running).length, 0)
+	);
+	const total = $derived(spanText(data.sheet.totalMs + running * (now - data.now)));
+
+	const entries = resolve('/(app)/entries');
+	/** The table's address with another scope, the range and search kept. */
+	const withScope = (scope: Scope) => `${entries}?${filterQuery({ ...data.filter, ...scope })}`;
+	const clear = $derived(withScope({ customer: '', project: '', activity: '', location: '' }));
+	const clearSearch = $derived(`${entries}?${filterQuery({ ...data.filter, q: '' })}`);
+	const filtered = $derived(scopeCount(data.filter) > 0);
+
+	// A row's refusal belongs to the table it was made on.
+	afterNavigate(() => (rowRefusal.error = null));
 
 	let enhanced = $state(false);
 	onMount(() => (enhanced = true));
+	/** From `lg` the PC's table; below it the phone's list. Without the script both render, CSS shows one. */
+	const wide = new MediaQuery('(min-width: 1024px)', true);
+	const pc = $derived(!enhanced || wide.current);
+	const phone = $derived(!enhanced || !wide.current);
 
-	/** The rows checked: a refused or confirming selection, else every row when `all` asked. */
-	const initial = () => {
-		const shown = new Set(data.entries.map((e) => e.id));
-		const posted = failure?.selected ?? confirm?.chosen.map((c) => c.id);
-		return posted
-			? posted.filter((id) => shown.has(id))
-			: data.entries.filter((e) => e.checked).map((e) => e.id);
-	};
-	// Writable: the checkboxes change it; a new load or action result starts it again.
-	let chosen = $derived<string[]>(initial());
+	/** A refused bulk post, and Edit's chosen entries without the script (the form as a page). */
+	const failure = $derived(form && 'error' in form ? (form as BulkFailure) : null);
+	const edit = $derived(form && 'chosen' in form ? (form as BulkEdit) : null);
+	// `back` is `/entries?<query>`; the actions carry the query so a refusal renders this table.
+	const query = $derived(data.back.slice(data.back.indexOf('?') + 1));
 
-	// Below `lg` the table's head is hidden, so the same select-all sits by the count.
-	const every = $derived(data.entries.length > 0 && chosen.length === data.entries.length);
-	const some = $derived(chosen.length > 0 && !every);
-	function toggleAll(e: Event & { currentTarget: HTMLInputElement }) {
-		chosen = e.currentTarget.checked ? data.entries.map((r) => r.id) : [];
-	}
-
-	let confirmButton = $state<HTMLButtonElement | null>(null);
-	// The confirm step appears under the buttons; take the focus to it.
-	$effect(() => {
-		if (confirm) confirmButton?.focus();
+	const rows = $derived(data.sheet.days.flatMap((d) => d.rows));
+	const byId = $derived(new Map(rows.map((r) => [r.id, r])));
+	const selection = createSelection(() => rows.map((r) => r.id));
+	// Ticked from the start: a refused or edited selection as posted, or every row (`all=1`).
+	untrack(() =>
+		selection.setMany(
+			failure?.selected ?? edit?.chosen.map((c) => c.id) ?? (data.all ? rows.map((r) => r.id) : []),
+			true
+		)
+	);
+	// A new shown set (a filter, the search, the range) clears the ticks (call 19).
+	let shown = untrack(() => data.back);
+	$effect.pre(() => {
+		if (data.back === shown) return;
+		shown = data.back;
+		selection.clear();
 	});
 
+	const ticked = $derived(selection.ids);
+	const tickedTotal = $derived(
+		spanText(
+			ticked.reduce((t, id) => {
+				const r = byId.get(id);
+				return r ? t + (r.endAt ?? now) - r.startAt : t;
+			}, 0)
+		)
+	);
+	const set = $derived(
+		data.filter.q === ''
+			? rangeLabel(data.filter)
+			: `${rangeLabel(data.filter)} · “${data.filter.q}”`
+	);
+	/** The phone's Select: tick boxes in place of ⋯ and the bulk bar in the toolbar's place. */
+	let picking = $state(untrack(() => data.select));
+	const selectMode = $derived(enhanced ? picking : data.select);
+	/** Where a cleared selection was made from: the head's box (PC) or Select (phone). */
+	const origin = () =>
+		[...document.querySelectorAll<HTMLElement>('[data-select-all], [data-select]')].find((el) =>
+			el.checkVisibility()
+		) ?? null;
+	/** `el` is shown and on top at its centre, so focusing it scrolls nothing. */
+	function inView(el: Element): boolean {
+		const r = el.getBoundingClientRect();
+		if (r.width === 0 || r.height === 0) return false;
+		const at = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+		return at !== null && el.contains(at);
+	}
+	/** A row's control (its tick box, or once selecting is over its ⋯) and the day heads' boxes. */
+	const ROW_CONTROL = 'input[type="checkbox"], button[aria-haspopup]';
+	const CONTROLS =
+		'[data-row] input[type="checkbox"], [data-row] button[aria-haspopup], tbody input[type="checkbox"], [data-phone-list] section input[type="checkbox"]';
+	/**
+	 * The ticks cleared (`last` the row last toggled): the focus back where the selecting
+	 * began, the head's box or Select, when it is in view; else the last toggled row's
+	 * control, else the control in view nearest it. The page never scrolls (the band may
+	 * have been pinned a month down).
+	 */
+	async function cleared(last: string | null) {
+		await tick();
+		const from = origin();
+		if (from && inView(from)) return from.focus();
+		const row = last ? document.querySelector(`[data-row="${CSS.escape(last)}"]`) : null;
+		const own = row?.querySelector<HTMLElement>(ROW_CONTROL);
+		if (own && inView(own)) return own.focus({ preventScroll: true });
+		const at = row?.getBoundingClientRect().top ?? innerHeight / 2;
+		const distance = (el: Element) => Math.abs(el.getBoundingClientRect().top - at);
+		const near = [...document.querySelectorAll<HTMLElement>(CONTROLS)]
+			.filter(inView)
+			.sort((a, b) => distance(a) - distance(b))[0];
+		near?.focus({ preventScroll: true });
+	}
+	/** Clear selection (PC): the ticks clear. */
+	function clearTicks() {
+		const last = selection.last;
+		selection.clear();
+		void cleared(last);
+	}
+	/** Done: selecting ends and the ticks clear. */
+	function leave() {
+		const last = selection.last;
+		picking = false;
+		selection.clear();
+		void cleared(last);
+	}
+	/**
+	 * The bar takes the toolbar's place once a box is ticked (PC) or while selecting
+	 * (phone). Without the script both show; the phone's bar only with `select=1`.
+	 */
+	const barUp = $derived(enhanced && (wide.current ? ticked.length > 0 : picking));
+
+	/**
+	 * While the bar is up its band (the bar and the chips under it) is pinned under the
+	 * sticky bars, so the count and the actions stay in view however far down the ticks
+	 * are; keyboard focus on a row lands clear of it.
+	 */
+	let band = $state<HTMLDivElement | null>(null);
+	$effect(() => {
+		const node = band;
+		if (!node || !barUp) return;
+		const clear = (e: FocusEvent) => clearOf(node, e.target);
+		document.addEventListener('focusin', clear);
+		return () => document.removeEventListener('focusin', clear);
+	});
+
+	/** The entries the dialog edits, with the versions shown; null while it is closed. */
+	let editing = $state<Chosen[] | null>(null);
+	const versionOf = (id: string) => failure?.versions[id] ?? String(byId.get(id)?.version ?? '');
+	const openEdit = () => {
+		if (ticked.length > 0) editing = ticked.map((id) => ({ id, version: versionOf(id) }));
+	};
+
+	/**
+	 * A done bulk action: the ticks clear and the table reloads where it was, with the
+	 * strip, whose Undo takes the focus.
+	 */
+	async function done(location: string) {
+		editing = null;
+		selection.clear();
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- the action's own redirect
+		await goto(location, { refreshAll: true, reset: false });
+		await focusUndo(origin);
+	}
+
+	/** The bulk form as a page (no script): Edit's chosen entries, or a refused Apply's. */
+	const onPage = $derived<Chosen[] | null>(
+		edit?.chosen ??
+			(failure?.action === 'apply'
+				? failure.selected.map((id) => ({ id, version: failure.versions[id] ?? '' }))
+				: null)
+	);
+	/** What the table says was refused: a row's post, or a bulk Edit or Delete. */
+	const refusal = $derived(
+		rowRefusal.error
+			? { error: rowRefusal.error, reload: rowRefusal.reload }
+			: failure && failure.action !== 'apply'
+				? { error: failure.error, reload: failure.conflict }
+				: null
+	);
+	/** The strip's flash: a refused action replaces it (the screen shows the refusal). */
+	const strip = $derived(refusal || failure ? null : data.flash);
+	const entryCount = (n: number) => `${n} ${n === 1 ? 'entry' : 'entries'}`;
+
 	const link =
-		'rounded-sm font-medium text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:inline-flex max-lg:min-h-11 max-lg:min-w-11 max-lg:items-center';
+		'inline-flex min-h-11 items-center rounded-sm text-sm font-medium text-foreground underline decoration-input underline-offset-4 outline-none hover:decoration-foreground focus-visible:ring-2 focus-visible:ring-ring lg:min-h-9';
 </script>
 
 <svelte:head><title>Entries · Time Keep</title></svelte:head>
 
-<!-- A refused action replaces the strip: the screen shows the failure, not an older success. -->
-<UndoStrip flash={failure ? null : data.flash} back={data.back} />
+<!-- A refused action replaces the strip: the screen shows the refusal, not an older success. -->
+<!-- While the bulk bar is up the strip rides in its band instead, over the bar (below). -->
+{#if !barUp}
+	<UndoStrip flash={strip} back={data.back} />
+{/if}
+{#if refusal}
+	<div
+		role="alert"
+		class="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-destructive/60 bg-card px-3.5 py-2 text-sm text-destructive"
+	>
+		<p class="min-w-0 flex-1 text-pretty">{refusal.error}</p>
+		{#if refusal.reload}
+			<!-- A full load, so the table shows the entries as they are now. -->
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved by the server -->
+			<a href={data.back} data-sveltekit-reload class={link}>Reload</a>
+		{/if}
+	</div>
+{/if}
 
-<section aria-labelledby="filters-heading">
-	<SectionHead id="filters-heading" title="Filters" />
-	<EntryFilters
-		search={data.search}
-		filters={data.filters}
-		error={data.error}
-		dateError={data.dateError}
-	/>
-</section>
+<!-- Selecting on the phone, the "+" gives way (the shell hides it). While the bar is up the
+     band is sticky under the bars: opaque, its padding taken back by negative margins so
+     nothing below it moves; on the phone a surface band edge to edge on a bottom rule. -->
+<div
+	bind:this={band}
+	class={[
+		'flex flex-col gap-3',
+		barUp &&
+			'sticky top-(--bars-height) z-10 -mt-2 pt-2 max-lg:-mx-4 max-lg:-mb-[calc(0.5rem+1px)] max-lg:border-b max-lg:border-border max-lg:bg-card max-lg:px-4 max-lg:pb-2 lg:-mx-6 lg:-mb-3 lg:bg-background lg:px-6 lg:pb-3'
+	]}
+	data-selecting={selectMode ? '' : undefined}
+	data-bulk-band={barUp ? '' : undefined}
+>
+	{#if barUp}
+		<!-- Pinned with the band, so a row's Delete, Copy or Restart shows its Undo in view. -->
+		<UndoStrip flash={strip} back={data.back} pin={false} />
+	{/if}
+	{#if !barUp}
+		<Toolbar
+			filter={data.filter}
+			options={data.options}
+			hints={data.hints}
+			error={data.error}
+			{clear}
+			count={data.sheet.count}
+			{total}
+			sheet={enhanced && !wide.current}
+			selectHref="{data.back}&select=1"
+			onSelect={enhanced ? () => (picking = true) : undefined}
+		/>
+	{/if}
+	{#if data.error === null && data.sheet.count > 0 && (barUp || !enhanced)}
+		<!-- The no-JS bar is hidden from the first paint when the script will run (`data-nojs`). -->
+		<div
+			class={!enhanced && !data.select ? 'max-lg:hidden' : ''}
+			data-nojs={enhanced ? undefined : ''}
+		>
+			<BulkBar
+				{enhanced}
+				count={ticked.length}
+				total={tickedTotal}
+				{set}
+				back={data.back}
+				{query}
+				onEdit={openEdit}
+				onDone={done}
+				onClear={clearTicks}
+				onLeave={leave}
+			/>
+		</div>
+	{/if}
+	<FilterChips scope={data.filter} options={data.options} href={withScope} />
+</div>
+
+{#if onPage && data.error === null}
+	<section
+		aria-labelledby="bulk-page-title"
+		class="rounded-md border border-border bg-card px-4 lg:px-5"
+	>
+		<h2 id="bulk-page-title" class="pt-3 text-lg font-bold">Edit {entryCount(onPage.length)}</h2>
+		<BulkForm
+			choices={data.choices}
+			chosen={onPage}
+			failure={failure?.action === 'apply' ? failure : null}
+			back={data.back}
+			{query}
+		/>
+		<div class="h-4"></div>
+	</section>
+{/if}
 
 {#if data.error === null}
-	{#if data.entries.length === 0}
-		<div class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border py-3 text-sm">
-			<p class="text-muted-foreground">No entries match.</p>
-			<a href={resolve('/(app)/entries')} class={link}>Clear</a>
+	{#if data.sheet.count === 0}
+		<div class="flex flex-wrap items-center gap-x-4 gap-y-2 border-y border-border py-3 text-sm">
+			{#if data.sheet.error !== null}
+				<!-- The core refused the read (a search over 200 characters): say why, not "no match". -->
+				<p role="alert" class="text-destructive">{data.sheet.error}</p>
+				{#if data.filter.q !== ''}
+					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above -->
+					<a href={clearSearch} class={link}>Clear the search</a>
+				{/if}
+			{:else if data.filter.q !== ''}
+				<p class="text-muted-foreground">No entries match “{data.filter.q}”.</p>
+				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above -->
+				<a href={clearSearch} class={link}>Clear the search</a>
+			{:else}
+				<p class="text-muted-foreground">No entries in this range.</p>
+				{#if filtered}
+					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above -->
+					<a href={clear} class={link}>Clear filters</a>
+				{/if}
+			{/if}
 		</div>
 	{:else}
-		<section aria-labelledby="change-heading">
-			<SectionHead id="change-heading" title="Change selected">
-				{#snippet aside()}
-					{#if enhanced}
-						<p class="text-sm" aria-live="polite">{chosen.length} selected</p>
-					{/if}
-				{/snippet}
-			</SectionHead>
-			<ChangeForm
-				id="bulk"
-				choices={data.choices}
-				{failure}
-				{query}
-				back={data.back}
-				count={chosen.length}
-				{enhanced}
-			/>
-
-			{#if failure}
-				<div
-					role="alert"
-					class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-destructive/60 bg-card px-3.5 py-2 text-sm text-destructive"
-				>
-					<p class="min-w-0 flex-1 text-pretty">{failure.error}</p>
-					{#if failure.conflict}
-						<!-- A full load, so the list shows the entries as they are now. -->
-						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-						<a href={data.back} data-sveltekit-reload class={link}>Reload</a>
-					{/if}
-				</div>
-			{/if}
-
-			{#if confirm}
-				<form
-					method="POST"
-					action="?/confirmDelete&{query}"
-					use:enhance
-					class="mt-4 flex flex-col gap-3 border-y border-border py-3"
-				>
-					<input type="hidden" name="back" value={data.back} />
-					{#each confirm.chosen as c (c.id)}
-						<input type="hidden" name="id" value={c.id} />
-						<input type="hidden" name="version.{c.id}" value={c.version} />
-					{/each}
-					<p class="text-sm text-pretty">Delete {entries(confirm.chosen.length)}?</p>
-					<div class="flex flex-wrap gap-3">
-						<Button
-							bind:ref={confirmButton}
-							type="submit"
-							variant="destructive"
-							class="flex-1 sm:flex-none">Yes, delete them</Button
-						>
-						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-						<Button href={data.back} variant="outline" class="flex-1 sm:flex-none">Keep them</Button
-						>
-					</div>
-				</form>
-			{/if}
-		</section>
-
-		<section aria-labelledby="list-heading">
-			<SectionHead id="list-heading" title="Found">
-				{#snippet aside()}
-					<p class="flex flex-wrap items-baseline justify-end gap-x-4 text-sm">
-						<span>{entries(data.count)}, <span class="figures">{data.total}</span></span>
-						{#if enhanced}
-							<label class="flex items-center gap-2 lg:hidden">
-								<input
-									type="checkbox"
-									class="size-4.5 rounded-sm border-input align-middle accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-									checked={every}
-									indeterminate={some}
-									onchange={toggleAll}
-								/>
-								<span>Select all shown</span>
-							</label>
-						{:else}
-							<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-							<a href="{data.back}&all=1" class={link}>Select all</a>
-						{/if}
-					</p>
-				{/snippet}
-			</SectionHead>
-			{#if data.truncated}
+		<div class="flex flex-col">
+			{#if data.sheet.truncated}
 				<p class="border-b border-border py-2 text-sm text-muted-foreground">
-					Showing the first 500 entries; narrow the filters.
+					Showing the newest 500 entries; narrow the filters.
 				</p>
 			{/if}
-			<EntryTable
-				form="bulk"
-				entries={data.entries}
-				bind:chosen
-				versions={failure?.versions ?? {}}
-				warnings={data.flash?.warnings ?? []}
-				back={data.back}
-				{enhanced}
-			/>
-		</section>
+			{#if pc}
+				<div class="rounded-md border border-border bg-card max-lg:hidden">
+					<DayTable
+						days={data.sheet.days}
+						back={data.back}
+						{now}
+						loadedAt={data.now}
+						warnings={data.flash?.warnings ?? []}
+						{selection}
+						{enhanced}
+						versions={failure?.versions ?? {}}
+					/>
+				</div>
+			{/if}
+			{#if phone}
+				<div class="lg:hidden">
+					<PhoneList
+						days={data.sheet.days}
+						back={data.back}
+						{now}
+						loadedAt={data.now}
+						warnings={data.flash?.warnings ?? []}
+						{selection}
+						{enhanced}
+						selecting={selectMode}
+						versions={failure?.versions ?? {}}
+					/>
+				</div>
+			{/if}
+		</div>
 	{/if}
 {/if}
+
+<BulkDialog
+	chosen={editing}
+	choices={data.choices}
+	back={data.back}
+	{query}
+	onDone={done}
+	onClose={() => (editing = null)}
+/>

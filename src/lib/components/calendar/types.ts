@@ -1,3 +1,5 @@
+import type { FilterOptions } from '#lib/components/timesheet/types.js';
+import type { Scope } from '#lib/filter/filter.js';
 import type { View } from '#lib/calendar/dates.js';
 import type { ZoneSource } from '#lib/server/screens/zone.js';
 import type { Flash } from '#lib/components/today/types.js';
@@ -37,6 +39,14 @@ export type CalendarData = {
 	periodTotal: number;
 	/** Milliseconds in the week holding `date`. */
 	weekTotal: number;
+	/** The filter in the address: Customer › project, Activity, Location. */
+	scope: Scope;
+	/** The scope as a query string, carried by every link to the Calendar. */
+	scopeQuery: string;
+	/** A filter is on: the totals count only the entries shown. */
+	filtered: boolean;
+	/** The filter's choices. */
+	options: FilterOptions;
 	now: number;
 	flash: Flash | null;
 	back: string;

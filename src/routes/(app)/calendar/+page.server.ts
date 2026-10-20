@@ -7,6 +7,8 @@ import { done, text } from '#lib/server/screens/actions.js';
 import { safeBack } from '#lib/server/screens/back.js';
 import { calendarFor, moveInput } from '#lib/server/screens/calendar.js';
 import { setFlash, takeFlash } from '#lib/server/screens/flash.js';
+import { readScope } from '#lib/filter/filter.js';
+import { filterOptions } from '#lib/server/screens/timesheet.js';
 import { formatDate } from '#lib/server/screens/today.js';
 import { ZONE_COOKIE, zoneFor } from '#lib/server/screens/zone.js';
 import type { CalendarData } from '#lib/components/calendar/types.js';
@@ -20,7 +22,8 @@ export const load: PageServerLoad = ({ locals, cookies, url }): CalendarData => 
 	const today = formatDate(now, zone);
 	const { view, date } = readView(url.searchParams, today);
 	return {
-		...calendarFor(core, { view, date, zone, now }),
+		...calendarFor(core, { view, date, zone, now, scope: readScope(url.searchParams) }),
+		options: filterOptions(core, { archived: true }),
 		today,
 		zoneSource: source,
 		flash: takeFlash(cookies),

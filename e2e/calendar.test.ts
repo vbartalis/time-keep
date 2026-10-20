@@ -52,6 +52,11 @@ const user = (name: string): Promise<CalendarWeek> =>
 	seedCalendarWeek(`${test.info().project.name}-cal-${name}`, zone);
 
 const toolbar = (page: Page) => page.getByRole('group', { name: 'Calendar toolbar' });
+/** The date picker's summary (the Filter button is a summary too). */
+const dateSummary = (page: Page) =>
+	toolbar(page)
+		.locator('summary')
+		.filter({ hasNotText: /^\s*Filter/ });
 const main = (page: Page) => page.getByRole('navigation', { name: 'Main' });
 
 /** The address's query, as the toolbar's links make it. */
@@ -154,7 +159,7 @@ test('the picker reaches a day of last month', async ({ page }) => {
 	await signIn(page, u.username);
 	await page.goto('/calendar');
 	const picker = page.getByRole('group', { name: 'Choose a date' });
-	await toolbar(page).locator('summary').click();
+	await dateSummary(page).click();
 	await picker.getByRole('link', { name: 'Previous month' }).click();
 	const last = shift('month', `${u.today.slice(0, 8)}01`, -1).slice(0, 7);
 	await expect(page).toHaveURL(new RegExp(`pick=${last}`));
@@ -217,7 +222,7 @@ test.describe('without JavaScript', () => {
 		await expect(page).toHaveURL(new RegExp(`view=week&date=${u.today}`));
 
 		const picker = page.getByRole('group', { name: 'Choose a date' });
-		await toolbar(page).locator('summary').click();
+		await dateSummary(page).click();
 		await picker.getByRole('link', { name: 'Previous month' }).click();
 		const month = shift('month', `${u.today.slice(0, 8)}01`, -1).slice(0, 7);
 		await picker.getByRole('link', { name: '15', exact: true }).click();
@@ -256,7 +261,7 @@ test('the toolbar’s focus order is its on-screen order', async ({ page }) => {
 	const first = controls.map((c) => c.name.split(/\s+/)[0]);
 	expect(first).toEqual(
 		isPc()
-			? ['Previous', 'Today', 'Next', expect.stringMatching(/\d/), 'Day', 'Week', 'Month']
+			? ['Previous', 'Today', 'Next', expect.stringMatching(/\d/), 'Filter', 'Day', 'Week', 'Month']
 			: ['Day', 'Week', 'Month', 'Today', 'Previous', expect.stringMatching(/\d/), 'Next']
 	);
 	// Rows top to bottom, then left to right within a row (controls whose boxes share
@@ -1301,7 +1306,7 @@ test('the picker shows today; Escape or a click outside closes it, and keys wait
 	await signIn(page, u.username);
 	await openCalendar(page, `/calendar?view=week&date=${u.today}`);
 	const picker = page.getByRole('group', { name: 'Choose a date' });
-	const summary = toolbar(page).locator('summary');
+	const summary = dateSummary(page);
 	await summary.click();
 	await expect(picker).toBeVisible();
 	// Today's date is drawn in the surface colour on its text-colour circle.
@@ -1365,7 +1370,7 @@ test('the phone’s toolbar: a one-line title over the totals, one height from d
 		await expect(toolbar(page).getByText(totals, { exact: true })).toBeVisible();
 		await expect(toolbar(page).getByText(`Week ${isoWeek(date)}`, { exact: true })).toHaveCount(0);
 		// The title and its totals share the arrows' 44 px row.
-		const summary = (await toolbar(page).locator('summary').boundingBox())!;
+		const summary = (await dateSummary(page).boundingBox())!;
 		expect(summary.height).toBeLessThanOrEqual(45);
 		heights.push((await toolbar(page).boundingBox())!.height);
 	}
@@ -1376,6 +1381,51 @@ test('the phone’s toolbar: a one-line title over the totals, one height from d
 		toolbar(page).getByText(`Week ${isoWeek(u.lastMonday)} · 23:45`, { exact: true })
 	).toBeVisible();
 	expect((await toolbar(page).boundingBox())!.height).toBe(heights[0]);
+});
+
+test('the phone’s toolbar: Filter a 44 px icon in the first row, the title its own row, uncut', async ({
+	page
+}) => {
+	test.skip(isPc(), 'the phone’s toolbar');
+	await page.setViewportSize({ width: 390, height: 844 });
+	const u = await user('pbfilter');
+	await signIn(page, u.username);
+	const date = u.lastWeekDay(1);
+	await page.goto(`/calendar?view=day&date=${date}&project=${u.projects.timeKeep}`);
+	await page.waitForLoadState('networkidle');
+
+	const filter = toolbar(page).getByRole('button', { name: /^Filter/ });
+	await expect(filter).toHaveAccessibleName('Filter +1 more filters');
+	const f = (await filter.boundingBox())!;
+	expect(f.width).toBe(44);
+	expect(f.height).toBe(44);
+	const badge = (await filter.getByText('+1').boundingBox())!;
+	expect(badge.x).toBeGreaterThanOrEqual(f.x);
+	expect(badge.x + badge.width).toBeLessThanOrEqual(f.x + f.width);
+
+	// Row 1: the views, Filter and Today; row 2: the arrows round the title.
+	const today = (await toolbar(page)
+		.getByRole('link', { name: 'Today', exact: true })
+		.boundingBox())!;
+	const day = (await toolbar(page).getByRole('link', { name: 'Day', exact: true }).boundingBox())!;
+	const prev = (await toolbar(page).getByRole('link', { name: 'Previous day' }).boundingBox())!;
+	const next = (await toolbar(page).getByRole('link', { name: 'Next day' }).boundingBox())!;
+	expect(Math.abs(f.y - today.y)).toBeLessThan(1);
+	expect(Math.abs(f.y - day.y)).toBeLessThan(1);
+	expect(f.x + f.width).toBeLessThanOrEqual(today.x);
+	expect(prev.y).toBeGreaterThanOrEqual(f.y + f.height);
+
+	// The title and its totals line, "(filtered)" included, read whole between the arrows.
+	const title = toolbar(page).getByText(titleOf('day', date), { exact: true });
+	const sub = toolbar(page).getByText(/^Day \d+:\d{2} · Week \d+:\d{2} \(filtered\)$/);
+	for (const line of [title, sub]) {
+		await expect(line).toBeVisible();
+		expect(await line.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(false);
+	}
+	const summary = (await dateSummary(page).boundingBox())!;
+	expect(summary.x).toBeGreaterThanOrEqual(prev.x + prev.width);
+	expect(summary.x + summary.width).toBeLessThanOrEqual(next.x);
+	expect(summary.width).toBeGreaterThan(200);
 });
 
 test('the phone’s week tag at now fits its gutter', async ({ page }) => {
@@ -1609,4 +1659,146 @@ test('the phone’s month rings its chosen day in the text colour', async ({ pag
 		return [getComputedStyle(el).boxShadow, text];
 	});
 	expect(ring).toContain(text);
+});
+
+// The Calendar's filter.
+
+const filterOpener = (page: Page) =>
+	isPc()
+		? toolbar(page).locator('summary', { hasText: /^\s*Filter/ })
+		: page.getByRole('button', { name: /^Filter/ });
+const filterPanel = (page: Page) =>
+	isPc()
+		? page.getByRole('group', { name: 'Filter' })
+		: page.getByRole('dialog', { name: 'Filter' });
+
+test('filtering on Myself › time-keep: its blocks, the totals, the chip, kept by every link', async ({
+	page
+}) => {
+	const u = await user('filter');
+	await signIn(page, u.username);
+	const view = isPc() ? 'week' : 'day';
+	const date = isPc() ? u.lastMonday : u.lastWeekDay(1);
+	await page.goto(`/calendar?view=${view}&date=${date}`);
+	const View = isPc() ? 'Week' : 'Day';
+	const e = u.entries;
+
+	await test.step('unfiltered: every block, the whole week', async () => {
+		await expect(block(page, View, e.tuesdayStandup)).toHaveCount(1);
+		await expect(toolbar(page).getByText('(filtered)')).toHaveCount(0);
+		await expect(toolbar(page).getByText('Week 23:45', { exact: false })).toBeVisible();
+	});
+
+	await test.step('pick the project: only its blocks, reduced totals, the chip', async () => {
+		await filterOpener(page).click();
+		const scope = filterPanel(page).getByRole('combobox', { name: 'Customer › project' });
+		await scope.fill('time-keep');
+		await scope.press('Enter');
+		await expect(page).toHaveURL(
+			new RegExp(`view=${view}&date=${date}&project=${u.projects.timeKeep}`)
+		);
+		await expect(block(page, View, e.tuesdayStandup)).toHaveCount(0);
+		await expect(block(page, View, e.tuesdayEvening)).toHaveCount(1);
+		// Tuesday: the evening 1:30 and the late fix 2:00 by its start date; the week adds Thursday's
+		// 1:30, Friday's 1:00 and Wednesday's 1:00.
+		await expect(
+			toolbar(page).getByText(
+				isPc() ? 'Week 7:00 (filtered)' : /^Day 3:30 · Week 7:00 \(filtered\)$/
+			)
+		).toBeVisible();
+		await expect(page.getByRole('list', { name: 'Filters' }).getByRole('listitem')).toHaveText([
+			'Myself › time-keep'
+		]);
+		if (isPc()) {
+			// Its partner is filtered out; the block keeps its mark (call 38).
+			await expect(block(page, View, e.overlap)).toHaveAccessibleName(/Overlaps another entry/);
+			await expect(
+				head(page, View, u.lastWeekDay(1)).getByText('3:30', { exact: true })
+			).toBeVisible();
+			await expect(
+				head(page, View, u.lastWeekDay(0)).getByText('0:00', { exact: true })
+			).toBeVisible();
+		}
+	});
+
+	await test.step('the arrows, the views, Today and the picker keep it', async () => {
+		await page.keyboard.press('Escape');
+		const keep = () => expect(query(page).get('project')).toBe(u.projects.timeKeep);
+		await toolbar(page)
+			.getByRole('link', { name: `Previous ${view}` })
+			.click();
+		await expect(page).toHaveURL(new RegExp(`date=${addDays(date, isPc() ? -7 : -1)}`));
+		await keep();
+		await expect(toolbar(page).getByText('(filtered)')).toBeVisible();
+		await expect(page.getByRole('list', { name: 'Filters' })).toBeVisible();
+		await toolbar(page).getByRole('link', { name: 'Month', exact: true }).click();
+		await expect(page).toHaveURL(/view=month/);
+		await keep();
+		await toolbar(page).getByRole('link', { name: 'Today', exact: true }).click();
+		await expect(page).toHaveURL(new RegExp(`date=${u.today}`));
+		await keep();
+		await dateSummary(page).click();
+		const picker = page.getByRole('group', { name: 'Choose a date' });
+		await picker.getByRole('link', { name: '15', exact: true }).click();
+		await expect(page).toHaveURL(/date=\d{4}-\d{2}-15/);
+		await keep();
+		await expect(toolbar(page).getByText('(filtered)')).toBeVisible();
+	});
+
+	await test.step('Clear filters', async () => {
+		await page.getByRole('link', { name: 'Clear filters' }).click();
+		await expect(page).not.toHaveURL(/project=/);
+		await expect(toolbar(page).getByText('(filtered)')).toHaveCount(0);
+		await expect(page.getByRole('list', { name: 'Filters' })).toHaveCount(0);
+	});
+});
+
+test.describe('the filter without JavaScript', () => {
+	test.use({ javaScriptEnabled: false });
+
+	test('on the phone, Filter is a 44 px icon beside Today, never over it', async ({ page }) => {
+		test.skip(isPc(), 'the phone’s toolbar');
+		await page.setViewportSize({ width: 390, height: 844 });
+		const u = await user('fnojsph');
+		await signIn(page, u.username);
+		await page.goto(`/calendar?view=day&date=${u.lastWeekDay(1)}`);
+		const filter = toolbar(page).locator('summary', { hasText: /^\s*Filter/ });
+		const today = toolbar(page).getByRole('link', { name: 'Today', exact: true });
+		const f = (await filter.boundingBox())!;
+		const t = (await today.boundingBox())!;
+		expect(f.width).toBe(44);
+		expect(f.height).toBe(44);
+		expect(f.x + f.width).toBeLessThanOrEqual(t.x);
+		expect(t.x + t.width).toBeLessThanOrEqual(390);
+		// Open, its panel hangs under the toolbar across the screen; Today stays a link to tap.
+		await filter.click();
+		const panel = page.getByRole('group', { name: 'Filter' });
+		await expect(panel.getByRole('button', { name: 'Show' })).toBeVisible();
+		const p = (await panel.boundingBox())!;
+		expect(p.y).toBeGreaterThanOrEqual(f.y + f.height);
+		expect(p.width).toBeGreaterThan(340);
+		await today.click();
+		await expect(page).toHaveURL(new RegExp(`date=${u.today}`));
+	});
+
+	test('the panel is a form: Show applies it, the view and date kept', async ({ page }) => {
+		const u = await user('filter-nojs');
+		await signIn(page, u.username);
+		await page.goto(`/calendar?view=week&date=${u.lastMonday}`);
+		await toolbar(page)
+			.locator('summary', { hasText: /^\s*Filter/ })
+			.click();
+		const panel = page.getByRole('group', { name: 'Filter' });
+		await panel.getByLabel('Customer › project').selectOption({ label: 'time-keep' });
+		await panel.getByRole('button', { name: 'Show' }).click();
+		await expect(page).toHaveURL(
+			new RegExp(`view=week&date=${u.lastMonday}&scope=project%3A${u.projects.timeKeep}`)
+		);
+		// The page's links carry the scope as the address has it.
+		await expect(toolbar(page).getByRole('link', { name: 'Previous week' })).toHaveAttribute(
+			'href',
+			new RegExp(`project=${u.projects.timeKeep}`)
+		);
+		await expect(toolbar(page).getByText('(filtered)')).toBeVisible();
+	});
 });

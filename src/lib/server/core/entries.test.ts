@@ -582,6 +582,17 @@ describe('list filters', () => {
 		expect(ids(listEntries(db, userId, { text: '  ügyfél ' }, NOW))).toEqual([desc.id]);
 	});
 
+	it('finds text in activity and location names', () => {
+		const { db, userId, run, val, mk } = seeded();
+		const support = val(run((w) => createActivity(w, { name: 'Support ticket' })));
+		const cafe = val(run((w) => createLocation(w, { name: 'Café Nero' })));
+		const onActivity = mk({ start: '2026-10-18T11:00Z', activityId: support.id });
+		const atLocation = mk({ start: '2026-10-18T12:00Z', locationId: cafe.id });
+		mk({ start: '2026-10-18T13:00Z' });
+		expect(ids(listEntries(db, userId, { text: 'ticket' }, NOW))).toEqual([onActivity.id]);
+		expect(ids(listEntries(db, userId, { text: 'café' }, NOW))).toEqual([atLocation.id]);
+	});
+
 	it('matches text literally, without LIKE wildcards', () => {
 		const { db, userId, mk } = seeded();
 		mk({ start: '2026-10-18T11:00Z', description: '500 units' });

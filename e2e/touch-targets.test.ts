@@ -92,6 +92,7 @@ const screens = (u: Month) => [
 	'/calendar?view=day',
 	'/calendar?view=month',
 	'/entries',
+	'/entries?select=1',
 	`/entries/${u.entries.login}`,
 	'/copy-out',
 	'/reports',
@@ -131,6 +132,37 @@ test('opened disclosures have 44 px targets', async ({ page }) => {
 		const list = await offenders(page);
 		if (list.length) found[path] = list;
 	}
+	expect(found).toEqual({});
+});
+
+test('the Entries sheets have 44 px targets', async ({ page }) => {
+	await signIn(page, user.username, PASSWORD);
+	await page.goto('/entries');
+	await page.waitForLoadState('networkidle');
+	const found: Record<string, string[]> = {};
+
+	await page.getByRole('button', { name: /^Filter/ }).click();
+	await expect(page.getByRole('dialog', { name: 'Filter' })).toBeVisible();
+	let list = await offenders(page);
+	if (list.length) found['filter sheet'] = list;
+	await page.keyboard.press('Escape');
+
+	await page
+		.getByRole('button', { name: /^Actions for/ })
+		.first()
+		.click();
+	await expect(page.getByRole('dialog')).toBeVisible();
+	list = await offenders(page);
+	if (list.length) found['row sheet'] = list;
+	await page.keyboard.press('Escape');
+
+	await page.getByRole('button', { name: 'Select', exact: true }).click();
+	await page.getByRole('checkbox').first().check();
+	await page.getByRole('button', { name: 'Edit…' }).click();
+	await expect(page.getByRole('dialog', { name: /^Edit \d+ entr/ })).toBeVisible();
+	list = await offenders(page);
+	if (list.length) found['bulk sheet'] = list;
+
 	expect(found).toEqual({});
 });
 

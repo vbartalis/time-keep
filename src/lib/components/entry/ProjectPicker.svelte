@@ -14,13 +14,16 @@
 		projects,
 		value = $bindable(),
 		id,
-		describedby
+		describedby,
+		placeholder
 	}: {
 		projects: PickerProject[];
 		value: string;
 		id: string;
 		/** The refusal's id, when the field is refused. */
 		describedby?: string;
+		/** What no project means here (the bulk form's "Keep as it is"); then none is allowed. */
+		placeholder?: string;
 	} = $props();
 
 	// Whole class names, so Tailwind sees them.
@@ -125,7 +128,7 @@
 			role="combobox"
 			autocomplete="off"
 			aria-autocomplete="list"
-			placeholder="Type a customer or project"
+			placeholder={placeholder ?? 'Type a customer or project'}
 			aria-expanded={open}
 			aria-controls={listId}
 			aria-activedescendant={open && activeId ? `${id}-option-${activeId}` : undefined}
@@ -188,12 +191,12 @@
 	<select
 		{id}
 		name="projectId"
-		required
+		required={placeholder === undefined}
 		class={selectClass}
 		aria-invalid={describedby ? 'true' : undefined}
 		aria-describedby={describedby}
 	>
-		<option value="" selected={value === ''}>Choose a project</option>
+		<option value="" selected={value === ''}>{placeholder ?? 'Choose a project'}</option>
 		{#each matchProjects('', projects) as g (g.customerId)}
 			<optgroup label={g.customerName}>
 				{#each g.projects as p (p.id)}

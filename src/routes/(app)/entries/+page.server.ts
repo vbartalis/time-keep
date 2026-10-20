@@ -1,29 +1,33 @@
 import { fail } from '@sveltejs/kit';
-import type { BulkFailure, Chosen, DeleteConfirm, ListRow } from '#lib/components/entries/types.js';
-import { openCore, type Core, type CoreError, type EntryItem } from '#lib/server/core/index.js';
+import type { BulkEdit, BulkFailure, Chosen } from '#lib/components/timesheet/types.js';
+import type { Timesheet } from '#lib/components/timesheet/types.js';
+import { filterQuery, presetHint, PRESETS, readFilter, type Preset } from '#lib/filter/filter.js';
+import {
+	localParts,
+	openCore,
+	type Core,
+	type CoreError,
+	type EntryItem
+} from '#lib/server/core/index.js';
 import { getDb } from '#lib/server/db/index.js';
 import { requireUser } from '#lib/server/guards.js';
-import { done, formFailure, groupProjects, rows, text } from '#lib/server/screens/actions.js';
+import { done, formFailure, text } from '#lib/server/screens/actions.js';
 import { safeBack } from '#lib/server/screens/back.js';
 import {
 	bulkUpdates,
 	deleteLabel,
 	editLabel,
 	readBulk,
-	readSearch,
 	runBulk,
-	searchFilters,
-	searchInput,
-	searchPath,
 	selection
 } from '#lib/server/screens/entries.js';
 import { takeFlash } from '#lib/server/screens/flash.js';
-import { formatDate, formatHours, formatTime } from '#lib/server/screens/today.js';
+import { filterOptions, timesheetFor } from '#lib/server/screens/timesheet.js';
+import { formatDate, formatTime } from '#lib/server/screens/today.js';
 import { ZONE_COOKIE, zoneFor } from '#lib/server/screens/zone.js';
 import type { Actions, PageServerLoad } from './$types';
 
-/** The most rows the screen lists; the search asks the core for one more to know there are more. */
-const SHOWN = 500;
+const RANGE_COOKIE = 'entries_range';
 
 /** The change form's fields, as the core names them; a message for any other is general. */
 const FIELDS = ['projectId', 'activityId', 'locationId', 'reference', 'description'] as const;
@@ -44,52 +48,45 @@ export const load: PageServerLoad = ({ locals, cookies, url }) => {
 	const now = Date.now();
 	const core = openCore(getDb(), user.id, 'ui', () => now);
 	const { zone } = zoneFor(core, { cookie: cookies.get(ZONE_COOKIE) }, now);
-	const { search, error } = readSearch(url.searchParams, zone, now);
+	const today = localParts(now, zone).date;
+	const { filter, error } = readFilter(url.searchParams, cookies.get(RANGE_COOKIE), today);
 
-	let listed: EntryItem[] = [];
-	let listError: string | null = null;
-	if (error === null) {
-		const r = core.entries.list(searchInput(search, zone));
-		if (r.ok) listed = r.value;
-		else listError = r.error.message;
+	// Kept when the address names a preset (call 37), and on a first visit with neither
+	// address nor cookie, where this month is the choice made. Never for custom, nor
+	// when the range was read from the cookie.
+	const asked = url.searchParams.get('range');
+	const first = asked === null && cookies.get(RANGE_COOKIE) === undefined;
+	if (first || PRESETS.some((p) => p.preset === asked)) {
+		cookies.set(RANGE_COOKIE, filter.range, {
+			path: '/',
+			maxAge: 400 * 24 * 60 * 60,
+			sameSite: 'lax',
+			httpOnly: true
+		});
 	}
-	const truncated = listed.length > SHOWN;
-	const shown = listed.slice(0, SHOWN);
 
-	const entries: ListRow[] = shown.map((e) => ({
-		id: e.id,
-		version: e.version,
-		date: formatDate(e.startAt, e.startZone),
-		in: formatTime(e.startAt, e.startZone),
-		out: e.endAt === null ? null : formatTime(e.endAt, e.endZone ?? e.startZone),
-		hours: formatHours((e.endAt ?? now) - e.startAt),
-		customer: e.customerName,
-		project: e.projectName,
-		activity: e.activityName,
-		location: e.locationName,
-		reference: e.reference,
-		description: e.description,
-		checked: search.all
-	}));
-	const total = shown.reduce((sum, e) => sum + Math.max(0, (e.endAt ?? now) - e.startAt), 0);
+	const sheet: Timesheet =
+		error === null
+			? timesheetFor(core, filter, zone, now)
+			: { days: [], count: 0, totalMs: 0, truncated: false, error: null };
 
 	return {
-		search,
-		error: error ?? listError,
+		filter,
+		error,
 		/** Whether the error belongs to the date fields. */
 		dateError: error !== null,
-		entries,
-		truncated,
-		count: entries.length,
-		total: formatHours(total),
-		filters: searchFilters(core),
-		choices: {
-			projects: groupProjects(rows(core.projects.list())),
-			activities: rows(core.activities.list()).map(({ id, name }) => ({ id, name })),
-			locations: rows(core.locations.list()).map(({ id, name }) => ({ id, name }))
-		},
+		sheet,
+		options: filterOptions(core, { archived: true }),
+		choices: filterOptions(core, { archived: false }),
+		hints: Object.fromEntries(
+			PRESETS.map((p) => [p.preset, presetHint(p.preset, today)])
+		) as Record<Preset, string>,
 		flash: takeFlash(cookies),
-		back: searchPath(search)
+		back: `/entries?${filterQuery(filter)}`,
+		today,
+		now,
+		select: url.searchParams.get('select') === '1',
+		all: url.searchParams.get('all') === '1'
 	};
 };
 
@@ -163,25 +160,24 @@ export const actions: Actions = {
 		return refusal('apply', result.error, entries.get(failedId ?? ''), kept);
 	},
 
-	// The first press only asks, on the page; the confirm form posts to confirmDelete.
-	delete: async ({ request, locals }) => {
+	// Edit without JavaScript: the page opens the bulk form for the ticked entries.
+	edit: async ({ request, locals }) => {
 		const { chosen, kept } = await posted(request, locals);
-		if (chosen.length === 0) return plain('delete', 'Select at least one entry.', kept);
-		const confirm: DeleteConfirm = {
-			action: 'delete',
-			confirm: true,
+		if (chosen.length === 0) return plain('edit', 'Select at least one entry.', kept);
+		return {
+			action: 'edit',
 			chosen: chosen.map((c): Chosen => ({ id: c.id, version: kept.versions[c.id] }))
-		};
-		return confirm;
+		} satisfies BulkEdit;
 	},
 
-	confirmDelete: async ({ request, locals, cookies }) => {
+	// Delete at once; the undo strip is the way back (call 8).
+	delete: async ({ request, locals, cookies }) => {
 		const { core, chosen, kept, back } = await posted(request, locals);
-		if (chosen.length === 0) return plain('confirmDelete', 'Select at least one entry.', kept);
+		if (chosen.length === 0) return plain('delete', 'Select at least one entry.', kept);
 		const inputs = chosen.map(({ id, version }) => ({ id, expectedVersion: version }));
 		const { result, failedId } = runBulk(core, deleteLabel(inputs.length), inputs, 'delete');
 		if (result.ok) done(core, cookies, result, back);
 		const failed = failedId === null ? null : core.entries.get({ id: failedId });
-		return refusal('confirmDelete', result.error, failed?.ok ? failed.value : undefined, kept);
+		return refusal('delete', result.error, failed?.ok ? failed.value : undefined, kept);
 	}
 };

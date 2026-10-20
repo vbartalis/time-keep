@@ -11,7 +11,8 @@
 		date,
 		title,
 		sub,
-		stack = false
+		stack = false,
+		scope = ''
 	}: {
 		view: View;
 		date: string;
@@ -21,6 +22,8 @@
 		sub: string;
 		/** The phone's: the sub-line under the title, the two inside one 44 px row. */
 		stack?: boolean;
+		/** The filter's query, carried by every link. */
+		scope?: string;
 	} = $props();
 
 	const MONTHS = [
@@ -52,7 +55,7 @@
 	const today = $derived(page.data.today as string | undefined);
 
 	const pickHref = (n: number) =>
-		`${calendarHref(view, date)}&pick=${shift('month', first, n).slice(0, 7)}`;
+		`${calendarHref(view, date, scope)}&pick=${shift('month', first, n).slice(0, 7)}`;
 
 	// A <details>, so the panel opens without JavaScript; with it, choosing a day closes it,
 	// and so do Escape (the focus back on the title) and a click outside it.
@@ -124,7 +127,7 @@
 			{/each}
 			{#each days as day (day)}
 				<a
-					href={calendarHref(view, day)}
+					href={calendarHref(view, day, scope)}
 					aria-current={day === date ? 'date' : undefined}
 					aria-label={day === today ? `${Number(day.slice(8))}, today` : undefined}
 					class="flex size-11 items-center justify-center rounded-full text-sm figures outline-none focus-visible:ring-2 focus-visible:ring-ring lg:size-9 {day ===

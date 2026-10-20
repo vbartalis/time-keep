@@ -1,6 +1,7 @@
 import { addDays, periodDays, type View } from '#lib/calendar/dates.js';
 import { dayTotals, localDate, overlapping } from '#lib/calendar/grid.js';
 import type { CalendarData, CalendarEntry } from '#lib/components/calendar/types.js';
+import { matchesScope, scopeCount, scopeQuery, type Scope } from '#lib/filter/filter.js';
 import { colourOf } from '#lib/project-colour.js';
 import type { Core } from '../core/index';
 import { rows, text } from './actions';
@@ -9,12 +10,14 @@ import { formatTime, startOfDay } from './today';
 /**
  * The entries touching a calendar period (and the week holding its date, for the week
  * total), shaped for the Calendar. Midnight crossings and earlier-started timers come in.
+ * Only entries matching `scope` are shown and counted; overlaps are found among every
+ * entry, so a block keeps its mark when its partner is filtered out (call 38).
  */
 export function calendarFor(
 	core: Core,
-	opts: { view: View; date: string; zone: string; now: number }
-): Omit<CalendarData, 'zoneSource' | 'flash' | 'back' | 'today'> {
-	const { view, date, zone, now } = opts;
+	opts: { view: View; date: string; zone: string; now: number; scope: Scope }
+): Omit<CalendarData, 'zoneSource' | 'flash' | 'back' | 'today' | 'options'> {
+	const { view, date, zone, now, scope } = opts;
 	const days = periodDays(view, date);
 	const weekDays = periodDays('week', date);
 	const first = [days[0], weekDays[0]].sort()[0];
@@ -28,10 +31,11 @@ export function calendarFor(
 	);
 	const colours = colourOf(rows(core.projects.list({ includeArchived: true })));
 	const overlaps = overlapping(found);
+	const shown = found.filter((e) => matchesScope(e, scope));
 	// The week's entries are listed for its total only; the grid shows those touching the period.
 	const from = startOfDay(days[0], zone);
 	const to = startOfDay(addDays(days[days.length - 1], 1), zone);
-	const inView = found.filter((e) => e.startAt < to && (e.endAt === null || e.endAt > from));
+	const inView = shown.filter((e) => e.startAt < to && (e.endAt === null || e.endAt > from));
 	const entries: CalendarEntry[] = inView.map((e) => ({
 		id: e.id,
 		version: e.version,
@@ -50,7 +54,7 @@ export function calendarFor(
 		running: e.endAt === null,
 		overlaps: overlaps.has(e.id)
 	}));
-	const minutes = dayTotals(found, zone, now);
+	const minutes = dayTotals(shown, zone, now);
 	const sum = (ds: string[]) => ds.reduce((n, d) => n + (minutes.get(d) ?? 0), 0);
 	const totals: Record<string, number> = {};
 	for (const d of days) if (minutes.has(d)) totals[d] = minutes.get(d)!;
@@ -64,6 +68,9 @@ export function calendarFor(
 		totals,
 		periodTotal: sum(view === 'month' ? days.filter((d) => d.startsWith(month)) : days),
 		weekTotal: sum(weekDays),
+		scope,
+		scopeQuery: scopeQuery(scope),
+		filtered: scopeCount(scope) > 0,
 		now
 	};
 }

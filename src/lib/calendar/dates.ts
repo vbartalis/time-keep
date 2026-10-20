@@ -117,8 +117,9 @@ export function dayName(date: string): string {
 	return `${WEEKDAYS[new Date(toMs(date)).getUTCDay()]} ${d} ${m}`;
 }
 
-export function calendarHref(view: View, date: string): string {
-	return `/calendar?view=${view}&date=${date}`;
+/** The Calendar's address; `scope` is the filter's query (`scopeQuery`), carried along. */
+export function calendarHref(view: View, date: string, scope = ''): string {
+	return `/calendar?view=${view}&date=${date}${scope === '' ? '' : `&${scope}`}`;
 }
 
 /** Minutes as `h:mm`, exact: 1665 is `27:45`. */

@@ -3,12 +3,14 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { calendarHref, periodDays, shift, type View } from '#lib/calendar/dates.js';
 	import { swipe, type Draft } from '#lib/calendar/gestures.svelte.js';
+	import { scopeQuery } from '#lib/filter/filter.js';
 	import { localDate } from '#lib/calendar/grid.js';
 	import CalendarToolbar from '#lib/components/calendar/CalendarToolbar.svelte';
 	import MonthGrid from '#lib/components/calendar/MonthGrid.svelte';
 	import PhoneMonth from '#lib/components/calendar/PhoneMonth.svelte';
 	import TimeGrid from '#lib/components/calendar/TimeGrid.svelte';
 	import { nowTicker } from '#lib/components/calendar/now.svelte.js';
+	import FilterChips from '#lib/components/timesheet/FilterChips.svelte';
 	import UndoStrip from '#lib/components/UndoStrip.svelte';
 	import { screenKey } from '#lib/keys.js';
 	import type { PageProps } from './$types';
@@ -63,7 +65,7 @@
 	let draft = $state<Draft | null>(null);
 
 	// eslint-disable-next-line svelte/no-navigation-without-resolve -- calendarHref builds a /calendar address
-	const go = (view: View, date: string) => goto(calendarHref(view, date));
+	const go = (view: View, date: string) => goto(calendarHref(view, date, data.scopeQuery));
 
 	/** One period back (-1) or on (1). */
 	const move = (n: -1 | 1) => go(data.view, shift(data.view, data.date, n));
@@ -114,6 +116,17 @@
 	periodTotal={live.period}
 	weekTotal={live.week}
 	zoneSource={data.zoneSource}
+	scope={data.scope}
+	scopeQuery={data.scopeQuery}
+	filtered={data.filtered}
+	options={data.options}
+	shown={data.entries.length}
+/>
+
+<FilterChips
+	scope={data.scope}
+	options={data.options}
+	href={(s) => calendarHref(data.view, data.date, scopeQuery(s))}
 />
 
 <UndoStrip flash={data.flash} back={data.back} />
@@ -125,7 +138,8 @@
 		totals: live.totals,
 		date: data.date,
 		today: data.today,
-		back: data.back
+		back: data.back,
+		scope: data.scopeQuery
 	}}
 	<!-- `contents`: the views stay main's own flex items; the swipe hears them through it. -->
 	<div class="contents" {@attach swiped}>
@@ -140,7 +154,8 @@
 		today: data.today,
 		zone: data.zone,
 		now,
-		back: data.back
+		back: data.back,
+		scope: data.scopeQuery
 	}}
 	<!-- The phone's grid and the PC's, drawn to their own measures; one is shown. The phone's
 		cancels most of main's foot: the grid ends at the bottom bar and keeps its own room for

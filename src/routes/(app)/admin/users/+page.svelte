@@ -60,7 +60,7 @@
 				id="create-admin"
 				name="isAdmin"
 				type="checkbox"
-				class="size-4.5 rounded-sm border-input accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				class="size-4.5 rounded-sm accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 			/>
 			<Label for="create-admin">Admin</Label>
 		</div>

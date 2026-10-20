@@ -30,15 +30,17 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/routes/(app)/admin/backup` | The Backup screen (`+page.svelte`, `+page.server.ts`) and its download route (`download/+server.ts`), admin only. |
 | `src/routes/mcp` | `POST /mcp`, the MCP endpoint, outside the signed-in screens (see [mcp.md](mcp.md)). |
 | `src/routes/(app)/` | Signed-in screens: Today (`/`), `calendar`, `entries` and the entry form (`entries/new`, `entries/[id]`), `copy-out` and its CSV route (`copy-out/csv`), `reports`, `account`, `admin/users`, `admin/backup`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell (see Shell). |
-| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`; `edit.ts`: `withCurrent`, `postedValues`), the entry form's values, pickers, input and refusals (`entry-form.ts`: `valuesFromEntry`, `newValues`, `copyValues`, `templateValues`, `formPickers`, `createInput`, `updateInput`, `previousEnd`, `newEntryValues`, `coreFailure`), the bar's start and restart input (`timer-actions.ts`: `startFromTemplateInput`, `restartInput`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries search and bulk change (`entries.ts`: `readSearch`, `searchInput`, `searchFilters`, `searchPath`, `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`), the copy-out's rows and query (`copy-out.ts`: `outputRows`, `readCopyOut`, `copyOutQuery`, `monthRange`, `csvName`, `sheetFor`, and the pieces and options Reports shares: `outputPieces`, `readOptions`, `optionsQuery`), the reports' totals (`reports.ts`: `isoWeek`, `reportTotals`, `readReport`, `reportFor`, `reportQuery`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`), the Calendar's period, pieces and totals (`calendar.ts`: `calendarFor`, `moveInput`). |
-| `src/lib/components/entries/` | The Entries screen's parts: the filter form (shared with Copy-out), the change form, the selectable table. |
+| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`; `edit.ts`: `withCurrent`, `postedValues`), the entry form's values, pickers, input and refusals (`entry-form.ts`: `valuesFromEntry`, `newValues`, `copyValues`, `templateValues`, `formPickers`, `createInput`, `updateInput`, `previousEnd`, `newEntryValues`, `coreFailure`), the bar's start and restart input (`timer-actions.ts`: `startFromTemplateInput`, `restartInput`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries bulk change (`entries.ts`: `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`) and the filter bar's older search that Copy-out and Reports keep (`readSearch`, `searchInput`, `searchFilters`, `searchPath`), the timesheet's list and pickers (`timesheet.ts`: `listInput`, `timesheetFor`, `filterOptions`), the copy-out's rows and query (`copy-out.ts`: `outputRows`, `readCopyOut`, `copyOutQuery`, `monthRange`, `csvName`, `sheetFor`, and the pieces and options Reports shares: `outputPieces`, `readOptions`, `optionsQuery`), the reports' totals (`reports.ts`: `isoWeek`, `reportTotals`, `readReport`, `reportFor`, `reportQuery`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`), the Calendar's period, pieces and totals (`calendar.ts`: `calendarFor`, `moveInput`). |
+| `src/lib/filter/` | The one filter, pure and unit-tested, shared by Entries and the Calendar: `filter.ts` (`PRESETS`, `presetDays`, `presetHint`, `readFilter` with the kept preset, `readScope`, `filterQuery`, `scopeQuery`, `scopeCount`, `rangeLabel`, `matchesScope`). |
+| `src/lib/components/timesheet/` | The Entries screen's parts, and the Filter the Calendar shares: `Toolbar`, `FilterButton`, `FilterPanel` (the PC popover), `FilterSheet` (the phone), `ScopePicker`, `SearchField`, `FilterChips`, `DayTable` (the PC table), `PhoneList`, `RowMenu`, `BulkBar`, `BulkDialog`, `BulkForm`, `Sheet` (a bottom sheet over a native `<dialog>`); `selection.svelte.ts` (ticks, shift runs), `live.ts` (live filtering and in-place posts), `refusal.svelte.ts`, `rows.ts`, `types.ts`. |
+| `src/lib/components/entries/` | `EntryFilters`, round 1's filter bar, kept for Copy-out and Reports until item 15. |
 | `src/lib/components/copy-out/` | The Copy-out screen's parts: the column and option pickers (`OutputFields`), the option pickers alone (`OutputOptions`, shared with Reports), the Copy button and its status (`CopyRows`), the sheet table (`SheetTable`). |
 | `src/lib/components/reports/` | The Reports screen's part: one totals table (`TotalsTable`, a titled section of label and duration rows with a Total row). |
 | `src/lib/components/history/` | The History screen's parts: a batch's line with its changes (`BatchLine`), and the types its load returns. |
 | `src/lib/calendar/` | The Calendar's pure logic, shared by server and browser and unit-tested: `dates.ts` (`readView`, `periodDays`, `shift`, `isoWeek`, `periodTitle`, `dayName`, `calendarHref`, `hm`), `grid.ts` (`localDate`, `localMinutes`, `instantAt`, `piecesOf`, `lanes`, `overlapping`, `dayTotals` in exact ms, `wholeMinutes` and `spanText` truncating a span to whole minutes as every screen does, `snap`, `halfHourSlot`, `dragRange`), `drag.ts` (`dropTimes`, `clampDay`, `keepIn`) and `gestures.svelte.ts` (the `swipe` attachment, `clockOf`). `drawnExtent` and `growInto` are in `src/lib/components/calendar/block.ts`. |
 | `src/lib/components/calendar/` | The Calendar's parts: `CalendarToolbar`, `DatePicker`, `TimeGrid` (day and week), `EntryBlock`, `NewBlock`, `MonthGrid`, `PhoneMonth`; `block.ts` (a block's text and lines), `drag.svelte.ts` (the PC's `BlockDrag`), `now.svelte.ts` (`nowTicker`) and `types.ts`. |
 | `src/lib/keys.ts` | `screenKey`: whether an unmodified key press is the screen's (outside fields, no dialog or open `data-holds-keys` details), shared by the layout and the Calendar. |
-| `src/lib/components/narrowing.svelte.ts` | Customer and project pickers that narrow each other with JavaScript, shared by the template form and the Entries filters. |
+| `src/lib/components/narrowing.svelte.ts` | Customer and project pickers that narrow each other with JavaScript, shared by the template form and Copy-out's and Reports' filter bar. |
 | `src/lib/components/templates/` | The template form shared by the new and edit screens. |
 | `src/lib/components/account/` | The Account screen's Agent access parts: the token list with its revoke confirm (`TokenList`), the shown-once token with its Copy button (`NewToken`). |
 | `src/lib/components/setup/` | The Setup screen's parts: a rename-in-place row, the add lines, the Add project disclosure. |
@@ -47,6 +49,7 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/entry-link.ts` | `openForm` and `openInPlace`: open the entry form over the current screen through shallow routing (`pushState`), or go to its page when it cannot be loaded in place or the form is already shown as a page. |
 | `src/lib/time-input.ts` | The forgiving readers for the form's times, durations and dates (`readClock`, `readDuration`, `readDate`, `durationText`, `minutesBetween`, `endAfter`), pure and shared by the browser script and the server actions. |
 | `src/lib/components/UndoStrip.svelte` | The undo strip every screen shows after an action; posts to `/undo`. |
+| `src/lib/components/focus-clear.ts` | Keeps keyboard focus clear of a band pinned over the page (`scrollsWithPage`, `clearOf`): the undo strip's and the Entries bulk bar's. |
 | `src/routes/(app)/undo/` | The shared `/undo` route: `core.undo`, then back to the screen it came from. |
 | `src/lib/format.ts` | Formatting shared by server and browser: elapsed time, template times, warning text. |
 | `src/lib/output.ts` | The copy-out's columns and writers, shared by server and browser (no server imports): `COLUMNS` and their heads, `formatDuration` (`h:mm` or decimal hours), `safeText` (the formula guard), `toTsv` and `toCsv`. |
@@ -82,8 +85,8 @@ It is the same on every screen; no screen draws its own title or navigation.
   after the timer bar; on the phone a round "+" (56 px, "New entry") fixed at the right
   just above the bottom bar, with room left for it at the foot of the content. Below `lg`
   the controls that sit at the right edge keep out of its column, so it never hides a
-  control at any scroll position: the rows' ▶ lead the row on Today and sit under the
-  checkbox on Entries, the filter's Clear row and "Edit templates" keep a 3.5 rem right
+  control at any scroll position: the rows' ▶ lead the row on Today and the leading ⋯ leads it on Entries,
+  Copy-out's and Reports' filter Clear row and "Edit templates" keep a 3.5 rem right
   margin, and the undo strip's buttons go under its message. Both link
   to `/entries/new?back=<this screen>` and carry `data-entry-form`, so the form opens over
   the screen; without JavaScript they are plain links to the page.
@@ -147,7 +150,10 @@ It is the same on every screen; no screen draws its own title or navigation.
   without it the strip stays in its place) and casts the popover-down shadow. While it
   is pinned, a control in the screen's content (in `main`, not in a dialog, not sticky or
   fixed itself or inside such) focused under it is scrolled down clear of it (a
-  `focusin` handler), so keyboard focus is never hidden (WCAG 2.4.11). Focus in the bars
+  `focusin` handler, `clearOf` in `#lib/components/focus-clear`, which the Entries bulk
+  bar shares), so keyboard focus is never hidden (WCAG 2.4.11). A screen can turn the
+  pin off (`pin={false}`): Entries does for the strip it carries inside its pinned bulk
+  band. Focus in the bars
   or the entry form leaves the page where it is. After a
   save over a long screen, the overlay scrolls the saved row out from under the pinned
   strip if it would be hidden there.
@@ -206,6 +212,17 @@ muted labels with semibold text-colour figures ("Week **27:45**", "Day **5:45** 
 one-line short title over one sub-line, both inside the 44 px row so its height never
 changes: "Wed 14 October" over "Day 5:45 · Week 27:45", "12 – 18 Oct" over "Week 42 ·
 27:45", "October 2026" over "Month 72:40". The default zone gets Today's note. "+ New entry" and the phone's "+" carry the date in view.
+
+**The Calendar's filter** is the Entries screen's Filter button (`FilterButton`, with
+`FilterPanel` on the PC and `FilterSheet` on the phone) without the time range, which the
+calendar has in its own period: Customer › project, Activity and Location, with the chips
+and "Clear filters" under the toolbar and no search. The scope is in the address
+(`customer`, `project`, `activity`, `location`; read by `readScope`), carried by every
+toolbar link (arrows, Today, the views, the date picker) and by the day links of the month,
+and kept across moves within the visit, not between visits. `calendarFor` shows and counts
+only the entries `matchesScope`; overlap marks are still judged among every entry, so a
+block keeps its mark when its partner is filtered out. The toolbar's total reads
+"(filtered)" while a filter is on. On the phone the filter sits in the toolbar's two rows.
 
 The day and week are `TimeGrid`, drawn twice to their own measures with one shown: the
 phone's (hour 56 px for the day; for the week 34 px and `compact`: letter heads with "–" for
@@ -363,57 +380,138 @@ Templates item stays current on both sub-routes.
 
 ### Entries (`/entries`)
 
-A PC screen (in the sidebar and under More, not the phone's bar) for finding entries and changing or
-deleting many at once; it stays usable at phone widths.
+The timesheet: the entries newest first, grouped by day with each day's total, for
+finding them, reading a month and reorganising it. It is in the sidebar and the phone's
+bottom bar, titled "Entries" in the header; the Filter button names the range in view. The
+address holds everything shown, so reload and Back return to the same table. Every write is
+an existing core call; the screen enforces no rule.
 
-**Filters** are a `GET` form, so a search is a URL. From and To are dates, inclusive,
-read as days in the request's zone; `readSearch` (`screens/entries.ts`) defaults to
-the current month when neither is in the query, leaves a side unbound when its field
-is submitted blank, and refuses a malformed date ("Use dates like 2026-10-01.") or
-From after To ("From must not be after To.") with the message by the fields and no
-list. Customer and Project list every row, archived included and marked
-"(archived)", projects grouped by customer, "Any" first; with JavaScript a customer
-narrows the projects (`narrowing.svelte.ts`). Activity and Location offer "Any",
-"None", then every row. Text matches reference, description, project or customer
-name as the core does. `searchInput` asks `entries.list` for entries that started
-in the range (`startedIn`), oldest first, at most 501; "Clear" returns to the month.
+**The toolbar** (`Toolbar`) is one row above the table: **Filter**, an outline button with
+a funnel, labelled with the range ("This month", "2026-09-01 – 2026-09-15" for a custom
+one) and "+n" for the other filters on; **Search entries** (`SearchField`, a `/` hint, a
+× while it holds text); and at the right "<n> entries, <h:mm>" ("1 entry"), running entries
+counted to now. While any filter other than the range is on, **chips** (`FilterChips`: the
+project with its colour dot, "Activity: …") and "Clear filters" stand under it; each chip
+removes its filter. The range has no chip.
 
-**The list** is a ruled table of at most 500 rows: a checkbox, date (a
-`data-entry-form` link to the entry form with `back` set to the search, so it opens
-over Entries), in, out (or Running), hours, customer › project, activity, location,
-reference, description, each time in the entry's own zone, and on a finished row a ▶
-posting to `/timers/restart` ("Restart <customer › project>", back to the search). The narrower PC widths drop activity and location; the phone stacks each row.
-Above it, "<n> entries, <h:mm>" ("1 entry, h:mm"), running entries counted to now;
-a 501st entry adds "Showing the first 500 entries; narrow the filters."; none says
-"No entries match." with Clear. A head checkbox selects all shown with JavaScript;
-without it a "Select all" link reloads the search with `&all=1`, every row checked.
+**The filter** (`readFilter`, `filter.ts`) opens as a popover on the PC (`FilterPanel`) and a
+sheet from the bottom on the phone (`FilterSheet`). Time range: Today, Yesterday, This week,
+Last week, This month, Last month, each with its short ISO dates beside it (`presetHint`),
+and Custom range with From and To (dates, inclusive, read as days in the request's zone;
+one side blank is open). Customer › project (`ScopePicker`, matching either name; a
+customer's heading or only a customer filters by the customer), Activity and Location
+("Any", "None", then the rows). Archived rows are offered, marked "(archived)". Every
+choice applies at once, with JavaScript (`live.ts`); the phone sheet's foot is a primary
+"Show n entries" with the live count, which closes it, and Escape, the scrim and Back close
+it keeping the choices. "Clear filters" resets all but the range. A bad date ("Use dates
+like 2026-10-01.") or From after To ("From must not be after To.") shows by the fields with
+no list.
 
-**Change selected** and **Delete selected** are one `POST` form with the table: each
-checked row posts `id` and its loaded `version.<id>` (`selection`; a repeated id is
-taken once). The change form sets, each left as it is unless set: Project ("Keep" or
-an active project), Activity and Location ("Keep", "None" or an active row),
-Reference (blank keeps it; "Clear the reference"), and a literal, case-sensitive Find
-and Replace with in the description, taken as typed (a Find of only spaces is blank;
-a description left empty becomes none). `bulkUpdates` reads each selected entry as it
-is now and builds one `entries.update` per entry the form would change, only the
-changed fields, with the posted `expectedVersion`, oldest start first; "Apply to
-selected" sends them as one `core.batch` labelled `Edit <n> entries` (`Edit 1 entry`,
-`n` counting the updates). Nothing selected says "Select at least one entry.";
-nothing to change stores no batch and says "Nothing to change.". Delete selected asks
-on the page ("Delete <n> entries?", "Delete 1 entry?"; "Yes, delete them" in red /
-"Keep them"), then sends one batch of `entries.delete` with each version, labelled
-`Delete <n> entries`. Both redirect to the search they were posted from with the
-strip, and undo returns there.
+**What is kept.** A preset is kept per device in the `entries_range` cookie (`httpOnly`,
+400 days), written whenever the address names a preset and on a first visit; a bare
+`/entries` reads it, a first visit with nothing kept opens on This month. A custom range,
+the other filters and the search live only in the address. **Address parameters:**
+`range` (a preset or `custom`), `from`, `to`, `customer`, `project`, `activity`,
+`location` (`none` or an id; `scope=customer:<id>` or `project:<id>` is the no-JavaScript
+picker's one field), `q` (the search), and `select=1` and `all=1` for the no-JavaScript
+selecting below. The table's own links always carry the range.
 
-**Refusals** re-render the search with the selection and the posted values kept. One
-refused entry refuses the whole batch (`runBulk` tracks the input in flight, so a
-rule thrown inside the batch is also traced to its entry); the message names the
-entry ("2026-10-07 09:00, CompA › ProjC: <the core's message>", in the entry's start
-zone), and a Reload link to the search shows only when that entry's posted version is
-stale. An entry deleted elsewhere since the list loaded cannot be named: when the form
-would set a field on it the core's "Not found." shows alone, with no Reload; when it
-would not (a Find its text no longer has), it is skipped. Field messages show beside
-the change form's fields.
+**One search** matches reference, description, project, customer, activity and location
+names (the core's `text`, literal, NFC, lowercased in English; the agent's `list_entries`
+matches the same), as you type, keeping focus and scroll. `/` focuses it outside fields
+and while no dialog is open.
+
+**The table** (`DayTable`, from `lg`) is ruled and never scrolls sideways. Columns: a tick
+box, Start, End (`HH:mm`, "+1" or "+n" in muted text when it ends later, "Running" in blue
+`caps`), Hours (exact, truncated to the minute; a running entry to now), Customer › project
+(colour dot, customer muted), Activity, Location, Reference, Description (one line, the
+full text as the `title`), ▶ Restart on a finished entry, and ⋯. Below 1280 px Location and
+Reference drop. Each day opens with a head row: a tick box for its rows (mixed when some
+are), "Tue 2026-10-20", and the day's total under Hours. A row belongs to the day it
+started in its own start zone and times show in its own zones; newest day first, newest
+start first within it. Overlapping rows have a 2 px red top edge and "Overlaps another
+entry" in their name, judged among all the user's entries, not only the shown. A row click
+(not the tick box, ▶ or ⋯) opens the entry form in place with `back` the table's address.
+A just-changed row stays marked while its undo is offered. At most 500 rows, the newest:
+the 501st adds "Showing the newest 500 entries; narrow the filters."; none says "No entries
+in this range." with Clear filters when filters are on, or "No entries match “<text>”."
+with a link clearing the search. A read the core refuses (a search over 200 characters;
+the field stops at 200) shows the core's message in red in that place, with the same link.
+Each row's ▶ is named "Restart <date> <start>, <customer › project>".
+
+**The row menu** (`RowMenu`) is a ⋯ popover: Restart (`aria-disabled` with "Already
+running" on a running entry, still met by the arrow keys, its activation ignored), Copy (`/entries/new?copy=<id>`), Edit, then Delete in red. Arrow keys move,
+Escape closes and returns the focus to ⋯. Delete removes the entry at once through the
+entry form's delete; the strip offers Undo, and focus moves to Undo.
+
+**Ticking and the bulk bar.** Ticking any box puts the bulk bar (`BulkBar`) in the
+toolbar's place, the chips staying under it: "n selected, h:mm" over the set it acts on (wrapping, never cut)
+(the range and any search), **Edit…**, **Delete** (destructive outline) and Clear
+selection; clearing the last tick brings the toolbar back, focus going to the head box
+when it is in view, else to the last toggled row's tick box (or the control in view
+nearest it), so clearing a month down never scrolls the page.
+While the bar is up, its band (the bar and the chips) is `position: sticky` under the
+header (`top: var(--bars-height)`), opaque, its padding taken back by negative margins so
+nothing below it moves; however far down the ticked row is, the count and the actions are
+in view. A row focused under the band is scrolled clear of it (`clearOf`). While the band
+is up the screen's undo strip rides inside it, over the bar, so a row's Delete, Copy or
+Restart (or a Stop) shows its Undo in view and focusing it scrolls nothing. Without the
+script the bar stays in its place. Shift-click ticks the run between this box and the last ticked. The ticks clear when the
+shown set changes (range, filter, search) and after a successful bulk action. **Edit…**
+opens the bulk dialog (`BulkDialog`, `BulkForm`, "Edit n entries"; a sheet on the phone,
+its Cancel and Apply pinned): each field left as it is unless set: Project ("Keep" or an
+active project), Activity and Location ("Keep", "None" or an active row), Reference (blank
+keeps it; "Clear the reference"), and a literal, case-sensitive Find and Replace with in
+the description (a Find of only spaces is blank; a description left empty becomes none).
+`bulkUpdates` reads each selected entry as it is now and builds one `entries.update` per
+entry the form would change, only the changed fields, with the posted `expectedVersion`,
+oldest start first; Apply sends them as one `core.batch` labelled `Edit <n> entries`
+(`Edit 1 entry`, `n` counting the updates). **Delete** removes the ticked entries at once,
+one batch of `entries.delete` with each version, labelled `Delete <n> entries`; there is
+no confirm, the strip offers Undo. Each ticked row posts `id` and its loaded
+`version.<id>` (`selection`; a repeated id is taken once). Nothing selected says "Select at
+least one entry."; nothing to change stores no batch and says "Nothing to change.". Both
+actions redirect to the table they were posted from with the strip, and undo returns there.
+
+**Refusals** show in the dialog (or, for Delete, above the table) with the selection and the
+posted values kept. One refused entry refuses the whole batch (`runBulk` tracks the input in
+flight, so a rule thrown inside the batch is also traced to its entry); the message names
+the entry ("2026-10-07 09:00, CompA › ProjC: <the core's message>", in the entry's start
+zone), and a Reload link shows only when that entry's posted version is stale. An entry
+deleted elsewhere cannot be named: when the form would set a field on it the core's "Not
+found." shows alone, with no Reload; when it would not (a Find its text no longer has), it
+is skipped. Field messages show beside the dialog's fields.
+
+**The phone** (below `lg`) takes `PhoneList` in the table's place: the toolbar scrolls with
+the page: Filter (full width but for Select) and **Select**, the search under them, the
+count and total under that. Each day is a `caps` head ("TUE 2026-10-20") with its total on
+a text-colour rule; the rows run to the screen's edges, at least 64 px with the project's
+4 px bar, a leading ⋯ (44 px), start over end ("Running" in blue under a running entry's
+start), customer › project in semibold (wrapping to a second line), activity · location ·
+reference and the description in muted lines that wrap, never cut (the row grows), and the
+duration at the right, kept out of the "+"'s column (72 px
+right margin). An
+overlap has a red top edge and "Overlaps another entry" in red. A tap opens the entry form
+as a sheet; ⋯ opens the row's sheet (`Sheet`, a bottom sheet over a native `<dialog>`;
+Escape, the scrim and Back close it), headed by the row it came from, with Restart, Copy,
+Edit and Delete as 48 px rows (Delete red; Restart is the phone's only per-row restart).
+**Select** swaps every ⋯ for a tick box, gives each day head one, hides the "+" and puts the
+bulk bar ("n selected" over the total, Edit…, Delete, Done) in the toolbar's place, pinned
+under the timer strip as an edge-to-edge surface band on a rule while selecting; Edit…
+opens the bulk form as a sheet, and Done leaves selecting, clearing the ticks and returning
+the focus to Select when it is in view (else to the last toggled row's ⋯, the page staying
+where it is).
+
+**Without JavaScript** the screen works as pages. The filter is a `<details>` holding a GET
+form with a Show button; the search submits on Enter; the PC table shows its tick boxes and
+the bulk bar's Edit and Delete at all times, posting the ticked rows (`?/edit` shows the
+bulk form as a page, `?/apply` and `?/delete` act); a "Select all" link reloads with
+`&all=1`, every row checked, and the day heads' boxes are hidden; the phone's Select is a
+link to `select=1` that reloads with tick boxes; the row menu is a `<details>` of links and
+post buttons. The parts only these pages have carry `data-nojs`: an inline script in
+`src/app.html` puts `js` on `<html>` before the first paint and `layout.css` hides them
+under it, so with JavaScript they never show and nothing moves when the page hydrates. Live search and filtering, shift-click, `/`, the ticking total and the
+popovers' focus handling need JavaScript.
 
 ### Copy-out (`/copy-out`, `/copy-out/csv`)
 
@@ -421,9 +519,10 @@ A PC screen (in the sidebar after Entries, under More on the phone) that writes 
 entries out as the columns chosen, to paste into Excel or download as CSV; it stays
 usable at phone widths. It only reads: nothing rounded or split is stored.
 
-**The form** is one `GET` form, so a copy-out is a URL. The Filters are the Entries
-filter bar (`EntryFilters`, read by the same `readSearch`, the same query names and
-messages), with **This month** and **Last month** beside Clear: each sets From and To
+**The form** is one `GET` form, so a copy-out is a URL. The Filters are round 1's
+Entries filter bar (`EntryFilters`, read by `readSearch`: From, To, Customer, Project,
+Activity, Location and Text, with its own query names and messages; Entries now has the
+new Filter, and these two keep this bar until item 15), with **This month** and **Last month** beside Clear: each sets From and To
 to that month in the request's zone (`monthRange`) and keeps every other filter,
 column and option. Below the filters, **Columns**: ten checkboxes in one fixed order,
 Date, Start, End, Duration, Customer, Project, Activity, Location, Reference,
@@ -453,7 +552,7 @@ both outline; "1 running entry left out." / "<n> running entries left out." when
 then the rows as a ruled table with the chosen columns as heads, every value as it is
 copied, the times and durations in figures. The table scrolls sideways at any width and
 never stacks. None says "No entries match." with Clear (and the running line, when
-the only matches run). A date mistake shows as on Entries, with no result.
+the only matches run). A date mistake shows by the fields, with no result.
 
 **Copy** (`CopyRows`, shown only once the page's script runs) writes `toTsv` of the
 page's rows to the clipboard: values separated by tabs, lines by `\r\n`, no header, a
@@ -481,7 +580,7 @@ entries as totals per day, week, customer and project, to check a month before c
 it out; it stays usable at phone widths. It only reads: nothing rounded or split is
 stored, and the totals are computed on the way out.
 
-**The form** is Copy-out's without the columns: the Entries filter bar (`EntryFilters`,
+**The form** is Copy-out's without the columns: round 1's filter bar (`EntryFilters`,
 `readSearch`) with **This month** and **Last month** beside Clear, then the **Options**
 (`OutputOptions`: Round to 5 minutes, Split at midnight, Duration as `h:mm` or Decimal
 hours), a hidden `show=1` and Show as the one primary button. `readReport` reads the
@@ -505,7 +604,7 @@ a Total row at the foot; the heads are for screen readers only). On the PC two
 columns: Days on the left, Weeks, Customers and Projects stacked on the right; on the
 phone one column in the order Customers, Projects, Weeks, Days. None says "No entries
 match." with Clear (and the running line, when the only matches run). A date mistake
-shows as on Entries, with no result.
+shows by the fields, with no result.
 
 ### The entry form (`/entries/new`, `/entries/[id]`)
 
@@ -748,12 +847,15 @@ files.
   no-JavaScript posts; `setup.test.ts` covers Setup (create, rename, duplicates,
   archive and unarchive, a refused undo, a stale rename), Templates (create, edit,
   delete and undo, an archived project, a stale save) and their no-JavaScript posts;
-  `entries.test.ts` covers Entries with a user of its own per test (`seedMonth`:
-  five entries across the month and one last month): each filter and Clear, a bulk
-  change and a bulk delete with undo, an entry changed or deleted elsewhere, a
-  refusal naming its entry, opening an entry and coming back to the search, the
-  500-row cut (`seedMany`, one batch) and the no-JavaScript search, Select all and
-  apply; `history.test.ts` covers History with a user of its own per test, who has
+  `entries.test.ts` covers Entries with a user of its own per test (`seedMonth`):
+the PC table (newest day first with day totals, overlaps, the count; a preset
+applying at once and kept; the search by any field and `/`; chips; a row opening its form
+in place; the row menu by mouse and keyboard; Restart; the narrower widths; the empty,
+unmatched and refused states; the 500-row cut; ticking by day and by shift-click;
+Edit… and Delete in one batch with Undo; ticks clearing; a ticked entry changed elsewhere
+refused by name; the checkbox, accent and focus rules) and the phone list (the toolbar,
+the filter sheet, the row sheet, Select with the bulk sheet and Undo), each with its
+no-JavaScript posts; `history.test.ts` covers History with a user of its own per test, who has
   no batch until seeded: a batch with its label, time and changes, undo and redo of a
   batch (checked on Setup), two of a batch's three changes undone (`seedThreeChanges`:
   Partly undone, 2 of 3), changes of two batches undone as one, a refused undo with

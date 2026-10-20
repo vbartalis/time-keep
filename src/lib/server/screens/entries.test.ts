@@ -11,7 +11,6 @@ import {
 	readSearch,
 	runBulk,
 	searchInput,
-	searchPath,
 	selection,
 	type BulkForm,
 	type Search
@@ -80,24 +79,6 @@ describe('searchInput', () => {
 		const input = searchInput({ ...month, from: '', to: '', projectId: 'p', text: 'x' }, ZONE);
 		expect(input).toEqual({ startedIn: true, order: 'asc', limit: 501, projectId: 'p', text: 'x' });
 		expect(input).not.toHaveProperty('from');
-	});
-});
-
-describe('searchPath', () => {
-	it('round-trips through readSearch without all', () => {
-		const search = { ...month, activity: 'none', text: 'a b', all: true };
-		const path = searchPath(search);
-		expect(path.startsWith('/entries?')).toBe(true);
-		expect(path).not.toContain('all=');
-		expect(readSearch(new URL(path, 'http://x').searchParams, ZONE, NOW).search).toEqual({
-			...search,
-			all: false
-		});
-	});
-
-	it('keeps a blank bound blank', () => {
-		const path = searchPath({ ...month, from: '' });
-		expect(read(path.slice('/entries?'.length)).search.from).toBe('');
 	});
 });
 

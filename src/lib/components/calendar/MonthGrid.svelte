@@ -11,6 +11,7 @@
 		date,
 		today,
 		back,
+		scope = '',
 		class: cls = ''
 	}: {
 		/** Every day of the weeks touching the month, Monday first. */
@@ -22,6 +23,8 @@
 		date: string;
 		today: string;
 		back: string;
+		/** The filter's query, carried by every link. */
+		scope?: string;
 		class?: string;
 	} = $props();
 
@@ -84,14 +87,14 @@
 				>
 					<!-- eslint-disable svelte/no-navigation-without-resolve -- calendarHref is the app's own address -->
 					<a
-						href={calendarHref('day', day)}
+						href={calendarHref('day', day, scope)}
 						tabindex="-1"
 						aria-hidden="true"
 						class="absolute inset-0 hover:bg-accent/40"
 					></a>
 					<div class="pointer-events-none relative flex items-center justify-between gap-1">
 						<a
-							href={calendarHref('day', day)}
+							href={calendarHref('day', day, scope)}
 							aria-current={day === today ? 'date' : undefined}
 							class="pointer-events-auto -ml-1 inline-flex h-7 min-w-7 items-center justify-center rounded-full px-1 text-sm leading-none font-semibold figures outline-none focus-visible:ring-2 focus-visible:ring-ring {day ===
 							today
@@ -128,7 +131,7 @@
 					{/each}
 					{#if list.length > LINES}
 						<a
-							href={calendarHref('day', day)}
+							href={calendarHref('day', day, scope)}
 							class="relative w-fit rounded-sm text-xs leading-[18px] text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
 							>+{list.length - LINES} more</a
 						>

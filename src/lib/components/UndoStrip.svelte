@@ -4,10 +4,14 @@
 	import { goto } from '$app/navigation';
 	import { warningText } from '#lib/format.js';
 	import { Button } from '#lib/components/ui/button/index.js';
+	import { clearOf } from '#lib/components/focus-clear.js';
 	import type { Flash } from './today/types';
 
-	/** `back` is where `/undo` returns to: the screen this strip is on. */
-	let { flash, back }: { flash: Flash | null; back: string } = $props();
+	/**
+	 * `back` is where `/undo` returns to: the screen this strip is on. `pin` off keeps it
+	 * in its place: inside a band pinned itself (the Entries bulk bar's).
+	 */
+	let { flash, back, pin = true }: { flash: Flash | null; back: string; pin?: boolean } = $props();
 
 	let strip = $state<HTMLDivElement | null>(null);
 	/** Scrolled past its place, it is pinned under the sticky bars and floats over the page. */
@@ -15,19 +19,18 @@
 	$effect(() => {
 		const node = strip;
 		void flash; // checked again for each new message
-		if (!node) return;
+		if (!node || !pin) {
+			pinned = false;
+			return;
+		}
 		const check = () => {
 			const top = parseFloat(getComputedStyle(node).top);
 			pinned = !Number.isNaN(top) && Math.abs(node.getBoundingClientRect().top - top) < 1;
 		};
 		/** Keyboard focus on the page lands clear of the pinned strip, not under it (WCAG 2.4.11). */
 		const clear = (e: FocusEvent) => {
-			const target = e.target;
 			check();
-			if (!pinned || !(target instanceof Element) || !scrollsWithPage(target)) return;
-			const below = node.getBoundingClientRect().bottom + 8;
-			const top = target.getBoundingClientRect().top;
-			if (top < below) window.scrollBy(0, top - below);
+			if (pinned) clearOf(node, e.target);
 		};
 		check();
 		// A new message (Done → Undone, a warning line) changes its height without a scroll.
@@ -43,20 +46,6 @@
 			document.removeEventListener('focusin', clear);
 		};
 	});
-
-	/**
-	 * A control in the screen's content, which a scroll can move: in `main`, not in a dialog,
-	 * and neither it nor an ancestor sticky or fixed (the strip itself, the bars, the "+").
-	 */
-	function scrollsWithPage(el: Element): boolean {
-		const main = el.closest('main');
-		if (!main || el.closest('dialog')) return false;
-		for (let at: Element | null = el; at && at !== main; at = at.parentElement) {
-			const position = getComputedStyle(at).position;
-			if (position === 'sticky' || position === 'fixed') return false;
-		}
-		return true;
-	}
 
 	/** Undo and Restart return to this screen as it was scrolled, not to its top. */
 	const inPlace: SubmitFunction =
@@ -76,7 +65,8 @@
 		data-undo-strip
 		role={flash.error ? 'alert' : 'status'}
 		class={[
-			'sticky top-[calc(var(--bars-height)+0.5rem)] z-10 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border bg-card py-2 pr-2 pl-3.5',
+			pin && 'sticky top-[calc(var(--bars-height)+0.5rem)] z-10',
+			'flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border bg-card py-2 pr-2 pl-3.5',
 			flash.error ? 'border-destructive/60' : 'border-border',
 			// Pinned, the gap above it is the page's ground, so no row shows through over it.
 			pinned &&
@@ -110,7 +100,7 @@
 			<form method="POST" action="/undo" use:enhance={inPlace}>
 				<input type="hidden" name="batchId" value={flash.batchId} />
 				<input type="hidden" name="back" value={back} />
-				<Button type="submit" variant="outline">Undo</Button>
+				<Button type="submit" variant="outline" data-undo>Undo</Button>
 			</form>
 		{/if}
 	</div>

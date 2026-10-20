@@ -20,6 +20,31 @@ The operator answers whenever they like, here (under the entry) or in conversati
 An answer is added to [the operator's voice](operator-voice.md) in their words, and if
 it changes built work, it becomes a roadmap item.
 
+## 2026-10-20 — 14
+
+- Question: Should the table's bulk edit also move the selected entries' times
+  (shift them by some minutes or days, or set the same start or end time), beside
+  changing customer › project, activity, location, reference and find-and-replace in
+  the description?
+- Call made: No time changes in bulk. The bulk edit keeps round 1's set (customer ›
+  project, activity, location, reference, find-and-replace in the description). Nothing
+  on record says you move many entries' times at once from the screen; a single
+  entry's time is moved in its form or by drag on the PC calendar, and bulk
+  reorganising by agent goes through the MCP server.
+- If answered differently: item 14's (or a later item's) bulk edit gains a shift by
+  minutes or days and/or a same start or end time, applied as one batch with one undo;
+  the change form and its tests grow with it.
+
+## 2026-10-20 — 14
+
+- Question: What should the table screen be called: "Entries" (as now), "Timesheet",
+  or Kimai's "My times"?
+- Call made: "Entries", at `/entries`, as now. It is the smaller change: the sidebar,
+  the phone's bottom bar and the docs already use it, and you never named the screen
+  (2026-10-19: "anothr view that is more like a table").
+- If answered differently: the screen's title, the sidebar and bottom-bar labels, and
+  the docs are renamed; the URL may stay.
+
 ## 2026-10-20 — 13
 
 - Question: Should the calendar remember the last view you used (day, week or month)

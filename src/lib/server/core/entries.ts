@@ -552,7 +552,8 @@ const fold = (s: string) => s.normalize('NFC').toLocaleLowerCase('en');
  * The user's entries whose interval touches `[from, to)` (instants with an offset; a
  * running entry reaches `now`; with `startedIn`, whose start lies in it), filtered by
  * project, customer, activity, location (null: none), running and text (in the
- * reference, description, project or customer name, case-insensitive and literal),
+ * reference, description, project, customer, activity or location name,
+ * case-insensitive and literal),
  * newest start first unless `order` is `asc`, at most `limit`, each with its names.
  */
 export function listEntries(
@@ -618,7 +619,9 @@ export function listEntries(
 						match(i.reference, needle) ||
 						match(i.description, needle) ||
 						match(i.projectName, needle) ||
-						match(i.customerName, needle)
+						match(i.customerName, needle) ||
+						match(i.activityName, needle) ||
+						match(i.locationName, needle)
 				);
 	return ok(data.limit === undefined ? found : found.slice(0, data.limit));
 }

@@ -98,7 +98,8 @@ and `redo` carry `destructiveHint: true`. The inputs are the core's own zod sche
 **`list_entries`** asks the core for one row past `limit` and answers `truncated:
 true` when there were more, so the agent narrows the range; there is no cursor. The
 filters are `entries.list`'s: `from`, `to`, `projectId`, `customerId`, `running`,
-`activityId`, `locationId`, `text`, `startedIn`, `order`.
+`activityId`, `locationId`, `text`, `startedIn`, `order`. `text` matches the reference,
+description, project, customer, activity and location names.
 
 **`list_history`** gives each batch without its changes: `id`, `label`, `actor`
 (`ui`, `agent`, `system`), `createdAt`, `changeCount`, `undoneChanges`, `undone` and

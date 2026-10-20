@@ -175,14 +175,14 @@
 	</div>
 
 	<!-- The phone's "+", above the bottom bar; main's foot leaves it room. It gives way to the
-		Calendar's create bar, whose New entry is then the one primary. -->
+		Calendar's create bar, whose New entry is then the one primary, and to Entries' Select. -->
 	<!-- eslint-disable svelte/no-navigation-without-resolve -- newEntry resolves it -->
 	<a
 		href={newEntry}
 		data-entry-form
 		aria-label="New entry"
 		inert={sheetOpen}
-		class="fixed right-4 bottom-[calc(5.0625rem+env(safe-area-inset-bottom))] z-30 inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors duration-150 ease-out outline-none group-has-[[data-create-bar]]/shell:hidden hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:hidden"
+		class="fixed right-4 bottom-[calc(5.0625rem+env(safe-area-inset-bottom))] z-30 inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors duration-150 ease-out outline-none group-has-[[data-create-bar]]/shell:hidden group-has-[[data-selecting]]/shell:hidden hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:hidden"
 	>
 		<Plus class="size-6" aria-hidden="true" />
 	</a>

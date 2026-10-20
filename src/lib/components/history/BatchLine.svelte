@@ -24,7 +24,7 @@
 	const changes = (n: number) => `${n} ${n === 1 ? 'change' : 'changes'}`;
 	const undone = $derived(batch.state.state === 'undone');
 	const box =
-		'mt-0.5 size-4.5 shrink-0 rounded-sm border-input accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring max-lg:size-5';
+		'mt-0.5 size-4.5 shrink-0 rounded-sm accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring max-lg:size-5';
 </script>
 
 <li

@@ -11,6 +11,7 @@
 		date,
 		today,
 		back,
+		scope = '',
 		now,
 		class: cls = ''
 	}: {
@@ -23,6 +24,8 @@
 		date: string;
 		today: string;
 		back: string;
+		/** The filter's query, carried by every link. */
+		scope?: string;
 		/** A running entry's time counts to it. */
 		now: number;
 		class?: string;
@@ -81,7 +84,7 @@
 					{@const marks = Object.values(dots[day] ?? {})}
 					<!-- eslint-disable svelte/no-navigation-without-resolve -- calendarHref is the app's own address -->
 					<a
-						href={calendarHref('month', day)}
+						href={calendarHref('month', day, scope)}
 						data-date={day}
 						aria-current={day === date ? 'date' : undefined}
 						aria-label="{title(day)}{day === today ? ', today' : ''}{total
@@ -115,7 +118,7 @@
 	<section aria-label="Day list" class="pt-4">
 		<!-- eslint-disable svelte/no-navigation-without-resolve -- calendarHref is the app's own address -->
 		<a
-			href={calendarHref('day', date)}
+			href={calendarHref('day', date, scope)}
 			class="flex min-h-11 items-center justify-between gap-3 border-b border-foreground px-0 text-xs caps outline-none focus-visible:ring-2 focus-visible:ring-ring"
 		>
 			<span class="figures">{title(date)}</span>

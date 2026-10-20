@@ -56,7 +56,7 @@
 				id="restore-confirm"
 				name="confirm"
 				type="checkbox"
-				class="size-4.5 rounded-sm border-input accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				class="size-4.5 rounded-sm accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 			/>
 			<Label for="restore-confirm">Replace all data with this backup</Label>
 		</div>

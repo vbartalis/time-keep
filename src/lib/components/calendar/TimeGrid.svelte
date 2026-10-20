@@ -33,6 +33,7 @@
 		hour,
 		compact,
 		back,
+		scope = '',
 		create,
 		draft = $bindable(null),
 		class: cls = ''
@@ -49,6 +50,8 @@
 		/** The phone's week: letter heads, colour-only blocks, each column a link to its day. */
 		compact: boolean;
 		back: string;
+		/** The filter's query, carried by every link. */
+		scope?: string;
 		/**
 		 * Creating on empty time: the PC's click or drag, the phone day's tap and handles,
 		 * or none (the phone's week: call 25).
@@ -616,7 +619,7 @@
 				{#if compact}
 					<!-- eslint-disable svelte/no-navigation-without-resolve -- calendarHref builds a /calendar address -->
 					<a
-						href={calendarHref('day', date)}
+						href={calendarHref('day', date, scope)}
 						data-date={date}
 						aria-current={date === today ? 'date' : undefined}
 						aria-label="{p.weekday} {p.day} {p.month}, {totals[date]

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { openCore, type Result } from '../src/lib/server/core/index';
 import { openDb, type DB } from '../src/lib/server/db/index';
 import { createUser } from '../src/lib/server/users';
+import { seedMonth as seedRealMonth } from '../scripts/seed-month';
 
 /** The database `playwright.config.ts` hands the test server. */
 const DB_PATH = fileURLToPath(new URL('../test-results/e2e/time-keep.db', import.meta.url));
@@ -237,6 +238,47 @@ export async function seedMonth(prefix: string, zone: string) {
 }
 
 export type Month = Awaited<ReturnType<typeof seedMonth>>;
+
+/**
+ * Adds to a `seedMonth` user the table's edge cases, on this month's days:
+ *
+ * | day      | in–out      | project           | location | ref    | description                     |
+ * | 10       | 13:30–15:00 | Acme › Operations |          | T-4740 | Reset the shared printer queue  |
+ * | 10       | 14:00–14:30 | Acme › Website    | Café     |        | Looked into the overlap warning |
+ * | 14 to 15 | 23:00–01:00 | Acme › Website    |          |        | Late fix for the sync bug       |
+ *
+ * The two on day 10 overlap; the last crosses midnight and counts in day 14.
+ */
+export function seedMonthEdges(user: Month, zone: string) {
+	const core = asUi(user.id);
+	const cafe = value(core.locations.create({ name: 'Café' })).id;
+	const span = (start: string, end: string, input: Record<string, string>) =>
+		value(
+			core.entries.create({
+				projectId: user.projects.website,
+				...input,
+				start,
+				end,
+				timeZone: zone
+			} as Parameters<typeof core.entries.create>[0])
+		).id;
+	const d10 = user.day(10);
+	return {
+		cafe,
+		printer: span(`${d10}T13:30`, `${d10}T15:00`, {
+			projectId: user.projects.operations,
+			reference: 'T-4740',
+			description: 'Reset the shared printer queue'
+		}),
+		overlap: span(`${d10}T14:00`, `${d10}T14:30`, {
+			locationId: cafe,
+			description: 'Looked into the overlap warning'
+		}),
+		late: span(`${user.day(14)}T23:00`, `${user.day(15)}T01:00`, {
+			description: 'Late fix for the sync bug'
+		})
+	};
+}
 
 /**
  * A user for the calendar (in `zone`), shaped like the usability seed: CompX ›
@@ -546,3 +588,18 @@ export const seedEntry = (
 			description: input.description
 		})
 	).id;
+
+/**
+ * A user with the usability gate's realistic month (`scripts/seed-month.ts`): 3 to 7
+ * entries on every weekday of the 30 days before today in `zone`, references on the
+ * support tickets. `from` is the first of those days, for a custom range over them all.
+ */
+export async function seedGateMonth(prefix: string, zone: string) {
+	const user = await newUser(prefix);
+	const today = dateIn(zone);
+	seedRealMonth(database(), user.id, { today, zone });
+	const from = new Date(Date.parse(`${today}T00:00:00Z`) - 30 * 86_400_000)
+		.toISOString()
+		.slice(0, 10);
+	return { ...user, today, from };
+}
