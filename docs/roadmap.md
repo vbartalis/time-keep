@@ -631,7 +631,7 @@ line keeps the doc's term "PC" though the side track starts at 1280 px; the new 
 does not pin the PC's empty side track (the wrapper is unchanged; the gate checks it);
 `DESIGN.md`'s "Not built yet" chip example stays until item 11. No questions queued.
 
-### 10. Reference study
+### 10. Reference study — done 2026-10-20
 
 How Kimai, Google Calendar, Samsung Calendar and a few dedicated time trackers
 (Toggl, Clockify, Timing or similar) handle what time-keep does: their views (day,
@@ -650,6 +650,40 @@ more the study suggests for the charter goes to `docs/questions.md`.
 
 Exit: a reference document in `docs/`, and the amended vision, both approved by the
 operator stand-in.
+
+Done 2026-10-20: [the reference study](reference-study.md), with 33 screenshots in
+`docs/reference-study/`: Kimai 2.70 used live through its public demo at phone and PC
+widths (read only; nothing saved), Google Calendar, Samsung Calendar, Toggl Track,
+Clockify and Timing from their public pages. Findings by subject with follow, adapt
+or reject verdicts; the operator's four entry shapes walked through each reference;
+the vision revisited; round 1's failures answered; a summary for each of items 11–15.
+The vision gains a Views section (the day, week and month calendar views and the
+table, on both surfaces) and nothing else. Spec
+`docs/superpowers/specs/2026-10-19-reference-study-design.md`; no plan (a document
+unit); no decision record. Calls made in the operator's place, the stand-in's: the
+seventeen in the spec's "Calls made in the operator's place", among them the study's
+form and readers (inferred), the demo's default Kimai setup standing for the
+operator's (ungrounded, queued), the weekly grid decided by the study with reject or
+defer as the default (grounded that the study decides; the operator's view
+ungrounded, queued), Kimai's demo read only (grounded) and the views going into a new
+vision section (inferred). The builder's: the eight in the study's section 9, among
+them the weekly hours grid rejected, so item 14 does not build it; templates, not
+description autocomplete or a recents list, as the fast path; a bare number in a
+duration read as hours; undo after every change instead of confirm dialogs or a
+trash; drag to move and resize on the PC only; and the six in the spec's builder list
+(writes without a form treated as writes; captures of public pages as the study's own
+screenshots; docs-only counts marked estimated; the paths; account-only references
+from public material; verdict words defined once). Questions queued in
+`docs/questions.md`: the Kimai setup used; the weekly grid (now with the verdict
+noted); what in Kimai was relied on; recents in the timer bar beside templates
+(the stand-in's, at the review of revision 1); description autocomplete beside
+templates; the fast-capture principle for past entries; the phone's "fix today".
+Revision 2 followed the stand-in's review of revision 1: the look is given as options
+for item 11 to render, with Kimai's structure kept as one, not as verdicts; the
+departure from item 12's "recents" is named; restart copies the description as
+Kimai's does. Approved by the stand-in at revision 2, with one note left open, not
+blocking: a bare number in a duration read as hours goes against every tracker
+studied; item 12 settles it.
 
 ### 11. Design direction, round 2
 

@@ -86,6 +86,14 @@ Agent changes are batches like any other, so a wrong tidy-up is one undo.
 - **Phone:** quick capture: start a timer, log an entry from a template, fix today.
 - **PC:** dense work: organising, bulk edits, month-end.
 
+## Views
+
+The user's entries are seen and worked on in two kinds of view, on both surfaces:
+
+- **Calendar:** day, week and month views, with entries placed on the time they
+  cover.
+- **Table:** the entries as rows, the way Kimai's timesheet lists them.
+
 ## Output
 
 - **Reports:** totals per day, week, customer and project.
