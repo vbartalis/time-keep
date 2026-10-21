@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
+	import type { Snippet } from 'svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { rangeLabel, scopeCount, type Filter, type Preset } from '#lib/filter/filter.js';
 	import FilterButton from './FilterButton.svelte';
@@ -12,9 +12,13 @@
 	 * Above the table: Filter, Search entries, and the shown set's count and total. On the
 	 * phone, Filter (full width) and Select, the search under them and the count under
 	 * that, out of the "+"'s column; with the script there the filter is a sheet, and
-	 * Select a button, else a link that reloads with tick boxes (`select=1`).
+	 * Select a button, else a link that reloads with tick boxes (`select=1`). Select shows
+	 * only on a screen that passes `selectHref` or `onSelect` (Entries).
 	 */
 	let {
+		action,
+		noun,
+		hidden,
 		filter,
 		options,
 		hints,
@@ -26,6 +30,12 @@
 		selectHref,
 		onSelect
 	}: {
+		/** The screen the filter's form shows (`/entries`, `/copy-out`, `/reports`). */
+		action: string;
+		/** What the count counts, one and many: ['entry', 'entries'], ['row', 'rows']. */
+		noun: [string, string];
+		/** More hidden fields the filter's form keeps (Copy-out's columns and options). */
+		hidden?: Snippet;
 		filter: Filter;
 		options: FilterOptions;
 		hints: Record<Preset, string>;
@@ -38,13 +48,12 @@
 		/** The script runs on a phone: the filter opens as a sheet. */
 		sheet: boolean;
 		/** Select without the script: the table with its tick boxes. */
-		selectHref: string;
+		selectHref?: string;
 		/** Select with the script; absent without it. */
 		onSelect?: () => void;
 	} = $props();
 
 	const FORM = 'filter';
-	const action = resolve('/(app)/entries');
 </script>
 
 <div class="flex flex-wrap items-center gap-x-2 gap-y-3 max-lg:pr-14">
@@ -61,6 +70,8 @@
 				{error}
 				{clear}
 				{count}
+				{noun}
+				{hidden}
 			/>
 		{:else}
 			<FilterButton
@@ -69,11 +80,21 @@
 				open={error !== null}
 				fill
 			>
-				<FilterPanel id={FORM} {action} {filter} {options} range={true} {hints} {error} {clear} />
+				<FilterPanel
+					id={FORM}
+					{action}
+					{filter}
+					{options}
+					range={true}
+					{hints}
+					{error}
+					{clear}
+					{hidden}
+				/>
 			</FilterButton>
 		{/if}
-		{#if count === 0}
-			<!-- Nothing to select. -->
+		{#if count === 0 || (selectHref === undefined && !onSelect)}
+			<!-- Nothing to select, or no selecting on this screen. -->
 		{:else if onSelect}
 			<Button variant="outline" class="lg:hidden" onclick={onSelect} data-select>Select</Button>
 		{:else}
@@ -85,7 +106,7 @@
 	{#if error === null}
 		<p class="text-sm text-muted-foreground max-lg:basis-full lg:ml-auto">
 			<span class="font-semibold text-foreground figures">{count}</span>
-			{count === 1 ? 'entry' : 'entries'} ·
+			{count === 1 ? noun[0] : noun[1]} ·
 			<span class="font-semibold text-foreground figures">{total}</span>
 		</p>
 	{/if}

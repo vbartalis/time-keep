@@ -1,16 +1,11 @@
-import { localParts, nextDate, previousDate, type Core, type EntryItem } from '../core/index';
-import {
-	COLUMNS,
-	formatDuration,
-	safeText,
-	type Column,
-	type DurationFormat,
-	type OutputRow
-} from '#lib/output.js';
-import { readSearch, searchInput, type Search } from './entries';
+import { localParts, nextDate, type Core, type EntryItem } from '../core/index';
+import { formatDuration, safeText, type OutputRow } from '#lib/output.js';
+import type { OutputOptions } from '#lib/filter/output.js';
+import { formFailure } from './actions';
+import { outputInput, type OutputView } from './output';
 import { startOfDay } from './today';
 
-export type CopyOutOptions = { round: boolean; split: boolean; duration: DurationFormat };
+export type CopyOutOptions = OutputOptions;
 
 /** The rows of a copy-out: `minutes` summed over them, `running` the entries left out for having no end. */
 export type Sheet = { rows: OutputRow[]; minutes: number; running: number };
@@ -109,87 +104,17 @@ export function outputRows(entries: EntryItem[], options: CopyOutOptions): Sheet
 	return { rows, minutes, running };
 }
 
-/** What the Copy-out screen shows: the search, the columns to write and how to write them. */
-export type CopyOut = { search: Search; columns: Column[]; options: CopyOutOptions };
-
-/** The switches a query string asks for; with `show` they are what was sent, without it the defaults. */
-export function readOptions(params: URLSearchParams): CopyOutOptions {
-	const shown = params.has('show');
-	return {
-		round: shown ? params.get('round') === '1' : true,
-		split: shown && params.get('split') === '1',
-		duration: params.get('duration') === 'decimal' ? 'decimal' : 'hm'
-	};
-}
-
-/**
- * The copy-out a query string asks for. The form sends a hidden `show=1`; with it the
- * columns and switches are what was sent, without it they are the defaults.
- */
-export function readCopyOut(
-	params: URLSearchParams,
-	zone: string,
-	now: number
-): { copyOut: CopyOut; error: string | null; columnsError: string | null } {
-	const { search, error } = readSearch(params, zone, now);
-	const shown = params.has('show');
-	const sent = new Set(params.getAll('col'));
-	const columns = shown ? COLUMNS.filter((column) => sent.has(column)) : [...COLUMNS];
-	return {
-		copyOut: { search, columns, options: readOptions(params) },
-		error,
-		columnsError: shown && columns.length === 0 ? 'Choose at least one column.' : null
-	};
-}
-
-/** `show=1`, the search and the switches as a query; no columns. */
-export function optionsQuery(search: Search, options: CopyOutOptions): URLSearchParams {
-	const query = new URLSearchParams({ show: '1', from: search.from, to: search.to });
-	if (search.customerId !== '') query.set('customerId', search.customerId);
-	if (search.projectId !== '') query.set('projectId', search.projectId);
-	if (search.activity !== 'any') query.set('activity', search.activity);
-	if (search.location !== 'any') query.set('location', search.location);
-	if (search.text !== '') query.set('text', search.text);
-	if (options.round) query.set('round', '1');
-	if (options.split) query.set('split', '1');
-	if (options.duration === 'decimal') query.set('duration', 'decimal');
-	return query;
-}
-
-/** The full query string (no `?`) that reads back as `copyOut`. */
-export function copyOutQuery(copyOut: CopyOut): string {
-	const { search, columns, options } = copyOut;
-	const query = optionsQuery(search, options);
-	for (const column of columns) query.append('col', column);
-	return query.toString();
-}
-
-/** This month's (`back` 0) or last month's (`back` 1) first and last day in `zone`. */
-export function monthRange(now: number, zone: string, back: 0 | 1): { from: string; to: string } {
-	const today = localParts(now, zone).date;
-	const first = new Date(
-		Date.UTC(Number(today.slice(0, 4)), Number(today.slice(5, 7)) - 1 - back, 1)
-	);
-	const next = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 1));
-	return {
-		from: first.toISOString().slice(0, 10),
-		to: previousDate(next.toISOString().slice(0, 10))
-	};
-}
-
 /** The download's file name: `time-keep-<from|all>-<to|all>.csv`. */
-export const csvName = (search: Search): string =>
+export const csvName = (search: { from: string; to: string }): string =>
 	`time-keep-${search.from || 'all'}-${search.to || 'all'}.csv`;
 
-/** The rows of every entry the search matches, with no page limit; a refused list is its message. */
+/** The rows of every entry the filter matches, with no page limit; a refused list is its message, said as Entries says it. */
 export function sheetFor(
 	core: Core,
-	copyOut: CopyOut,
+	view: OutputView,
 	zone: string
 ): { ok: true; sheet: Sheet } | { ok: false; message: string } {
-	const input = searchInput(copyOut.search, zone);
-	delete input.limit;
-	const listed = core.entries.list(input);
-	if (!listed.ok) return { ok: false, message: listed.error.message };
-	return { ok: true, sheet: outputRows(listed.value, copyOut.options) };
+	const listed = core.entries.list(outputInput(view.filter, zone));
+	if (!listed.ok) return { ok: false, message: formFailure(listed.error, []).error };
+	return { ok: true, sheet: outputRows(listed.value, view.choice.options) };
 }

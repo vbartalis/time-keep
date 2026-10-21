@@ -3,20 +3,9 @@ import { openCore, type EntryItem, type Result } from '../core/index';
 import { user } from '../db/schema';
 import { newId } from '../id';
 import { createTestDb } from '../testing/db';
-import {
-	copyOutQuery,
-	csvName,
-	monthRange,
-	optionsQuery,
-	outputPieces,
-	outputRows,
-	readCopyOut,
-	readOptions,
-	sheetFor,
-	type CopyOutOptions
-} from './copy-out';
+import { csvName, outputPieces, outputRows, sheetFor, type CopyOutOptions } from './copy-out';
 import { formatDuration } from '#lib/output.js';
-import type { Search } from './entries';
+import { readOutput } from './output';
 
 const BUD = 'Europe/Budapest';
 const at = (iso: string) => Date.parse(iso);
@@ -175,37 +164,6 @@ describe('outputPieces', () => {
 	});
 });
 
-describe('readOptions', () => {
-	it('defaults without show', () => {
-		expect(readOptions(new URLSearchParams(''))).toEqual({
-			round: true,
-			split: false,
-			duration: 'hm'
-		});
-	});
-	it('reads what was sent with show', () => {
-		expect(readOptions(new URLSearchParams('show=1&split=1&duration=decimal'))).toEqual({
-			round: false,
-			split: true,
-			duration: 'decimal'
-		});
-	});
-});
-
-describe('optionsQuery', () => {
-	it('has no columns', () => {
-		const { search } = readCopyOut(
-			new URLSearchParams(''),
-			BUD,
-			at('2026-10-15T12:00:00Z')
-		).copyOut;
-		const query = optionsQuery(search, base);
-		expect(query.has('col')).toBe(false);
-		expect(query.get('show')).toBe('1');
-		expect(query.get('round')).toBe('1');
-	});
-});
-
 describe('sheet', () => {
 	it('leaves out running entries and sums the rows', () => {
 		const sheet = outputRows(
@@ -238,84 +196,8 @@ describe('sheet', () => {
 	});
 });
 
-describe('readCopyOut', () => {
-	const NOW = at('2026-10-19T10:00:00Z');
-	const read = (query: string) => readCopyOut(new URLSearchParams(query), BUD, NOW);
-	const ALL = [
-		'date',
-		'start',
-		'end',
-		'duration',
-		'customer',
-		'project',
-		'activity',
-		'location',
-		'reference',
-		'description'
-	];
-
-	it('defaults to every column, rounded, whole, as hours and minutes', () => {
-		const { copyOut, error, columnsError } = read('');
-		expect(error).toBeNull();
-		expect(columnsError).toBeNull();
-		expect(copyOut.columns).toEqual(ALL);
-		expect(copyOut.options).toEqual({ round: true, split: false, duration: 'hm' });
-		expect(copyOut.search).toMatchObject({ from: '2026-10-01', to: '2026-10-31' });
-	});
-
-	it('keeps the chosen columns in column order', () => {
-		expect(read('show=1&col=project&col=date').copyOut.columns).toEqual(['date', 'project']);
-	});
-
-	it('takes each column once and ignores unknown ones', () => {
-		expect(read('show=1&col=date&col=date&col=foo').copyOut.columns).toEqual(['date']);
-	});
-
-	it('asks for a column when none is chosen', () => {
-		const { copyOut, columnsError } = read('show=1');
-		expect(columnsError).toBe('Choose at least one column.');
-		expect(copyOut.columns).toEqual([]);
-	});
-
-	it('turns round and split off unless sent', () => {
-		expect(read('show=1&col=date').copyOut.options).toMatchObject({ round: false, split: false });
-		expect(read('show=1&col=date&round=1&split=1').copyOut.options).toMatchObject({
-			round: true,
-			split: true
-		});
-	});
-
-	it('reads the duration format, hm unless decimal', () => {
-		expect(read('duration=decimal').copyOut.options.duration).toBe('decimal');
-		expect(read('duration=weeks').copyOut.options.duration).toBe('hm');
-	});
-
-	it('carries the search errors', () => {
-		expect(read('from=2026-10-09&to=2026-10-01').error).toBe('From must not be after To.');
-	});
-
-	it('round-trips a non-default choice through copyOutQuery', () => {
-		const first = read(
-			'show=1&from=2026-09-01&to=2026-09-30&projectId=p9&activity=none&text=x&col=description&col=date&split=1&duration=decimal'
-		).copyOut;
-		const query = copyOutQuery(first);
-		expect(query).toContain('show=1');
-		expect(query).not.toContain('round');
-		expect(query).not.toContain('all=');
-		expect(read(query).copyOut).toEqual(first);
-	});
-});
-
-describe('monthRange', () => {
-	const now = at('2026-01-15T10:00:00Z');
-	it('is this month or last month in the zone', () => {
-		expect(monthRange(now, BUD, 1)).toEqual({ from: '2025-12-01', to: '2025-12-31' });
-		expect(monthRange(now, BUD, 0)).toEqual({ from: '2026-01-01', to: '2026-01-31' });
-	});
-});
-
 describe('csvName', () => {
-	const search = (from: string, to: string) => ({ from, to }) as Search;
+	const search = (from: string, to: string) => ({ from, to });
 	it('names the file by its dates, all for a blank bound', () => {
 		expect(csvName(search('2026-10-01', '2026-10-31'))).toBe('time-keep-2026-10-01-2026-10-31.csv');
 		expect(csvName(search('', '2026-10-31'))).toBe('time-keep-all-2026-10-31.csv');
@@ -336,7 +218,7 @@ describe('sheetFor', () => {
 	};
 	const customer = val(core.customers.create({ name: 'C' }));
 	const project = val(core.projects.create({ customerId: customer.id, name: 'P' }));
-	const query = (q: string) => readCopyOut(new URLSearchParams(q), BUD, at('2026-10-19T10:00:00Z'));
+	const query = (q: string) => readOutput(new URLSearchParams(q), {}, '2026-10-19').view;
 
 	it('returns every matching row, not a capped page', () => {
 		for (let i = 0; i < 600; i++) {
@@ -351,14 +233,14 @@ describe('sheetFor', () => {
 				})
 			);
 		}
-		const result = sheetFor(core, query('').copyOut, BUD);
+		const result = sheetFor(core, query(''), BUD);
 		expect(result.ok).toBe(true);
 		if (result.ok) expect(result.sheet.rows).toHaveLength(600);
 	});
 
-	it('gives the core message when the list is refused', () => {
-		const result = sheetFor(core, query(`text=${'x'.repeat(201)}`).copyOut, BUD);
+	it('gives the field message when the list is refused', () => {
+		const result = sheetFor(core, query(`q=${'x'.repeat(201)}`), BUD);
 		expect(result.ok).toBe(false);
-		if (!result.ok) expect(result.message).toBe('The input is not valid.');
+		if (!result.ok) expect(result.message).toBe('Use 1–200 characters.');
 	});
 });

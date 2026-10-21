@@ -10,6 +10,7 @@ import {
 	type Filter,
 	type Preset
 } from '#lib/filter/filter.js';
+import { choiceQuery, readChoice } from '#lib/filter/output.js';
 
 /** The fields a form (and the fields that name it with `form=`) holds as posted. */
 function formParams(form: HTMLFormElement): URLSearchParams {
@@ -49,6 +50,19 @@ export async function applyForm(form: HTMLFormElement, opts: { replace: boolean 
 		const scope = scopeQuery(readScope(params));
 		// eslint-disable-next-line svelte/no-navigation-without-resolve -- the resolved route with its query
 		await goto(`${resolve('/(app)/calendar')}?${kept}${scope === '' ? '' : `&${scope}`}`, {
+			reset: false,
+			replace: opts.replace
+		});
+		return;
+	}
+	const path = new URL(form.action, location.href).pathname;
+	if (path === resolve('/(app)/copy-out') || path === resolve('/(app)/reports')) {
+		// Copy-out and Reports: the filter, then the columns and options the form holds. A
+		// form naming none of them sends none, so the kept choice applies.
+		const { choice, named } = readChoice(formParams(form), undefined);
+		const kept = named ? `&${choiceQuery(choice)}` : '';
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- the resolved route with its query
+		await goto(`${path}?${filterQuery(formFilter(form))}${kept}`, {
 			reset: false,
 			replace: opts.replace
 		});

@@ -179,6 +179,7 @@
 	--color-chart-1: var(--chart-1);
 	--color-ring: var(--ring);
 	--color-input: var(--input);
+	--color-checkbox: var(--checkbox);
 	--color-border: var(--border);
 	--color-destructive: var(--destructive);
 	--color-accent-foreground: var(--accent-foreground);
@@ -249,6 +250,12 @@
  * so it beats a utility's `display`.
  */
 .js [data-nojs] {
+	display: none;
+}
+
+/* Its opposite (`data-js`): a control that needs the script (Copy-out's Copy and column
+ * chips) is drawn by the server and hidden only when no script will run. */
+html:not(.js) [data-js] {
 	display: none;
 }
 

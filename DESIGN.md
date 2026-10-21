@@ -368,6 +368,45 @@ components:
     textColor: "{colors.foreground}"
     rounded: "{rounded.md}"
     size: "44px"
+  output-band:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    padding: "16px"
+  column-chip:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.muted-foreground}"
+    typography: "{typography.body-pc}"
+    rounded: "{rounded.md}"
+    padding: "0 12px"
+    height: "44px"
+  column-chip-on:
+    backgroundColor: "{colors.accent}"
+    textColor: "{colors.foreground}"
+  duration-segment:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    typography: "{typography.body-pc}"
+    rounded: "{rounded.md}"
+    padding: "0 14px"
+    height: "44px"
+  duration-segment-current:
+    backgroundColor: "{colors.accent}"
+  copy-sheet-cell:
+    textColor: "{colors.foreground}"
+    typography: "{typography.body-pc}"
+    padding: "8px 10px"
+  totals-row:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    typography: "{typography.body-pc}"
+    padding: "12px 16px"
+  options-button:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    padding: "0 12px"
+    height: "44px"
 ---
 
 # Design System: time-keep
@@ -386,7 +425,11 @@ and bulk edit, the phone's bottom sheets, and the `checkbox` stroke; and with wh
 (`feat/15a-setup-and-templates`) added: the phone's four-cell bottom bar and More sheet,
 Today's templates and entries, the Templates screen, the template form and sheet, and
 Setup; and with what item 15b (`feat/15b-history`) added: History as a ruled table of
-batches and their change lines, its band and bulk bar, and the phone's rows and Select.
+batches and their change lines, its band and bulk bar, and the phone's rows and Select;
+and with what item 15c (`feat/15c-copy-out-and-reports`) added: Copy-out's output band
+(column chips, options, the segmented Duration, Copy and Download CSV) over its copy
+sheet, Reports as four ruled lists of totals with the phone's Options sheet, both on
+Entries' Filter and chips, and the `data-js` / `data-nojs` pair.
 Where the build differs from the
 direction contract (`.impeccable/surfaces/src-routes-app-layout-svelte.md`), the
 build wins and the difference is noted. Light values are the frontmatter's plain keys;
@@ -475,13 +518,15 @@ project colours as the only strong colour.
   phone month's chosen-day ring, a drag's landing tag and the current view's
   underline (tags and circles carry `ground` text); the Filter's count badge
   (`ground` figures on a text-colour pill, "+2"), the phone day head's rule in the
-  timesheet, and the PC bulk bars' frame (Entries and History; the text colour at 80 %). **Muted text**
+  timesheet, the PC bulk bars' frame (Entries and History; the text colour at 80 %), and
+  the rule over a Total row (Copy-out's sheet, Reports' lists). **Muted text**
   (`muted-foreground`): secondary lines, empty states, column heads.
 - **Muted** (`muted`): the table head band. **Accent** (`accent`): hover fills, ticked
   rows (every ticked row in the timesheet fills with it, PC and phone, so a selection
   across days reads at a glance), a ticked History change line, a just-changed row while its undo is offered, an
   open Filter button, the current view in the Calendar's switch and the date picker's week
-  in view. **Shade** (`shade`): the calendar's one shading, the hours before 08:00
+  in view, an on column chip and the current Duration segment (Copy-out, Reports), and
+  the phone Options button while its no-JavaScript panel is open. **Shade** (`shade`): the calendar's one shading, the hours before 08:00
   and from 20:00 and the days outside the month; `muted` in light; in dark, where
   `muted` on the surface does not read, a step lighter than `border`, so the hour rules
   and day dividers still read on it (muted text on it 4.7:1).
@@ -489,7 +534,9 @@ project colours as the only strong colour.
   bar's top rule. **Input** (`input`): field and outline-button strokes, the rule
   under a table head, filter chips' outline, the scrollbar.
 - **Checkbox** (`checkbox`; dark `checkbox-dark`): the stroke of every unticked
-  checkbox in the app (Entries, Copy-out, History, Users, Backup), one base rule. It
+  checkbox in the app (Entries, Copy-out's and Reports' Round and Split, History, Users,
+  Backup), one base rule, and the 1 px outline of every Copy-out column chip, on or
+  off, so an off chip still reads as a control on the band and the ground. It
   holds 3:1 on the surface and on a shaded or ticked row (light 3.7:1 on the surface,
   3.3:1 on `accent`; dark 3.8:1 and 3.3:1), where `input` (1.6:1) did not. `input` is
   unchanged for fields and buttons; only checkboxes take `checkbox`.
@@ -520,9 +567,9 @@ appears. Today the timer dot, the start list, Fill from, the project picker, the
 Calendar (block edge, fill and ink, month dots, the phone day list's bar) and Entries
 (the table's 8 px dot, the project chip's dot, the phone row's 4 px bar) use it, and so do
 Today's template rows and entries, the Templates table and list (an 8 px dot before the
-name; none without a project) and Setup's project rows (the dot at 50 % when archived); the
-other screens' tables and phone rows take it as item 15 rebuilds them. No other
-element borrows a project colour.
+name; none without a project), Setup's project rows (the dot at 50 % when archived) and
+Reports' Projects list (an 8 px dot before the customer › project). Copy-out's sheet is
+the copied text and carries no dot. No other element borrows a project colour.
 
 **The Text-Colour Marks Rule.** In the Calendar, what only points is in the text
 colour: the line at now and its tag, today's circle, the chosen day's ring, a drag's
@@ -554,7 +601,9 @@ ramp below, not from a second face.
 - **Body PC** (400, 14 px / `text-sm`, 1.45): PC body and fields from 1024 px, buttons,
   sidebar items, tables (the timesheet's day heads in semibold figures), the undo
   strip, filter chips; the Calendar's totals (semibold figures) in
-  the toolbar, a day head and the month's week column; History's rows and change lines.
+  the toolbar, a day head and the month's week column; History's rows and change lines;
+  Copy-out's band (chips, options, the semibold "Columns" label on the PC) and its sheet,
+  and Reports' lists (the Total row semibold), at every width.
 - **Label** (400, 12 px / `text-xs`, 1.35): meta lines (a timer's "since 09:00"),
   bottom-bar labels, field labels over fields (the phone form, the time row's Start,
   End and Duration) and hints under them, in muted text. On the PC the entry form's
@@ -614,9 +663,11 @@ Cancel and Save stay above the keyboard. While the phone's start sheet is open t
 page behind it is inert.
 
 Regions stack 24 px apart. Controls are 44 px on the phone and 36 px on the PC; table
-cells pad 12 px. The screens inside the shell keep round 1's layouts in the new tokens
-until item 15, except Entries (item 14), the Calendar (item 13), Today, Templates and
-Setup (item 15a), and History (item 15b).
+cells pad 12 px. Only Account, Users and Backup keep round 1's layouts in the new
+tokens; every other screen is item 11's direction: Entries (item 14), the Calendar
+(item 13), Today, Templates and Setup (item 15a), History (item 15b), and Copy-out and
+Reports (item 15c). Round 1's filter bar (`components/entries/`) is gone; every filtered
+screen uses Entries' Filter and chips.
 
 Today is one column: the TEMPLATES section, then TODAY · WED 2026-10-21, 32 px apart.
 Each section head sits on its rule; on the PC the template rows are a surface panel with
@@ -672,6 +723,25 @@ outline Select, kept out of the "+"'s column (56 px right padding). Select puts 
 selection bar in its place, the band pinned under the timer strip, and the "+" gives
 way. The list runs to the screen's edges on the surface, flush under the band.
 
+Copy-out (item 15c) stacks 24 px apart: Entries' toolbar (counting "56 rows · 68:30"),
+its chips and the muted running line ("1 running entry left out.") 12 px apart, then the
+output band, then the copy sheet or the empty state. From 1024 px the band is a surface
+panel (4 px corners, `border` stroke, 16 px padding). From 1280 px it has two columns
+24 px apart: at the left Columns (the label, then the chips wrapping beside it) over a `border` rule and the
+options line; at the right Copy and Download CSV side by side at the top, the copy's
+status under them right-aligned. From 1024 to 1279 px it is one column, the actions a
+row at the left under the options, on their own `border` rule. The sheet follows the
+band at the measure. Below 1024 px there is no panel and no sheet: Copy and Download CSV
+full width and stacked first, then Columns and Options as section heads (`caps` on a
+text-colour rule) over the chips and the stacked 44 px options, all kept out of the
+"+"'s column (56 px right padding, as the toolbar and the chips).
+
+Reports (item 15c) stacks the same toolbar, chips and running line, then on the PC the
+options as one line (Round, Split and Duration, 20 px apart, wrapping as units) without a
+panel; then the lists 24 px apart in two columns: Days at the left; Weeks, Customers and
+Projects stacked at the right. Below 1024 px the outline Options button, then the lists
+one column 32 px apart, the month's split first: Customers, Projects, Weeks, Days.
+
 The Calendar's phone toolbar is two rows: the view switch (taking the free width),
 the 44 px icon Filter and Today; then ‹, the title and ›, so the title is never
 squeezed. On the PC Filter sits in its one row.
@@ -681,7 +751,8 @@ viewport tall, with the safe area under it; its head and foot stay put and its b
 scrolls. The bulk form is the same sheet below 1024 px and a centred dialog from
 there (620 px wide at most, the viewport less 32 px; at most the viewport less 64 px
 tall). The template sheet is the same dialog from 1024 px; Setup's create form is the
-narrow one (440 px).
+narrow one (440 px). Reports' Options sheet is phone-only: below 1024 px it is a sheet,
+from there the options are the line on the page.
 
 The header names the screen with a fixed title. The contract's raise that a view's
 header names the span in view was settled by item 13: the Calendar's header keeps
@@ -709,7 +780,7 @@ start sheet) also dim the page with the 40 % black scrim.
 - **Sheet up** (`box-shadow: 0 -8px 24px rgb(0 0 0 / 0.12)`): the phone's sheets: More
   above the bottom bar, the start sheet and the entry sheet; every bottom sheet (the
   filter sheet, the row sheet, the bulk sheet, the template sheet, Setup's create
-  sheet).
+  sheet, Reports' Options sheet).
 - **Popover down** (`box-shadow: 0 8px 24px rgb(0 0 0 / 0.12)`): the PC timer bar's
   list of other running timers, the PC start popover, the project picker's list and
   the PC entry dialog, and the undo strip while it is pinned under the bars (scrolled
@@ -726,7 +797,8 @@ An overlapping timesheet row's 2 px red top edge on the PC is drawn with an inse
 `box-shadow` across its cells (a rule, not depth; the phone row uses a border). A ticked
 History change line's accent band reaches 12 px past the line each side, to the panel's
 edges, by two unblurred `box-shadow` offsets in `accent` (a fill, not depth; its hairline
-keeps its width).
+keeps its width). The current Duration segment's 2 px text-colour foot is an inset
+`box-shadow` too (a rule, as the view switch's underline).
 
 **The Floating Only Rule.** A surface at rest has no shadow. Only a sheet, popover or
 dialog that floats over the page casts one, and a calendar block only while it is
@@ -752,6 +824,10 @@ line at now is 2 px with an 8 px dot; today's date sits in a full circle (32 px 
 PC grid, 28 px on the phone and in the month); the date picker's days are circles
 (36 px, phone 44 px); the phone month's cells have 4 px corners, the chosen one a 2 px
 ring. The phone's new block has 14 px round handles.
+
+Copy-out's column chips take 4 px corners and a 1 px `checkbox` outline. The Duration
+control takes the view switch's form: joined segments, 4 px outer corners, the current
+one's 2 px text-colour foot.
 
 Setup's filter takes the view switch's form: joined segments, 4 px outer corners, the
 current one's 2 px text-colour foot. A Setup project's dot is indented under its
@@ -784,6 +860,9 @@ Flat, firm, quiet until pressed.
   16 px funnel, the range in view in figures ("This month"), the count badge when other
   filters are on, and a muted chevron; it fills with accent while open. On Entries'
   phone toolbar it takes the free width beside Select (its chevron at the right end).
+  Copy-out and Reports use Entries' toolbar whole (Filter, search, count; no Select),
+  their count naming what it counts ("56 rows" on Copy-out, and the filter sheet's
+  "Show 56 rows").
   On the phone Calendar it is a 44 px icon button: the funnel and the badge, no
   chevron, "Filter" for screen readers. On the PC Calendar it is the text form without
   a range. Its name reads "Filter", then the range, then "+2 more filters".
@@ -802,8 +881,9 @@ Flat, firm, quiet until pressed.
   "Archived" is the outline chip in muted text, after an archived row's muted name.
 
 ### Filter chips
-The filters on besides the range, one removable chip each, under the toolbar (Entries
-and the PC Calendar). The range has no chip; the Filter button names it.
+The filters on besides the range, one removable chip each, under the toolbar (Entries,
+Copy-out, Reports and the PC Calendar). On the phone the row keeps out of the "+"'s
+column (56 px right padding). The range has no chip; the Filter button names it.
 - **Style:** surface fill, 1 px `input` stroke, 4 px corners, 14 px text; 44 px tall
   on the phone, 36 px on the PC. A project chip leads with its 8 px project dot and
   reads "CompX › CompY – Support"; the others "Activity: Support ticket".
@@ -1184,12 +1264,77 @@ whole or change by change.
   and clears the ticks.
 - **Empty:** "Nothing recorded yet." in muted text on a `border` rule.
 
+### Output band (Copy-out)
+What a copy holds, chosen in one place over the sheet it fills.
+- **Column chips:** the ten columns as toggle chips in a fixed order, wrapping 8 px
+  apart: 44 px (PC 36 px), 12 px sides, 4 px corners, a 1 px `checkbox` outline, 14 px.
+  On: `accent` fill, semibold, the text colour and a 14 px Lucide check before the name.
+  Off: the surface, muted text and no check; hover darkens the outline to 60 % text. A
+  press shows at once (150 ms ease-out colour), the focus staying on the chip. With
+  none on, "Choose at least one column." in red 14 px under them, Copy and Download CSV
+  off and no sheet; a chip never refuses a press.
+- **Options:** Round to 5 minutes and Split at midnight as checkboxes beside their
+  14 px labels, then "Duration" and the **Duration** control: h:mm | Decimal as joined
+  outline segments (surface, `input` stroke, 14 px semibold, 14 px sides, 4 px outer
+  corners); the current one fills with `accent` and carries a 2 px text-colour foot,
+  hover fills with `accent`, focus the 2 px blue ring. One line from 1024 px (36 px),
+  stacked 44 px rows below it with Duration's label and control at the row's ends. Shared
+  with Reports.
+- **Copy and Download CSV:** "Copy 56 rows" is the screen's one primary (a 16 px copy
+  icon); Download CSV is outline with a 16 px download icon. With nothing to copy (no
+  column on, or no row) both are off at 50 %, still focusable and described by why. The
+  copy's outcome ("Copied 56 rows.", or the failure) sits under them in 14 px, cleared
+  when the rows change.
+- Without JavaScript the chips are labelled checkboxes in the same dress and a primary
+  Apply sends the form; Copy is drawn by the server and hidden (`data-js`).
+
+### Copy sheet (Copy-out)
+The rows as Copy writes them, in the ruled table's dress: a surface panel (4 px corners,
+`border` stroke), the muted 36 px head band of `caps` heads over an `input` rule, rows on
+`border` hairlines, cells 8 px tall and 10 px to the sides, top-aligned, 14 px. Date,
+Start, End and Duration in figures, Duration right-aligned; a column whose value is up to
+24 characters keeps it on one line (never broken at its hyphen); Description takes the
+rest of the width (at least 192 px) and wraps, so nothing is cut. Only when the columns
+cannot fit does the panel scroll sideways inside itself: at 1440 px all ten fit, the
+gate month with little to spare; at 1024 px it scrolls. With the Duration column, a
+semibold Total row at the foot on a 1 px text-colour rule. PC only: the phone copies
+without showing the sheet.
+
+### Totals lists (Reports)
+Days, Weeks, Customers and Projects, each a section head (`caps` on a text-colour rule)
+over a surface panel of ruled rows: the label at the left, the duration at the right in
+figures, 14 px, 12 px tall padding (PC 10 px) and 16 px sides, `border` hairlines. Days
+("Thu 2026-10-01") and Weeks ("W40 · 2026-09-28 – 10-04") set their labels in figures; a
+Projects row leads with its project's 8 px dot, then the customer › in muted text and the
+project in the text colour. The foot is a semibold Total row on a 1 px text-colour rule.
+On the PC the panel has 4 px corners and a `border` frame; below 1024 px it runs edge to
+edge, ruled top and bottom, the head keeping the 16 px margin.
+
+### Options button and sheet (phone, Reports)
+An outline button (44 px, 12 px sides, semibold 14 px) summarising the options: a 16 px
+Lucide sliders icon, "Options · h:mm, rounded", a muted chevron. It opens a bottom sheet:
+the head "Options" (17 px bold), the options stacked at 44 px, each change shown at once
+behind it, and a pinned full-width outline Done over a `border` rule (outline, not
+primary: nothing is applied by it), which closes the sheet and returns the focus to the
+button. Without JavaScript the button is a disclosure that fills with `accent` while
+open, over a surface panel (4 px corners, `border` stroke) whose form has its own
+primary Apply.
+
+### Script-only and no-script parts
+A part that needs the script carries `data-js`; a part only the no-JavaScript page has
+carries `data-nojs`. The server draws both; the stylesheet hides `data-js` while the
+root has no `js` class and `data-nojs` once it does, so neither flashes. Copy-out's Copy
+and column-chip buttons are `data-js`; their checkboxes and the Apply buttons are
+`data-nojs`. Where a screen's PC and phone forms differ, both render without the script
+and CSS shows one.
+
 ### Bottom sheet
 How the phone shows a choice over the page: the filter, a row's actions and the bulk
 form. A native modal dialog: surface, a `border` top rule, 6 px top corners, the
 sheet-up shadow, the 40 % black scrim behind it, at most 85 % of the viewport tall. It
 traps focus and returns it to its opener; Escape, a tap on the scrim and the browser's
-Back close it (Back stays on the screen under it). The filter sheet's head is "Filter"
+Back close it (Back stays on the screen under it). Reports' Options sheet is one too
+(Options button). The filter sheet's head is "Filter"
 (17 px bold) with a Clear filters link; every choice applies at once, and its foot's
 full-width primary "Show 52 entries" closes it. The presets sit two to a row, each name
 over its dates, Custom range across both.
@@ -1220,16 +1365,11 @@ Surface fill, 1 px `input` stroke, 4 px corners, 14 px. Errors take red at 60 % 
 red text.
 
 ### Screen components carried from round 1
-These keep their structure until item 15, now in the tokens above: the filter bar on
-Copy-out and Reports (labels over fields, 1/2/4 columns at phone/640/1280 px, an outline
-Search and an underlined Clear link; Copy-out's primary Show; Entries replaced it with
-Filter and chips), the selectable ruled table (a 44 px checkbox column, a "Select all"
-link without JavaScript), the change form and the
-in-page delete confirm (only the confirming button is red; it takes the focus),
-Reports' totals tables (a semibold Total row under a text-colour rule), Copy-out's
-sheet table (never stacks; scrolls sideways), Account's token list and shown-once
-token, and Backup's file input and confirm checkbox. In-page links are the text colour
-with an `input` underline that darkens on hover; never blue.
+These keep their structure, now in the tokens above, on Account, Users and Backup: the
+change form and the in-page delete confirm (only the confirming button is red; it takes
+the focus), Account's token list and shown-once token, and Backup's file input and
+confirm checkbox. In-page links are the text colour with an `input` underline that
+darkens on hover; never blue.
 
 ## Do's and Don'ts
 
@@ -1251,6 +1391,9 @@ with an `input` underline that darkens on hover; never blue.
 - **Do** stroke every checkbox with `checkbox` and keep `input` for fields and buttons.
 - **Do** mark a template by what a tap does, TIMER or LOG, in muted `caps`, TIMER with its timer icon.
 - **Do** let a phone row's meta line wrap between its parts, keeping a reference such as "T-1234" whole.
+- **Do** mark an on toggle chip by fill, weight and a check together (`accent`, semibold, the check), never by colour alone, and keep the off chip's `checkbox` outline.
+- **Do** let a copied table fit by wrapping Description, keeping short values on one line, and scroll the panel sideways only when the columns cannot fit.
+- **Do** mark a part that needs the script `data-js` and a no-script-only part `data-nojs`, both drawn by the server.
 - **Do** return focus after an action: to Undo after a done change, to the head tick box or Select after a clear (when in view; else to the last ticked row, never scrolling the page).
 
 ### Don't:

@@ -412,7 +412,7 @@ Split 2026-10-19 into two parts, worked in order:
   entry with differing start and end zones;
   `monthRange` repeats `readSearch`'s month arithmetic; a partial `Search` cast in
   the `csvName` test and the 600-row test data built in a `describe` body; the
-  refusal test pins the core's generic "The input is not valid."; the load sends an
+  load sends an
   unused `heads`; the section head reads "Result" with the count beside it, as
   Entries' "Found"; the duration choice is a `role=radiogroup` div rather than a
   fieldset; the copy-out form keeps `role=search`; the running line shows under "No
@@ -1526,8 +1526,118 @@ screens.
     Select; the no-JS phone gutter; a tight row-height bound (≤116 px against 113); a
     createdAt tie in `history.page`; an edited-then-deleted entry; the "changed twice"
     test passes whichever change wins.
-- **15c. Copy-out and Reports.** They share round 1's filter bar
+- **15c. Copy-out and Reports — done 2026-10-21.** They share round 1's filter bar
   (`components/entries/`), which goes with them.
+
+  Done 2026-10-21: Copy-out and Reports redone in item 11's direction and the
+  patterns of 12–14; round 1's filter bar and readers removed. The rows, the writers,
+  the CSV format and the totals' arithmetic are unchanged; nothing in the core, the
+  database or the MCP changed. What was built:
+
+  - An output model (`filter/output.ts`: columns and options in the address as `cols`,
+    `round`, `split`, `duration`) and one server reader (`screens/output.ts`) for both
+    screens and the CSV route. Kept per device: `output_range` (the preset, shared by
+    the two screens, apart from Entries' `entries_range`; never a custom range) and
+    `output_choice` (columns and options); the address beats them, an address naming
+    the choice writes it unless it names no column, the CSV route reads both and
+    writes neither. Rows oldest first, no row limit.
+  - Entries' toolbar, Filter popover and sheet, chips and live search generalised to
+    the screen's path (`Toolbar` `action`, `noun`, `hidden`; `applyForm` carries the
+    choice, and leaves it out when a form names none). "56 rows · 68:30" on Copy-out,
+    "56 entries · 68:30" on Reports; every total follows Duration.
+  - Copy-out, PC: the output band (ten `aria-pressed` toggle chips, the options with a
+    segmented Duration, Copy the one primary, Download CSV outline, the polite status;
+    one column with the actions under the options from 1024 to 1279 px, two from
+    1280), and the sheet as a ruled table whose short columns stay on one line while
+    Description wraps, scrolling sideways only when the columns cannot fit, with a
+    Total row. With no column on or no match, Copy and Download CSV are off (focusable,
+    saying why); with no column the toolbar still counts and totals the rows. Phone:
+    Copy and Download CSV first, then COLUMNS and OPTIONS, no sheet.
+  - Reports: the options line, then Days at the left and Weeks, Customers, Projects
+    (with dots) at the right, each a ruled list with a Total; days "Thu 2026-10-01",
+    weeks "W40 · 2026-09-28 – 10-04". Phone: an Options button opening a bottom sheet
+    (outline Done), then Customers, Projects, Weeks, Days.
+  - Without JavaScript both are `GET` pages: checkboxes, radios and Apply; Reports'
+    phone Options a `<details>`. A new `data-js` rule mirrors `data-nojs`.
+  - Fixed in passing: an impossible date (`2026-13-01`) was a 500 on every filtered
+    screen and the CSV route; it is now refused with "Use dates like 2026-10-01.". A
+    search over 200 characters reads "Use 1–200 characters." on both screens and the
+    CSV's 400, as on Entries. The phone's "Clear filters" (Entries too) keeps out of
+    the "+"'s column.
+  - Round 1's `e2e/copy-out.test.ts` and `e2e/reports.test.ts` rewritten (PC, 390 px,
+    no JavaScript), round 1's behaviours kept; `components/entries/`,
+    `narrowing.svelte.ts`, `readSearch`, `searchInput`, `searchFilters`, `searchPath`,
+    `groupProjects` and round 1's copy-out and reports readers removed.
+
+  Records: spec `docs/superpowers/specs/2026-10-21-copy-out-and-reports-design.md`, plan
+  `docs/superpowers/plans/2026-10-21-copy-out-and-reports.md`. `docs/app.md` updated;
+  `DESIGN.md` and `.impeccable/design.json` recorded by impeccable's documenter (Copy-out,
+  Reports and the filter bar dropped from round 1's carry-overs). No new decision record.
+
+  Checks: 1094 unit tests and the browser suite (336 passed, the rest skipped by
+  project); check and lint clean. impeccable's critique and audit found 0 P0, 0 P1, 5
+  P2 and 5 P3 (the detector found nothing); the P2s and two P3s were fixed and
+  reviewed. Task reviews: one Important (the phone sheet's Done was a third blue
+  fill), fixed. The docs review's two Importants (a week label's dash, "Copy is not
+  drawn") fixed. The final whole-branch review found no Critical or Important; its
+  minors were fixed but one, parked below.
+
+  Calls made in the operator's place, the stand-in's: spec calls 1–20, as recorded in
+  the spec (sources and confidence there), and from the build:
+
+  - **With no matching rows, Copy and Download CSV are both off (50 %, focusable,
+    saying "No entries match."); the CSV address itself still answers a header-only
+    file.** Source: none on record; the spec's no-column state by analogy.
+    Confidence: ungrounded, queued.
+
+  The builder's: spec calls 21–29. From the build (ledger rulings):
+
+  - A week holding 2026-12-31 reads "W53 · 2026-12-28 – 2027-01-03", not the spec's
+    and plan's "W01 · …": 2026 starts on a Thursday, so ISO weeks make it week 53;
+    call 28's substance (the Sunday in full across the year) holds.
+  - `csvName` keeps its output; its parameter is `{ from, to }` so it survives the
+    removal of round 1's `Search` type.
+  - `applyForm` leaves the choice out when a form names none, and Reports' forms carry
+    the choice as hidden fields, so a filter change on Reports never resets the kept
+    columns.
+  - With no column on, the toolbar and Copy still count and total the matching rows
+    (critique P2-1), as the spec has the toolbar still say the total without Duration.
+  - The phone's "Clear filters" is kept clear of the "+" in the shared `FilterChips`,
+    so Entries gets it too (the spec's anti-goal).
+  - P3s fixed: the chip outline takes the `checkbox` stroke (3:1); the last Reports
+    total clears the "+" (already true; now tested). Left: the phone checkboxes' indent
+    against the mockup, the PC "Columns" label not in caps (as the mockup), unticking
+    every chip keeps the last single column (call 26).
+  - Interim: between Tasks 3 and 4 the Reports placeholder failed one touch-target
+    case; Task 4 replaced it and the suite is green.
+  - Parked: a round 1 bookmark with `from`/`to` and no `range` opens the kept preset
+    with no sign the dates were ignored (the plan's Review Focus 1 rules it so);
+    reading a bare `from`/`to` as a custom range is a later improvement.
+
+  Questions queued in `docs/questions.md`: what the two actions do with no matching
+  rows; whether a weekday with no time shows on Reports; shares beside totals; four
+  lists or nested ones; bars or a chart; whether a total leads to its entries; all
+  four totals at once; whether the ticked columns and options are kept; whether the
+  two screens share a kept range.
+
+  Deferred minors:
+
+  - Look: on the phone "No entries match." sits below the band, out of first view,
+    and the off button reads "Copy 0 rows"; all ten columns fit at 1440 px with 7 px
+    to spare on the gate month (longer names scroll the panel, as call 12 allows); the
+    Total label is hidden when Duration is the first column on; without JavaScript a
+    chip label's fill and weight follow different states, and Apply hovers with
+    `bg-primary/90`; "Columns" is named twice to assistive technology; Reports'
+    options line hides on a refusal (as Copy-out's band).
+  - Code: Copy-out's and Reports' buttons hand-roll the primary and outline classes;
+    the project dot lookup exists three times; the Reports load's `entries` repeats
+    `count`; `formFailure(…, []).error` is repeated in three readers; the route tests
+    repeat their cookie and entry helpers.
+  - Test gaps: `keepOutput` has no unit test; `outputQuery`'s round trip covers only a
+    preset; "rounded and not" never asserts the two totals differ; `applyForm`'s
+    unnamed choice is covered by e2e only; the phone Clear-filters loop asserts no
+    count; the band's 1280 px boundary; "Copy failed" untested; hydration waits on
+    `networkidle`; the Gate 5 sheet-total locator is positional.
 - **15d. Account and agent access, Users, Backup and the sign-in page.** The last
   part also checks that no screen still uses round 1's look or patterns.
 

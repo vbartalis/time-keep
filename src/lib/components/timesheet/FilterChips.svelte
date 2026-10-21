@@ -69,7 +69,8 @@
 </script>
 
 {#if chips.length > 0}
-	<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+	<!-- Clear of the phone "+"'s column. -->
+	<div class="flex flex-wrap items-center gap-x-3 gap-y-2 max-lg:pr-14">
 		<ul aria-label="Filters" class="flex flex-wrap items-center gap-2">
 			{#each chips as chip (chip.text)}
 				<li

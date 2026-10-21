@@ -20,6 +20,103 @@ The operator answers whenever they like, here (under the entry) or in conversati
 An answer is added to [the operator's voice](operator-voice.md) in their words, and if
 it changes built work, it becomes a roadmap item.
 
+## 2026-10-21 — 15c
+
+- Question: On Copy-out, when the filter matches no rows ("No entries match."), what
+  do Copy and Download CSV do: both off, Copy off with the CSV live (header only), or
+  both live (an empty copy, "Copied 0 rows.")?
+- Call made: Both off, as the no-column state already does on this screen (50 %,
+  still focusable, saying why: no entries match). It reuses the screen's own off
+  pattern, and a live blue "Copy 0 rows" does nothing useful. Nothing on record
+  covers it. The CSV route itself still answers a header-only file if opened by
+  address; only the buttons are off.
+- If answered differently: Download CSV (or both) stay live on no match; Copy writes
+  nothing and says "Copied 0 rows.", the CSV holds only the header row, and the
+  browser tests for the empty state change with it.
+
+## 2026-10-21 — 15c
+
+- Question: On Reports, should a weekday with no time in the range show as a row
+  reading "—", or be left out of the days?
+- Call made: Left out, as round 1 does. It is the smaller change. Nothing on record
+  says how you look for a missing day. A "—" row would also mark today, or a day not
+  yet worked, as empty.
+- If answered differently: every weekday in the range (up to today) gets a row, with
+  "—" where no time was logged, on the PC and the phone; weekends stay out unless
+  they hold time.
+
+## 2026-10-21 — 15c
+
+- Question: Should Reports show each total's share of the range (CompX 72 %) beside
+  its duration, or durations only?
+- Call made: Durations only. The vision asks for totals per day, week, customer and
+  project. Nothing on record asks for shares, and leaving them out is the smaller
+  change.
+- If answered differently: the customer and project rows (and possibly weeks) gain a
+  share column, with the share of the range's total.
+
+## 2026-10-21 — 15c
+
+- Question: Should Reports show four separate lists (days, weeks, customers,
+  projects), or two nested ones (customers with their projects under them, weeks with
+  their days under them)?
+- Call made: Four separate lists, as round 1 has: side by side on the PC, stacked on
+  the phone. It is the smaller change. Nothing on record says how you read the totals.
+- If answered differently: Reports becomes two lists, customer › project and week ›
+  day, each parent row carrying its subtotal.
+
+## 2026-10-21 — 15c
+
+- Question: Should Reports have bars or a chart beside the numbers, or numbers only?
+- Call made: Numbers only, as round 1 built it. The study rejects Kimai's dashboard
+  and its bar chart as a screen (Views 9, Totals 3). Nothing on record asks for a
+  chart.
+- If answered differently: Reports' rows gain a bar scaled to the largest total in
+  their table, or a chart (for example days as columns) above the tables.
+
+## 2026-10-21 — 15c
+
+- Question: Should a total on Reports lead to its entries (a customer's total opening
+  Entries filtered to that customer and range), or stay read-only?
+- Call made: Read-only, as round 1 built it. It is the smaller change, and nothing on
+  record asks for the link.
+- If answered differently: each row on Reports links to Entries with the range and
+  the scope filled in (a day or week as a custom range, a customer or project as the
+  scope).
+
+## 2026-10-21 — 15c
+
+- Question: Should Reports show the four totals (days, weeks, customers, projects) all
+  at once, or one at a time with a switch?
+- Call made: All four at once, as round 1 does: on the PC side by side, on the phone
+  stacked. It is the smaller change. Nothing on record says how you read them.
+- If answered differently: Reports gets a Days | Weeks | Customers | Projects switch
+  (kept in the address) and shows one table at a time.
+
+## 2026-10-21 — 15c
+
+- Question: On Copy-out, should the ticked columns and the output options (round to 5
+  minutes, split at midnight, h:mm or decimal) be kept between visits, and should you
+  be able to change the columns' order?
+- Call made: Kept per device, as Entries keeps its range preset (item 14); the order
+  stays fixed (Date, Start, End, Duration, Customer, Project, Activity, Location,
+  Reference, Description), as round 1. Your sheets are custom and differ (2026-10-18),
+  but nothing says their column order differs from that order or that you paste
+  into more than one sheet layout a month.
+- If answered differently: the choice lasts only for the visit (in the address), or
+  several named column sets are saved; the columns gain drag or move-up/down
+  ordering, kept with the set.
+
+## 2026-10-21 — 15c
+
+- Question: Copy-out and Reports take Entries' Filter control. Should their range
+  preset be shared with Entries (one kept preset for all three), or kept per screen?
+- Call made: Kept per screen, Copy-out and Reports sharing one between them, so
+  choosing Last month for the month-end output does not move Entries off This month.
+  Nothing on record covers it.
+- If answered differently: all three screens (and the Calendar's filter, if wanted)
+  share one kept preset and scope.
+
 ## 2026-10-21 — 15b
 
 - Question: Where should History's paging go: Newer / Older buttons in the toolbar

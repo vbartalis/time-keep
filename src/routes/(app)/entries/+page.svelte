@@ -241,6 +241,8 @@
 	{/if}
 	{#if !barUp}
 		<Toolbar
+			action={entries}
+			noun={['entry', 'entries']}
 			filter={data.filter}
 			options={data.options}
 			hints={data.hints}

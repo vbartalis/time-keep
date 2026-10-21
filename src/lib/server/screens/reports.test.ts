@@ -4,7 +4,8 @@ import { user } from '../db/schema';
 import { newId } from '../id';
 import { createTestDb } from '../testing/db';
 import { outputRows } from './copy-out';
-import { isoWeek, readReport, reportFor, reportQuery, reportTotals } from './reports';
+import { readOutput } from './output';
+import { isoWeek, reportFor, reportTotals } from './reports';
 
 const BUD = 'Europe/Budapest';
 const at = (iso: string) => Date.parse(iso);
@@ -51,18 +52,25 @@ describe('isoWeek', () => {
 });
 
 describe('days', () => {
+	it("reads as Entries' day heads", () => {
+		const report = reportTotals(
+			[entry('2026-10-01T09:00:00+02:00', '2026-10-01T10:00:00+02:00')],
+			base
+		);
+		expect(report.days[0].label).toBe('Thu 2026-10-01');
+	});
 	const night = entry('2026-10-07T22:00:00+02:00', '2026-10-08T02:00:00+02:00');
 	it('puts an unsplit entry on its start day', () => {
 		expect(reportTotals([night], base).days).toEqual([
-			{ key: '2026-10-07', label: '2026-10-07 Wed', minutes: 240 }
+			{ key: '2026-10-07', label: 'Wed 2026-10-07', minutes: 240 }
 		]);
 	});
 	it('splits it at midnight, leaving the other tables as they were', () => {
 		const whole = reportTotals([night], base);
 		const split = reportTotals([night], { ...base, split: true });
 		expect(split.days).toEqual([
-			{ key: '2026-10-07', label: '2026-10-07 Wed', minutes: 120 },
-			{ key: '2026-10-08', label: '2026-10-08 Thu', minutes: 120 }
+			{ key: '2026-10-07', label: 'Wed 2026-10-07', minutes: 120 },
+			{ key: '2026-10-08', label: 'Thu 2026-10-08', minutes: 120 }
 		]);
 		expect(split.weeks).toEqual(whole.weeks);
 		expect(split.customers).toEqual(whole.customers);
@@ -81,16 +89,23 @@ describe('weeks', () => {
 			base
 		);
 		expect(report.weeks.map((w) => w.label)).toEqual([
-			'W42 2026-10-12 – 2026-10-18',
-			'W43 2026-10-19 – 2026-10-25'
+			'W42 · 2026-10-12 – 10-18',
+			'W43 · 2026-10-19 – 10-25'
 		]);
 	});
-	it('labels a 53rd week', () => {
+	it('writes the Sunday in full when it falls in the next year', () => {
+		// Review Focus 5: an entry on 2026-12-31. ISO 8601 numbers that week 53 of 2026
+		// (2026 begins on a Thursday), so it reads W53, not W01.
 		const report = reportTotals(
+			[entry('2026-12-31T09:00:00+01:00', '2026-12-31T10:00:00+01:00')],
+			base
+		);
+		expect(report.weeks[0].label).toBe('W53 · 2026-12-28 – 2027-01-03');
+		const next = reportTotals(
 			[entry('2027-01-01T09:00:00+01:00', '2027-01-01T10:00:00+01:00')],
 			base
 		);
-		expect(report.weeks[0].label).toBe('W53 2026-12-28 – 2027-01-03');
+		expect(next.weeks[0].label).toBe('W53 · 2026-12-28 – 2027-01-03');
 	});
 	it('labels a week the range cuts as the whole week, counting only the entries found', () => {
 		const report = reportTotals(
@@ -101,7 +116,7 @@ describe('weeks', () => {
 			base
 		);
 		expect(report.weeks).toEqual([
-			{ key: expect.any(String), label: 'W40 2026-09-28 – 2026-10-04', minutes: 90 }
+			{ key: expect.any(String), label: 'W40 · 2026-09-28 – 10-04', minutes: 90 }
 		]);
 	});
 });
@@ -128,6 +143,7 @@ describe('customers and projects', () => {
 		);
 		expect(report.projects.map((p) => p.label)).toEqual(['Acme › Site', 'Bolt › Site']);
 		expect(report.projects.map((p) => p.key)).toEqual(['p1', 'p2']);
+		expect(report.projects[1]).toMatchObject({ customer: 'Bolt', project: 'Site' });
 	});
 });
 
@@ -139,7 +155,7 @@ describe('totals', () => {
 		);
 		expect(report.entries).toBe(1);
 		expect(report.minutes).toBe(0);
-		expect(report.days).toEqual([{ key: '2026-10-07', label: '2026-10-07 Wed', minutes: 0 }]);
+		expect(report.days).toEqual([{ key: '2026-10-07', label: 'Wed 2026-10-07', minutes: 0 }]);
 	});
 	it('leaves a running entry out and counts it', () => {
 		const report = reportTotals([entry('2026-10-07T09:00:00+02:00', null)], base);
@@ -174,24 +190,6 @@ describe('totals', () => {
 	});
 });
 
-describe('readReport', () => {
-	const now = at('2026-10-19T10:00:00Z');
-	it('defaults to this month, rounded, unsplit, as hours and minutes', () => {
-		const { query, error } = readReport(new URLSearchParams(''), BUD, now);
-		expect(error).toBeNull();
-		expect(query.search).toMatchObject({ from: '2026-10-01', to: '2026-10-31' });
-		expect(query.options).toEqual({ round: true, split: false, duration: 'hm' });
-	});
-	it('refuses a bad date', () => {
-		const { error } = readReport(new URLSearchParams('from=2026-13-01'), BUD, now);
-		expect(error).toBe('Use dates like 2026-10-01.');
-	});
-	it('writes the query back the way it reads', () => {
-		const { query } = readReport(new URLSearchParams('show=1&from=2026-10-01&split=1'), BUD, now);
-		expect(readReport(new URLSearchParams(reportQuery(query)), BUD, now).query).toEqual(query);
-	});
-});
-
 describe('reportFor', () => {
 	const db = createTestDb();
 	const val = <T>(r: Result<T>): T => {
@@ -210,8 +208,7 @@ describe('reportFor', () => {
 	};
 	const mine = make('a');
 	const other = make('b');
-	const query = (q: string) =>
-		readReport(new URLSearchParams(q), BUD, at('2026-10-19T10:00:00Z')).query;
+	const query = (q: string) => readOutput(new URLSearchParams(q), {}, '2026-10-19').view;
 
 	it('totals every entry of the user, not a capped page', () => {
 		for (let i = 0; i < 600; i++) {
@@ -242,8 +239,8 @@ describe('reportFor', () => {
 		}
 	});
 
-	it('gives the core message when the list is refused', () => {
-		const result = reportFor(mine.core, query(`text=${'x'.repeat(201)}`), BUD);
-		expect(result).toEqual({ ok: false, message: 'The input is not valid.' });
+	it('gives the field message when the list is refused', () => {
+		const result = reportFor(mine.core, query(`q=${'x'.repeat(201)}`), BUD);
+		expect(result).toEqual({ ok: false, message: 'Use 1–200 characters.' });
 	});
 });

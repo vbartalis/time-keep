@@ -1,12 +1,5 @@
 import { redirect, type Cookies } from '@sveltejs/kit';
-import {
-	nextDate,
-	previousDate,
-	type Core,
-	type CoreError,
-	type ProjectListItem,
-	type Result
-} from '../core/index';
+import { nextDate, previousDate, type Core, type CoreError, type Result } from '../core/index';
 import { readClock, readDate, readDuration, type Read } from '#lib/time-input.js';
 import { flashAfter, setFlash } from './flash';
 
@@ -135,26 +128,4 @@ export function formFailure(
 		else hidden.push(message);
 	}
 	return { error: hidden.length > 0 ? hidden.join(' ') : error.message, fields };
-}
-
-export type ProjectGroup = {
-	customerId: string;
-	customerName: string;
-	projects: { id: string; name: string }[];
-};
-
-const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
-
-/** Projects grouped under their customers, customers sorted by name. */
-export function groupProjects(projects: ProjectListItem[]): ProjectGroup[] {
-	const groups = new Map<string, ProjectGroup>();
-	for (const p of projects) {
-		let group = groups.get(p.customerId);
-		if (!group) {
-			group = { customerId: p.customerId, customerName: p.customerName, projects: [] };
-			groups.set(p.customerId, group);
-		}
-		group.projects.push({ id: p.id, name: p.name });
-	}
-	return [...groups.values()].sort((a, b) => collator.compare(a.customerName, b.customerName));
 }

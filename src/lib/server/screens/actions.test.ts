@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formFailure, fromTemplateInput, groupProjects, sheetTimeRefusals } from './actions';
+import { formFailure, fromTemplateInput, sheetTimeRefusals } from './actions';
 
 const form = (fields: Record<string, string>) => {
 	const f = new FormData();
@@ -172,29 +172,5 @@ describe('formFailure', () => {
 			error: 'Stopped already.',
 			fields: {}
 		});
-	});
-});
-
-describe('groupProjects', () => {
-	it('groups projects under their customers, customers by name', () => {
-		const p = (id: string, name: string, customerId: string, customerName: string) =>
-			({ id, name, customerId, customerName }) as never;
-		expect(
-			groupProjects([
-				p('1', 'Alpha', 'c2', 'Zeta'),
-				p('2', 'Beta', 'c1', 'acme'),
-				p('3', 'Gamma', 'c2', 'Zeta')
-			])
-		).toEqual([
-			{ customerId: 'c1', customerName: 'acme', projects: [{ id: '2', name: 'Beta' }] },
-			{
-				customerId: 'c2',
-				customerName: 'Zeta',
-				projects: [
-					{ id: '1', name: 'Alpha' },
-					{ id: '3', name: 'Gamma' }
-				]
-			}
-		]);
 	});
 });

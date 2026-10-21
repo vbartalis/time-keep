@@ -1,15 +1,20 @@
 import { type Core, type EntryItem } from '../core/index';
-import {
-	optionsQuery,
-	outputPieces,
-	readOptions,
-	type CopyOutOptions,
-	type Piece
-} from './copy-out';
-import { readSearch, searchInput, type Search } from './entries';
+import { outputPieces, type CopyOutOptions, type Piece } from './copy-out';
+import { outputInput, type OutputView } from './output';
+import { formFailure } from './actions';
+import { labelOf } from './timesheet';
 
-/** One row of a table: `key` identifies it, `minutes` is the pieces' sum. */
-export type Total = { key: string; label: string; minutes: number };
+/**
+ * One row of a table: `key` identifies it, `minutes` is the pieces' sum. A Projects row
+ * also names its customer and project apart (`customer`, `project`).
+ */
+export type Total = {
+	key: string;
+	label: string;
+	minutes: number;
+	customer?: string;
+	project?: string;
+};
 
 /** The four tables, each summing to `minutes`; `entries` the finished entries counted, `running` those left out. */
 export type Report = {
@@ -34,7 +39,6 @@ export const emptyReport = (): Report => ({
 });
 
 const DAY = 86_400_000;
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const utcDay = (date: string): number => Date.parse(`${date}T00:00:00Z`);
 const dateOf = (day: number): string => new Date(day).toISOString().slice(0, 10);
@@ -55,22 +59,36 @@ export function isoWeek(date: string): { week: number; monday: string; sunday: s
 
 const byText = (a: string, b: string): number => a.localeCompare(b, 'en', { sensitivity: 'base' });
 
+/**
+ * "W40 · 2026-09-28 – 10-04": the ISO week, its Monday, and its Sunday without the year,
+ * or in full when the Sunday falls in the next year ("W53 · 2026-12-28 – 2027-01-03").
+ */
+export function weekLabel(date: string): string {
+	const { week, monday, sunday } = isoWeek(date);
+	const end = sunday.slice(0, 4) === monday.slice(0, 4) ? sunday.slice(5) : sunday;
+	return `W${String(week).padStart(2, '0')} · ${monday} – ${end}`;
+}
+
 /** Adds each piece to the row `place` names for it; rows come out ordered by `order`. */
 function tally(
 	pieces: Piece[],
-	place: (piece: Piece) => { key: string; label: string; sort: string },
+	place: (piece: Piece) => { sort: string; row: Omit<Total, 'minutes'> },
 	order: (a: string, b: string) => number
 ): Total[] {
-	const rows = new Map<string, Total & { sort: string }>();
+	const rows = new Map<string, { sort: string; total: Total }>();
 	for (const piece of pieces) {
-		const { key, label, sort } = place(piece);
-		const row = rows.get(key) ?? { key, label, sort, minutes: 0 };
-		row.minutes += piece.minutes;
-		rows.set(key, row);
+		const { sort, row } = place(piece);
+		const found = rows.get(row.key) ?? { sort, total: { ...row, minutes: 0 } };
+		found.total.minutes += piece.minutes;
+		rows.set(row.key, found);
 	}
 	return [...rows.values()]
-		.sort((a, b) => order(a.sort, b.sort) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
-		.map(({ key, label, minutes }) => ({ key, label, minutes }));
+		.sort(
+			(a, b) =>
+				order(a.sort, b.sort) ||
+				(a.total.key < b.total.key ? -1 : a.total.key > b.total.key ? 1 : 0)
+		)
+		.map(({ total }) => total);
 }
 
 const plain = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
@@ -84,31 +102,22 @@ export function reportTotals(
 	return {
 		days: tally(
 			pieces,
-			({ date }) => ({
-				key: date,
-				label: `${date} ${WEEKDAYS[new Date(utcDay(date)).getUTCDay()]}`,
-				sort: date
-			}),
+			({ date }) => ({ sort: date, row: { key: date, label: labelOf(date) } }),
 			plain
 		),
 		weeks: tally(
 			pieces,
 			({ date }) => {
-				const { week, monday, sunday } = isoWeek(date);
-				return {
-					key: monday,
-					label: `W${String(week).padStart(2, '0')} ${monday} – ${sunday}`,
-					sort: monday
-				};
+				const { monday } = isoWeek(date);
+				return { sort: monday, row: { key: monday, label: weekLabel(date) } };
 			},
 			plain
 		),
 		customers: tally(
 			pieces,
 			({ entry }) => ({
-				key: entry.customerId,
-				label: entry.customerName,
-				sort: entry.customerName
+				sort: entry.customerName,
+				row: { key: entry.customerId, label: entry.customerName }
 			}),
 			byText
 		),
@@ -116,7 +125,15 @@ export function reportTotals(
 			pieces,
 			({ entry }) => {
 				const label = `${entry.customerName} › ${entry.projectName}`;
-				return { key: entry.projectId, label, sort: label };
+				return {
+					sort: label,
+					row: {
+						key: entry.projectId,
+						label,
+						customer: entry.customerName,
+						project: entry.projectName
+					}
+				};
 			},
 			byText
 		),
@@ -126,32 +143,13 @@ export function reportTotals(
 	};
 }
 
-/** What the Reports screen shows: the search and the switches the pieces are cut by. */
-export type ReportQuery = { search: Search; options: CopyOutOptions };
-
-/** The report a query string asks for; a bad date gives `error` and the default search. */
-export function readReport(
-	params: URLSearchParams,
-	zone: string,
-	now: number
-): { query: ReportQuery; error: string | null } {
-	const { search, error } = readSearch(params, zone, now);
-	return { query: { search, options: readOptions(params) }, error };
-}
-
-/** The totals of every entry the search matches, with no page limit; a refused list is its message. */
+/** The totals of every entry the filter matches, with no page limit; a refused list is its message. */
 export function reportFor(
 	core: Core,
-	query: ReportQuery,
+	view: OutputView,
 	zone: string
 ): { ok: true; report: Report } | { ok: false; message: string } {
-	const input = searchInput(query.search, zone);
-	delete input.limit;
-	const listed = core.entries.list(input);
-	if (!listed.ok) return { ok: false, message: listed.error.message };
-	return { ok: true, report: reportTotals(listed.value, query.options) };
+	const listed = core.entries.list(outputInput(view.filter, zone));
+	if (!listed.ok) return { ok: false, message: formFailure(listed.error, []).error };
+	return { ok: true, report: reportTotals(listed.value, view.choice.options) };
 }
-
-/** The query string (no `?`) that reads back as `query`. */
-export const reportQuery = (query: ReportQuery): string =>
-	optionsQuery(query.search, query.options).toString();

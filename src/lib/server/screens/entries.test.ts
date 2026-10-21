@@ -8,80 +8,17 @@ import {
 	deleteLabel,
 	editLabel,
 	readBulk,
-	readSearch,
 	runBulk,
-	searchInput,
 	selection,
-	type BulkForm,
-	type Search
+	type BulkForm
 } from './entries';
 
 const ZONE = 'Europe/Budapest';
-const NOW = Date.parse('2026-10-19T10:00:00Z');
 const post = (fields: [string, string][]) => {
 	const form = new FormData();
 	for (const [key, value] of fields) form.append(key, value);
 	return form;
 };
-const read = (query: string) => readSearch(new URLSearchParams(query), ZONE, NOW);
-
-describe('readSearch', () => {
-	it('defaults to the current month in the zone', () => {
-		const { search, error } = read('');
-		expect(error).toBeNull();
-		expect(search).toMatchObject({ from: '2026-10-01', to: '2026-10-31', activity: 'any' });
-	});
-
-	it('leaves a blank bound unbound', () => {
-		expect(read('from=&to=2026-10-05').search).toMatchObject({ from: '', to: '2026-10-05' });
-	});
-
-	it('refuses From after To and bad dates', () => {
-		expect(read('from=2026-10-09&to=2026-10-01').error).toBe('From must not be after To.');
-		expect(read('from=yesterday').error).toBe('Use dates like 2026-10-01.');
-		expect(read('from=2026-02-30').error).toBe('Use dates like 2026-10-01.');
-		// Not even a Date: month 13, day 32.
-		expect(read('from=2026-13-01').error).toBe('Use dates like 2026-10-01.');
-		expect(read('to=2026-10-32').error).toBe('Use dates like 2026-10-01.');
-	});
-
-	it('reads the pickers and all', () => {
-		const { search } = read('from=&to=&activity=none&location=abc&all=1');
-		expect(search).toMatchObject({ activity: 'none', location: 'abc', all: true });
-		expect(read('').search.all).toBe(false);
-	});
-});
-
-const month: Search = {
-	from: '2026-10-01',
-	to: '2026-10-31',
-	customerId: '',
-	projectId: '',
-	activity: 'any',
-	location: 'any',
-	text: '',
-	all: false
-};
-
-describe('searchInput', () => {
-	it('asks for the days as instants in the zone', () => {
-		expect(searchInput({ ...month, activity: 'none' }, ZONE)).toEqual({
-			from: '2026-09-30T22:00:00.000Z',
-			to: '2026-10-31T23:00:00.000Z',
-			startedIn: true,
-			order: 'asc',
-			limit: 501,
-			activityId: null
-		});
-	});
-
-	it('leaves unset fields out and sends the set ones', () => {
-		const input = searchInput({ ...month, from: '', to: '', projectId: 'p', text: 'x' }, ZONE);
-		expect(input).toEqual({ startedIn: true, order: 'asc', limit: 501, projectId: 'p', text: 'x' });
-		expect(input).not.toHaveProperty('from');
-	});
-});
-
 const keep: BulkForm = {
 	projectId: '',
 	activity: 'keep',

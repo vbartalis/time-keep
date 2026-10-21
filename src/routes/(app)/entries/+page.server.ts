@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import type { BulkEdit, BulkFailure, Chosen } from '#lib/components/timesheet/types.js';
 import type { Timesheet } from '#lib/components/timesheet/types.js';
-import { filterQuery, presetHint, PRESETS, readFilter, type Preset } from '#lib/filter/filter.js';
+import { filterQuery, PRESETS, readFilter } from '#lib/filter/filter.js';
 import {
 	localParts,
 	openCore,
@@ -22,6 +22,7 @@ import {
 	selection
 } from '#lib/server/screens/entries.js';
 import { takeFlash } from '#lib/server/screens/flash.js';
+import { presetHints } from '#lib/server/screens/output.js';
 import { filterOptions, timesheetFor } from '#lib/server/screens/timesheet.js';
 import { formatDate, formatTime } from '#lib/server/screens/today.js';
 import { ZONE_COOKIE, zoneFor } from '#lib/server/screens/zone.js';
@@ -78,9 +79,7 @@ export const load: PageServerLoad = ({ locals, cookies, url }) => {
 		sheet,
 		options: filterOptions(core, { archived: true }),
 		choices: filterOptions(core, { archived: false }),
-		hints: Object.fromEntries(
-			PRESETS.map((p) => [p.preset, presetHint(p.preset, today)])
-		) as Record<Preset, string>,
+		hints: presetHints(today),
 		flash: takeFlash(cookies),
 		back: `/entries?${filterQuery(filter)}`,
 		today,

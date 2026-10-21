@@ -30,17 +30,16 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/routes/(app)/admin/backup` | The Backup screen (`+page.svelte`, `+page.server.ts`) and its download route (`download/+server.ts`), admin only. |
 | `src/routes/mcp` | `POST /mcp`, the MCP endpoint, outside the signed-in screens (see [mcp.md](mcp.md)). |
 | `src/routes/(app)/` | Signed-in screens: Today (`/`), `calendar`, `entries` and the entry form (`entries/new`, `entries/[id]`), `copy-out` and its CSV route (`copy-out/csv`), `reports`, `account`, `admin/users`, `admin/backup`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell (see Shell). |
-| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`; `edit.ts`: `withCurrent`, `postedValues`), the entry form's values, pickers, input and refusals (`entry-form.ts`: `valuesFromEntry`, `newValues`, `copyValues`, `templateValues`, `formPickers`, `createInput`, `updateInput`, `previousEnd`, `newEntryValues`, `coreFailure`), the bar's start and restart input (`timer-actions.ts`: `startFromTemplateInput`, `restartInput`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries bulk change (`entries.ts`: `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`) and the filter bar's older search that Copy-out and Reports keep (`readSearch`, `searchInput`, `searchFilters`, `searchPath`), the timesheet's list and pickers (`timesheet.ts`: `listInput`, `timesheetFor`, `filterOptions`), the copy-out's rows and query (`copy-out.ts`: `outputRows`, `readCopyOut`, `copyOutQuery`, `monthRange`, `csvName`, `sheetFor`, and the pieces and options Reports shares: `outputPieces`, `readOptions`, `optionsQuery`), the reports' totals (`reports.ts`: `isoWeek`, `reportTotals`, `readReport`, `reportFor`, `reportQuery`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`, `touchedLine`), the Calendar's period, pieces and totals (`calendar.ts`: `calendarFor`, `moveInput`). |
-| `src/lib/filter/` | The one filter, pure and unit-tested, shared by Entries and the Calendar: `filter.ts` (`PRESETS`, `presetDays`, `presetHint`, `readFilter` with the kept preset, `readScope`, `filterQuery`, `scopeQuery`, `scopeCount`, `rangeLabel`, `matchesScope`). |
-| `src/lib/components/timesheet/` | The Entries screen's parts, and the Filter the Calendar shares: `Toolbar`, `FilterButton`, `FilterPanel` (the PC popover), `FilterSheet` (the phone), `ScopePicker`, `SearchField`, `FilterChips`, `DayTable` (the PC table), `PhoneList`, `RowMenu`, `BulkBar`, `BulkDialog`, `BulkForm`, `Sheet` (a bottom sheet over a native `<dialog>`); `selection.svelte.ts` (ticks, shift runs), `live.ts` (live filtering and in-place posts), `refusal.svelte.ts`, `rows.ts`, `types.ts`. |
-| `src/lib/components/entries/` | `EntryFilters`, round 1's filter bar, kept for Copy-out and Reports until item 15. |
-| `src/lib/components/copy-out/` | The Copy-out screen's parts: the column and option pickers (`OutputFields`), the option pickers alone (`OutputOptions`, shared with Reports), the Copy button and its status (`CopyRows`), the sheet table (`SheetTable`). |
-| `src/lib/components/reports/` | The Reports screen's part: one totals table (`TotalsTable`, a titled section of label and duration rows with a Total row). |
+| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`; `edit.ts`: `withCurrent`, `postedValues`), the entry form's values, pickers, input and refusals (`entry-form.ts`: `valuesFromEntry`, `newValues`, `copyValues`, `templateValues`, `formPickers`, `createInput`, `updateInput`, `previousEnd`, `newEntryValues`, `coreFailure`), the bar's start and restart input (`timer-actions.ts`: `startFromTemplateInput`, `restartInput`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries bulk change (`entries.ts`: `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`), the timesheet's list and pickers (`timesheet.ts`: `listInput`, `timesheetFor`, `filterOptions`), the view Copy-out and Reports share (`output.ts`: `readOutput`, `keepOutput`, `outputQuery`, `outputInput`, `presetHints`, and the `output_range` and `output_choice` cookie names), the copy-out's rows (`copy-out.ts`: `outputRows`, `outputPieces`, `csvName`, `sheetFor`), the reports' totals (`reports.ts`: `isoWeek`, `weekLabel`, `reportTotals`, `reportFor`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`, `touchedLine`), the Calendar's period, pieces and totals (`calendar.ts`: `calendarFor`, `moveInput`). |
+| `src/lib/filter/` | The one filter, pure and unit-tested, shared by Entries, the Calendar, Copy-out and Reports: `filter.ts` (`PRESETS`, `presetDays`, `presetHint`, `readFilter` with the kept preset, `readScope`, `filterQuery`, `scopeQuery`, `scopeCount`, `rangeLabel`, `matchesScope`), and `output.ts` for Copy-out and Reports (`DEFAULT_CHOICE`, `readChoice`: the columns and options from an address and the kept string, `choiceQuery`, `optionsLabel`). |
+| `src/lib/components/timesheet/` | The Entries screen's parts, and the Filter the Calendar shares: `Toolbar` (also Copy-out's and Reports'), `FilterButton`, `FilterPanel` (the PC popover), `FilterSheet` (the phone), `ScopePicker`, `SearchField`, `FilterChips`, `DayTable` (the PC table), `PhoneList`, `RowMenu`, `BulkBar`, `BulkDialog`, `BulkForm`, `Sheet` (a bottom sheet over a native `<dialog>`); `selection.svelte.ts` (ticks, shift runs), `live.ts` (live filtering, for Entries, Copy-out and Reports, and in-place posts), `refusal.svelte.ts`, `rows.ts`, `types.ts`. |
+| `src/lib/components/copy-out/` | The Copy-out screen's parts: the Copy button, Download CSV link and status (`CopyRows`) and the sheet table (`SheetTable`). |
+| `src/lib/components/reports/` | The Reports screen's part: one list (`TotalsTable`, a titled section of label and duration rows with a Total row). |
+| `src/lib/components/output/` | What Copy-out and Reports share: the choice's `GET` form with its no-JavaScript Apply (`ChoiceForm`), the choice as hidden fields (`ChoiceFields`), the column toggle chips (`ColumnChips`), the options (`OutputOptions`), the phone's Options button and sheet (`OptionsSheet`), the running line (`RunningLine`). |
 | `src/lib/components/history/` | The History screen's parts: the PC's ruled table (`HistoryTable`), the phone's rows with their leading Undo and Redo (`PhoneHistory`), a batch's row (`BatchRow`) and its changes (`ChangeList`), the band that is the toolbar or the bulk bar, on the phone the strip with Select or its bar (`HistoryBar`, its state from `barState` in `selection.ts`), and the types its load returns. |
 | `src/lib/calendar/` | The Calendar's pure logic, shared by server and browser and unit-tested: `dates.ts` (`readView`, `periodDays`, `shift`, `isoWeek`, `periodTitle`, `dayName`, `calendarHref`, `hm`), `grid.ts` (`localDate`, `localMinutes`, `instantAt`, `piecesOf`, `lanes`, `overlapping`, `dayTotals` in exact ms, `wholeMinutes` and `spanText` truncating a span to whole minutes as every screen does, `snap`, `halfHourSlot`, `dragRange`), `drag.ts` (`dropTimes`, `clampDay`, `keepIn`) and `gestures.svelte.ts` (the `swipe` attachment, `clockOf`). `drawnExtent` and `growInto` are in `src/lib/components/calendar/block.ts`. |
 | `src/lib/components/calendar/` | The Calendar's parts: `CalendarToolbar`, `DatePicker`, `TimeGrid` (day and week), `EntryBlock`, `NewBlock`, `MonthGrid`, `PhoneMonth`; `block.ts` (a block's text and lines), `drag.svelte.ts` (the PC's `BlockDrag`), `now.svelte.ts` (`nowTicker`) and `types.ts`. |
 | `src/lib/keys.ts` | `screenKey`: whether an unmodified key press is the screen's (outside fields, no dialog or open `data-holds-keys` details), shared by the layout and the Calendar. |
-| `src/lib/components/narrowing.svelte.ts` | Customer and project pickers that narrow each other with JavaScript, used by the filter bar Copy-out and Reports share. |
 | `src/lib/components/account/` | The Account screen's Agent access parts: the token list with its revoke confirm (`TokenList`), the shown-once token with its Copy button (`NewToken`). |
 | `src/lib/components/setup/` | The Setup screen's parts: `ShowFilter` (Active, Archived, All), `SetupList` (one list's ruled rows), `SetupMenu` (a row's ⋯), `RenameRow` (rename in place), `CreateDialog` (the create dialog or sheet); `act.ts` (`setupHref`, `actionOf`, `menuButtonOf`, `act`, the `use:enhance` for its posts). |
 | `src/lib/components/templates/` | The Templates screen's parts: `TemplateTable` (the PC), `TemplateList` (the phone's rows and row sheet), `TemplateMenu` (a template's ⋯); `rows.ts` (`editHref`, `whereOf`, `useLabel`, `dotOf`). |
@@ -86,7 +85,7 @@ It is the same on every screen; no screen draws its own title or navigation.
   just above the bottom bar, with room left for it at the foot of the content. Below `lg`
   the controls that sit at the right edge keep out of its column, so it never hides a
   control at any scroll position: the leading ⋯ leads the rows on Entries and Today,
-  Copy-out's and Reports' filter Clear row and Today's "Manage" keep a 3.5 rem right
+  Copy-out's and Reports' toolbars, chips, Copy buttons and options and Today's "Manage" keep a 3.5 rem right
   margin, and the undo strip's buttons go under its message. Both link
   to `/entries/new?back=<this screen>` and carry `data-entry-form`, so the form opens over
   the screen; without JavaScript they are plain links to the page.
@@ -605,95 +604,172 @@ popovers' focus handling need JavaScript.
 ### Copy-out (`/copy-out`, `/copy-out/csv`)
 
 A PC screen (in the sidebar after Entries, under More on the phone) that writes a month's
-entries out as the columns chosen, to paste into Excel or download as CSV; it stays
-usable at phone widths. It only reads: nothing rounded or split is stored.
+entries out as the columns chosen, to paste into Excel or download as CSV; the phone gets
+it reduced, with no sheet. It only reads: nothing rounded or split is stored. It is
+Entries' toolbar and filter over an output band and a sheet, and there is no Show: every
+choice applies at once.
 
-**The form** is one `GET` form, so a copy-out is a URL. The Filters are round 1's
-Entries filter bar (`EntryFilters`, read by `readSearch`: From, To, Customer, Project,
-Activity, Location and Text, with its own query names and messages; Entries now has the
-new Filter, and these two keep this bar until item 15), with **This month** and **Last month** beside Clear: each sets From and To
-to that month in the request's zone (`monthRange`) and keeps every other filter,
-column and option. Below the filters, **Columns**: ten checkboxes in one fixed order,
-Date, Start, End, Duration, Customer, Project, Activity, Location, Reference,
-Description (`col=<column>`, repeated); and **Options**: Round to 5 minutes (`round=1`,
-on by default), Split at midnight (`split=1`, off) and Duration as `h:mm` or Decimal
-hours (`duration=hm|decimal`). The form sends a hidden `show=1`; `readCopyOut` takes
-the columns and switches as sent when it is there and the defaults (all ten, rounded,
-unsplit, `h:mm`) when it is not. An unknown column or option value is ignored. A
-submitted form with no column says "Choose at least one column." by the columns and
-shows no rows. Show is the screen's one primary button.
+**The address** says the whole view, so a copy-out is a URL: the range (`range=<preset>`,
+or `range=custom` with `from` and `to`), the scope (`customer`, `project`, `activity`,
+`location`, as on Entries), `q` (Entries' one search), `cols` (the columns on, comma
+separated, in the fixed order Date, Start, End, Duration, Customer, Project, Activity,
+Location, Reference, Description whatever order they are named in), `round` (`1`/`0`),
+`split` (`1`/`0`) and `duration` (`hm` or `decimal`). The no-JavaScript form repeats `cols`
+once per ticked box and sends each switch as a hidden `0` then its `1` (the last counts);
+`readChoice` (`filter/output.ts`) reads both. An unknown column or value is ignored; a bad
+date ("Use dates like 2026-10-01.", impossible ones such as 2026-13-01 included: `isDate`
+refuses them rather than failing) or From after To shows by the filter's fields, with no
+rows.
 
-**The rows.** `sheetFor` asks `entries.list` for the entries that started in the
-range, oldest first, with no row limit, and `outputRows` turns them into rows of
-text: the date and start in the start zone, the end in the end zone (a time on the
-row's date, `24:00` at exactly the next midnight, else `YYYY-MM-DD HH:mm`), the
-duration in the chosen format, and the names, reference and description as stored.
-Rounding moves both ends to the nearest 5 minutes (2.5 up) and the duration is their
-difference; without it times are cut to the minute. Splitting
-comes after rounding and cuts an entry at each midnight of its start zone into one
-row per day, a piece of no length not written. A text value starting with `=`, `+`,
-`-`, `@`, a tab or a carriage return gets a leading `'` (`safeText`); dates, times
-and durations never do. Running entries are left out and counted.
+**What is kept.** Two `httpOnly` cookies, 400 days, written by `keepOutput`:
+`output_range` is the preset, shared by Copy-out and Reports and apart from Entries'
+`entries_range` (choosing Last month here does not move Entries); a custom range is never
+kept and lasts for the visit, a first visit with nothing kept opens on This month.
+`output_choice` is the columns and options as one query (`choiceQuery`). **The address
+beats them:** a name the address lacks comes from the cookie, then the default (all ten
+columns, rounded, unsplit, `h:mm`). An address that names a preset writes `output_range`
+(as Entries does); one that names any of `cols`, `round`, `split`, `duration` writes
+`output_choice`, unless it names no column: an empty column set is not kept, so the kept
+columns stay as they were (`readOutput` returns `keepRange` and `keepChoice`). The CSV
+route reads both and writes neither.
 
-**The result** sits under a "Result" head with "<n> rows, <total>" ("1 row"), the
-rows' minutes summed in the chosen format; a Copy button and a Download CSV link,
-both outline; "1 running entry left out." / "<n> running entries left out." when any;
-then the rows as a ruled table with the chosen columns as heads, every value as it is
-copied, the times and durations in figures. The table scrolls sideways at any width and
-never stacks. None says "No entries match." with Clear (and the running line, when
-the only matches run). A date mistake shows by the fields, with no result.
+**The toolbar** is Entries' `Toolbar` (`action`, `noun` and a `hidden` snippet are its
+parameters now: the screen's path, what the count counts, and the fields the filter's form
+carries along, here the four choice names via `ChoiceFields`, so a filter change keeps the
+columns and options), with `FilterChips` under it and the running line
+(`output/RunningLine`). `live.ts`'s `applyForm` goes to the form's path and, for `/copy-out`
+and `/reports`, adds the form's choice names to the address; a form naming none leaves the
+kept choice to apply. The count reads "<n> rows · <total>" ("1 row"); the filter sheet's
+foot reads "Show n rows". The count and total are of the rows even with no column on, and
+the total follows the Duration option.
 
-**Copy** (`CopyRows`, shown only once the page's script runs) writes `toTsv` of the
-page's rows to the clipboard: values separated by tabs, lines by `\r\n`, no header, a
-tab or line break inside a value replaced by a space, and a value that starts with a
-quote wrapped in quotes with its inner quotes doubled (so Excel keeps it whole). A polite status line says
-"Copied <n> rows." ("Copied 1 row.") or "Copy failed; select the table and copy it."
-and clears when the rows change. Without JavaScript the table is selected and copied
-by hand.
+**The output band** (from `lg`, `ChoiceForm` over `ColumnChips`, `OutputOptions` and
+`CopyRows`) is a surface panel above the sheet. **Columns**: the ten as toggle chips in
+the fixed order, 36 px, each a `button` with `aria-pressed`; on, an `accent` fill, semibold
+and a check before the name; off, the surface, muted text, the `checkbox` stroke (3:1). A
+chip never refuses a click. Under a rule the **options** line: Round to 5 minutes and Split
+at midnight as checkboxes and Duration as a two-button segmented `radiogroup` (`h:mm` |
+Decimal). **Copy n rows** (the screen's one blue primary, a copy icon) and **Download CSV**
+(outline, `csvHref`) sit at the band's right from `xl`, below it in a row under the
+options; a polite status line under them. Each change posts `applyForm` at once.
 
-**The CSV route** (`/copy-out/csv`, `+server.ts`) takes the same query (the screen
-links it with `copyOutQuery`) and answers `toCsv` of the same rows: a byte-order mark,
-a header row of the column heads, values comma-separated and quoted when they hold a
-comma, a quote or a line break (quotes doubled, line breaks kept), lines ending
-`\r\n`; `Content-Type: text/csv; charset=utf-8`, `Content-Disposition: attachment`,
-named `time-keep-<from>-<to>.csv` with a blank side written `all` (`csvName`). The
-app layout's load does not cover a `+server.ts`, so the route calls `requireUser`
-itself (signed out: 303 to `/login`) and reads only that user's entries. A query the
-screen would refuse (a bad date, From after To, no column, a refused list) is a 400
-with the screen's message as plain text.
+**The rows.** `sheetFor` asks `entries.list` (`outputInput`: `listInput` with `order: 'asc'`
+and no `limit`) for the entries that started in the range, **oldest first with no row
+limit**, and `outputRows` turns them into rows of text: the date and start in the start
+zone, the end in the end zone (a time on the row's date, `24:00` at exactly the next
+midnight, else `YYYY-MM-DD HH:mm`), the duration in the chosen format, and the names,
+reference and description as stored. Rounding moves both ends to the nearest 5 minutes (2.5
+up) and the duration is their difference; without it times are cut to the minute. Splitting
+comes after rounding and cuts an entry at each midnight of its start zone into one row per
+day, a piece of no length not written. A text value starting with `=`, `+`, `-`, `@`, a tab
+or a carriage return gets a leading `'` (`safeText`); dates, times and durations never do.
+Running entries are left out and counted: "1 running entry left out." / "<n> running
+entries left out." in muted text under the toolbar (under the chips).
+
+**The sheet** (`SheetTable`, from `lg`) is Entries' ruled table in a surface panel: a muted
+`caps` head band, one column per chip on, rows divided by hairlines, dates, times and
+durations in figures, Duration right-aligned, every value exactly as Copy writes it. Nothing
+is cut with "…": text columns wrap and Description takes the rest of the width and wraps;
+all ten fit the 72 rem measure at 1440 px, and below that the panel (never the band)
+scrolls sideways inside itself. With the Duration column a Total row ends the panel, on a
+text-colour rule; without it the toolbar alone says the total. Rows are not links and have
+no menu.
+
+**No column, no match.** With no column on, the band says "Choose at least one column." in
+red under the chips (`columnsError`), no sheet shows, and Copy and Download CSV are off:
+`aria-disabled`, 50 %, still focusable and described by the reason. With no entry matching,
+"No entries match." takes the sheet's place with Clear filters when a filter other than the
+range is on (and the running line, when the only matches run), and both actions are off the
+same way. The core's refusal of the read (a search over 200 characters) shows in red in
+that place.
+
+**The phone** (below `lg`, at any width, tablets included) has no sheet: the toolbar as
+Entries' (Filter taking the width, the search under it, the count and total under that),
+then Copy n rows and Download CSV, full width, stacked, 44 px, with the status; a
+**COLUMNS** section (a `caps` head on a rule, the ten chips at 44 px, wrapping); an
+**OPTIONS** section (the checkboxes and the segmented Duration at 44 px). Everything keeps
+out of the "+"'s column (a 3.5 rem right margin). The screen renders both layouts on the
+server and a media query (`MediaQuery` at 1024 px) keeps one once the script runs.
+
+**Copy** (`CopyRows`, `data-js`) writes `toTsv` of the page's rows to the clipboard: values
+separated by tabs, lines by `\r\n`, no header, a tab or line break inside a value replaced by
+a space, and a value that starts with a quote wrapped in quotes with its inner quotes
+doubled (so Excel keeps it whole). A polite status line says "Copied <n> rows." ("Copied 1
+row.") or "Copy failed; select the table and copy it." and clears when the rows change. The
+focus stays on Copy.
+
+**The CSV route** (`/copy-out/csv`, `+server.ts`) reads the same address through
+`readOutput` (a preset resolves as on the screen; the screen links it with `outputQuery`,
+all four choice names) and the kept cookies for what the address lacks, so a bookmarked
+`/copy-out/csv?range=last-month` downloads what the screen would show; it writes no cookie.
+It answers `toCsv` of the same rows: a byte-order mark, a header row of the column heads,
+values comma-separated and quoted when they hold a comma, a quote or a line break (quotes
+doubled, line breaks kept), lines ending `\r\n`; `Content-Type: text/csv; charset=utf-8`,
+`Content-Disposition: attachment`, named `time-keep-<from>-<to>.csv` with a blank side
+written `all` (`csvName`). The app layout's load does not cover a `+server.ts`, so the route
+calls `requireUser` itself (signed out: 303 to `/login`) and reads only that user's
+entries. A query the screen would refuse (a bad date, From after To, no column, a refused
+list) is a 400 with the screen's message as plain text.
+
+**Without JavaScript** the page is a plain `GET` page, as Entries is. The filter is
+Entries' form with its own submit; the columns are checkboxes (`data-nojs` labels, repeated
+`cols`) and the options a checkbox pair and a radio pair in the `output` form with an
+**Apply** submit (`ChoiceForm`); the chips and Copy are `data-js` and hidden, so there is no
+Copy (the sheet is selected and copied by hand; the CSV works everywhere). **The
+convention:** a part only the no-script page has carries `data-nojs` and `layout.css` hides
+it under `.js`; a control that needs the script carries `data-js` and is hidden under
+`html:not(.js)`. The inline script in `src/app.html` sets `js` before the first paint, so
+nothing moves on hydration.
 
 ### Reports (`/reports`)
 
 A PC screen (in the sidebar after Copy-out, under More on the phone) that shows a month's
-entries as totals per day, week, customer and project, to check a month before copying
-it out; it stays usable at phone widths. It only reads: nothing rounded or split is
+entries as totals per day, week, customer and project, to check a month before copying it
+out; the phone gets the same lists stacked. It only reads: nothing rounded or split is
 stored, and the totals are computed on the way out.
 
-**The form** is Copy-out's without the columns: round 1's filter bar (`EntryFilters`,
-`readSearch`) with **This month** and **Last month** beside Clear, then the **Options**
-(`OutputOptions`: Round to 5 minutes, Split at midnight, Duration as `h:mm` or Decimal
-hours), a hidden `show=1` and Show as the one primary button. `readReport` reads the
-query with `readSearch` and `readOptions` (the reading Copy-out shares, defaults
-rounded, unsplit, `h:mm`); `reportQuery` writes it back for the month links.
+**The address, the kept cookies and the toolbar** are Copy-out's, read by the same
+`readOutput`: the range, scope, `q` and the choice names (`cols` is carried through
+`ChoiceFields` or `ChoiceForm` so Reports never changes the kept columns; a missing column
+does not stop a report), the same `output_range` and `output_choice` cookies, so Reports
+opens on the range Copy-out was left on with the same options. The count reads
+"<n> entries · <total>" ("1 entry"): split at midnight can make more Copy-out rows than
+entries. The total follows Duration, and every total on the screen is the sum of the
+Copy-out rows it covers for the same address.
 
-**The totals.** `reportFor` asks `entries.list` for the entries that started in the
-range, with no row limit, and `reportTotals` sums the pieces `outputPieces` gives (the
-same code that writes Copy-out's rows, so a day's total is the sum of the rows with
-that date): by the piece's date (Days, `2026-10-19 Mon`), by its ISO week (`isoWeek`,
-Monday first; Weeks, `W43 2026-10-19 – 2026-10-25`, the week's own Monday and
-Sunday), by customer id (Customers, by name) and by project id (Projects,
-`Customer › Project`, by customer then project). An entry rounding to nothing is a
-piece of `0:00` and its groups are listed. Running entries are left out and counted.
-Every table's Total is the same number.
+**The options** are always shown on the PC as a line under the toolbar (`ChoiceForm` over
+`OutputOptions`, applied at once). On the phone an outline **Options** button, labelled with
+the options ("Options · h:mm, rounded", "Options · decimal, exact, split": `optionsLabel`),
+sits clear of the "+"'s column and opens a bottom sheet (`OptionsSheet` over `Sheet`: the
+head "Options", the options at 44 px, each change applied at once, a pinned full-width
+"Done" closing it and returning the focus to the button).
 
-**The result** sits under a "Result" head with "<n> entries, <total>" ("1 entry"),
-then "1 running entry left out." / "<n> running entries left out." when any, then four
-tables (`TotalsTable`, each a region named by its title, rows of label and duration,
-a Total row at the foot; the heads are for screen readers only). On the PC two
-columns: Days on the left, Weeks, Customers and Projects stacked on the right; on the
-phone one column in the order Customers, Projects, Weeks, Days. None says "No entries
-match." with Clear (and the running line, when the only matches run). A date mistake
-shows by the fields, with no result.
+**The totals.** `reportFor` asks `entries.list` (`outputInput`) for the entries that started
+in the range, with no row limit, and `reportTotals` sums the pieces `outputPieces` gives
+(the same code that writes Copy-out's rows, so a day's total is the sum of the rows with that
+date): by the piece's date (Days, "Thu 2026-10-01", `labelOf`, oldest first; only days with
+time), by its ISO week (`isoWeek`, Monday first; Weeks, `weekLabel`: "W40 · 2026-09-28 –
+10-04", the week's Monday and its Sunday without the year, or the Sunday in full when its
+year differs: "W53 · 2026-12-28 – 2027-01-03"; weeks are ISO, so 2026-12-31 is W53), by
+customer id (Customers, by name) and by project id (Projects, the project's 8 px dot, the
+customer muted, "›", the project, by customer then project). An entry rounding to nothing
+is a piece of `0:00` and its groups are listed. Running entries are left out and counted.
+Every list's Total is the same number, and it equals the toolbar's. The lists are numbers
+only (no share, bar or chart) and read-only: a row leads nowhere.
+
+**The lists** (`TotalsTable`, each a section named by its `caps` head on a text-colour rule
+over a surface panel of ruled rows, label at the left and duration at the right in figures,
+a semibold Total row at the foot on a text-colour rule; the table's own heads are for screen
+readers). On the PC two columns: Days on the left, Weeks, Customers and Projects stacked
+at the right. On the phone one column, the panels edge to edge with the heads keeping the
+16 px margin, in the order Customers, Projects, Weeks, Days. Nothing matching says "No
+entries match." with Clear filters when a filter other than the range is on (and the
+running line, when the only matches run), with no lists. A date mistake shows by the
+filter's fields, other refusals as on Copy-out.
+
+**Without JavaScript** the PC options line is a form with its own **Apply**, and the phone's
+Options is a `<details>` holding the same form; the filter is Entries' form. Both layouts are
+rendered and CSS shows one.
 
 ### The entry form (`/entries/new`, `/entries/[id]`)
 
@@ -1037,20 +1113,23 @@ no-JavaScript posts; `history.test.ts` covers History with a user of its own per
   and the sidebar's current item; `copy-out.test.ts` covers Copy-out
   with a user of its own per test (`seedCopyOut`: four entries this month, one of
   them overnight, one with a comma, a quote and a line break in its description
-  (`QUOTED`) and one starting with `-`, one last month and a running timer): the month
-  with all ten columns and the running line, fewer columns and decimal hours, Last
-  month and This month keeping the columns, no column ticked, Split at midnight and
-  rounding off, Copy on the PC (the clipboard granted; tab-separated, no header, one
-  line per row), Download CSV (its name, byte-order mark and header, every value
-  read back through a small CSV reader, the line break kept), the sidebar's current
-  item, the CSV route signed out, for another user and with bad queries, and the
-  no-JavaScript Show, table and CSV link with no Copy button; `reports.test.ts` covers
-  Reports with a user of its own per test (`seedCopyOut`): the month's four tables with
-  their rows and every Total (`7:15`), Split at midnight moving the overnight entry's
-  time across two days, decimal hours, Last month and This month keeping the options,
-  only a running entry matching ("No entries match." and the running line, no tables),
-  the sidebar's Reports after Copy-out and current (under More on the phone) and the
-  no-JavaScript Show with Split ticked; `entry-form.test.ts` covers the entry form and the timer bar (a user of its own per
+  and one starting with `-`, one last month and a running timer): the month as
+  written with its Total and the running line, Last month and the chips kept between
+  visits, Copy (the clipboard granted; tab-separated, no header, one line per row),
+  a project chip and the CSV of the columns on, exact minutes, decimal hours and Split
+  at midnight, the live search and no match with both actions off, no column on (the
+  kept columns unchanged), nothing cut at 1440 px and the band at 1024 px, the phone
+  (no sheet, nothing under the "+", no sideways scroll), the CSV route signed out, for
+  another user and with bad queries, and the no-JavaScript chips, Apply and CSV link
+  with no Copy button; `reports.test.ts` covers Reports with a user of its own per test
+  (`seedCopyOut`): the four lists each totalling the toolbar's, Days at the left and the
+  rest stacked, the options applying at once and Last month keeping them, the range and
+  options Copy-out kept, Reports leaving Copy-out's kept columns alone, totals equal to
+  Copy-out's rounded and not, the live search, only a running entry matching, a project
+  chip, the phone's Options sheet and Customers first, and the no-JavaScript Apply and
+  `<details>`; `filter/output.test.ts`, `screens/output.test.ts` and the two screens'
+  route tests (`copy-out-routes.test.ts`, `reports-routes.test.ts`) cover the address,
+  the kept cookies and the CSV route's reading; `entry-form.test.ts` covers the entry form and the timer bar (a user of its own per
   test): an entry made and corrected over Reports and Entries without leaving them and
   undone, closing by Back, Escape, Cancel and the dimmed screen, the phone's sheet with
   Save above the keyboard and the "+" clear of content and bottom bar, forgiving times

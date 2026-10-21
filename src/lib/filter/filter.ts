@@ -20,9 +20,12 @@ export type Filter = Scope & { range: Preset | 'custom'; from: string; to: strin
 const isPreset = (value: string | null | undefined): value is Preset =>
 	PRESETS.some((p) => p.preset === value);
 
-const isDate = (text: string) =>
-	/^\d{4}-\d{2}-\d{2}$/.test(text) &&
-	new Date(`${text}T00:00:00Z`).toISOString().slice(0, 10) === text;
+const isDate = (text: string) => {
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return false;
+	// A month or day out of range ("2026-13-01") is an invalid date, not a later one.
+	const at = new Date(`${text}T00:00:00Z`);
+	return !Number.isNaN(at.getTime()) && at.toISOString().slice(0, 10) === text;
+};
 
 const monthDays = (month: string) => {
 	const [y, m] = month.split('-').map(Number);

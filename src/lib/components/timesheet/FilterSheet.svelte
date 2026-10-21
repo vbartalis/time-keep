@@ -26,7 +26,8 @@
 		count,
 		range = true,
 		hidden,
-		icon = false
+		icon = false,
+		noun = ['entry', 'entries']
 	}: {
 		id: string;
 		action: string;
@@ -47,6 +48,8 @@
 		hidden?: Snippet;
 		/** A 44 px icon carrying the count, named "Filter" (the Calendar's phone row). */
 		icon?: boolean;
+		/** What `count` counts, one and many ("Show 4 rows" on Copy-out). */
+		noun?: [string, string];
 	} = $props();
 
 	/** Open on the first load when a refused date shows by its fields. */
@@ -100,7 +103,7 @@
 					type="button"
 					onclick={() => (open = false)}
 					class="inline-flex h-11 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-					>Show {count} {count === 1 ? 'entry' : 'entries'}</button
+					>Show {count} {count === 1 ? noun[0] : noun[1]}</button
 				>
 			{/snippet}
 		</FilterPanel>

@@ -1097,6 +1097,21 @@ test.describe('the phone list', () => {
 	const style = (l: Locator, prop: string) =>
 		l.evaluate((el, p) => getComputedStyle(el).getPropertyValue(p), prop);
 
+	test('a filter chip and Clear filters stay out of the "+"\'s column', async ({ page }) => {
+		const user = await newMonth('phone-chip');
+		await openEntries(page, user, `/entries?range=this-month&project=${user.projects.mobile}`);
+		await expect(page.getByRole('list', { name: 'Filters' }).getByRole('listitem')).toHaveCount(1);
+		const plusBox = await box(plus(page));
+		for (const control of [
+			page.getByRole('link', { name: 'Clear filters' }),
+			page.getByRole('list', { name: 'Filters' }).getByRole('link', { name: /^Remove/ })
+		]) {
+			const b = await box(control);
+			expect(b.x + b.width).toBeLessThanOrEqual(390 - 56);
+			expect(sameColumn(b, plusBox)).toBe(false);
+		}
+	});
+
 	test('Entries from the bottom bar: the toolbar, the day heads and rows that say what each entry was', async ({
 		page
 	}) => {
