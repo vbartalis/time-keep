@@ -20,6 +20,7 @@ core.entries.create / .update / .delete / .list / .get
 core.timers.start / .stop
 core.history.list({ before?, limit? })
 core.history.get({ batchId })
+core.history.page({ before?, limit? })
 core.undo({ batchId } | { changeIds })
 core.redo({ batchId } | { changeIds })
 core.batch(label, (c) => result)
@@ -152,6 +153,12 @@ from. Each batch and change says whether it is undone and by which batch. Histor
 are never updated or deleted, and there is no command to delete them.
 `history.get({ batchId })` returns one batch, built exactly as in the list; an unknown
 or another user's id is `not_found`.
+`history.page({ before?, limit? })` takes the same input as `history.list` and says
+where that page sits, without reading its batches: `total` (the user's batches),
+`position` (the 1-based place of the page's first batch), `hasNewer` and `newerBefore`
+(the `before` that lists the page `limit` newer, or `null` when that page is the
+newest). An unknown or another user's `before` is `not_found`. It serves the History
+screen's range and Newer link and is not an MCP tool.
 
 ## Reference data
 

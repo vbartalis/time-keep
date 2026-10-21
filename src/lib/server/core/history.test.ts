@@ -3,7 +3,7 @@ import { createTestDb } from '../testing/db';
 import { user } from '../db/schema';
 import { newId } from '../id';
 import { runBatch } from './batch';
-import { getHistory, listHistory } from './history';
+import { getHistory, listHistory, pageHistory } from './history';
 import { createCustomer, rename } from './reference';
 import type { Result } from './result';
 import { undo } from './undo';
@@ -162,5 +162,76 @@ describe('getHistory', () => {
 	it('rejects input without a batch id', () => {
 		const { db, userId } = setup();
 		expect(getHistory(db, userId, {})).toMatchObject({ ok: false, error: { code: 'invalid' } });
+	});
+});
+
+describe('history.page', () => {
+	/** n batches; ids newest first, so ids[k - 1] is the k-th newest. */
+	function many(n: number) {
+		const s = setup();
+		for (let i = 0; i < n; i++) s.mkCustomer(`C${i}`);
+		const ids = s.val(listHistory(s.db, s.userId, { limit: 200 })).map((b) => b.id);
+		return { ...s, ids };
+	}
+
+	it('is empty with no batches', () => {
+		const { db, userId, val } = setup();
+		expect(val(pageHistory(db, userId))).toEqual({
+			total: 0,
+			position: 1,
+			hasNewer: false,
+			newerBefore: null
+		});
+	});
+
+	it('is the newest page with no before', () => {
+		const { db, userId, val } = many(120);
+		expect(val(pageHistory(db, userId))).toEqual({
+			total: 120,
+			position: 1,
+			hasNewer: false,
+			newerBefore: null
+		});
+	});
+
+	it('places a page by its before', () => {
+		const { db, userId, val, ids } = many(120);
+		expect(val(pageHistory(db, userId, { before: ids[49] }))).toEqual({
+			total: 120,
+			position: 51,
+			hasNewer: true,
+			newerBefore: null
+		});
+		expect(val(pageHistory(db, userId, { before: ids[99] }))).toEqual({
+			total: 120,
+			position: 101,
+			hasNewer: true,
+			newerBefore: ids[49]
+		});
+	});
+
+	it('honours limit and clamps to the newest page', () => {
+		const { db, userId, val, ids } = many(120);
+		expect(val(pageHistory(db, userId, { before: ids[29], limit: 20 }))).toMatchObject({
+			position: 31,
+			hasNewer: true,
+			newerBefore: ids[9]
+		});
+		expect(val(pageHistory(db, userId, { before: ids[44] }))).toMatchObject({
+			position: 46,
+			hasNewer: true,
+			newerBefore: null
+		});
+	});
+
+	it('does not count or accept another user’s batches', () => {
+		const { db, userId, other, val, mkCustomer } = setup();
+		mkCustomer('Mine');
+		mkCustomer('Theirs', other);
+		const theirs = val(listHistory(db, other))[0];
+		expect(val(pageHistory(db, userId)).total).toBe(1);
+		expect(err(pageHistory(db, userId, { before: theirs.id }))).toMatchObject({
+			code: 'not_found'
+		});
 	});
 });

@@ -1,5 +1,10 @@
 import { fail, redirect, type Cookies } from '@sveltejs/kit';
-import type { BatchRow, HistoryDay, HistoryFailure } from '#lib/components/history/types.js';
+import type {
+	BatchRow,
+	HistoryDay,
+	HistoryFailure,
+	HistoryRange
+} from '#lib/components/history/types.js';
 import { openCore, type HistoryBatch } from '#lib/server/core/index.js';
 import { getDb } from '#lib/server/db/index.js';
 import { requireUser } from '#lib/server/guards.js';
@@ -12,7 +17,8 @@ import {
 	describeChange,
 	historyPath,
 	namesFrom,
-	readChangeIds
+	readChangeIds,
+	touchedLine
 } from '#lib/server/screens/history.js';
 import { formatTime } from '#lib/server/screens/today.js';
 import { ZONE_COOKIE, zoneFor } from '#lib/server/screens/zone.js';
@@ -30,19 +36,27 @@ export const load: PageServerLoad = ({ locals, cookies, url }) => {
 	const { zone } = zoneFor(core, { cookie: cookies.get(ZONE_COOKIE) }, now);
 	const before = url.searchParams.get('before');
 
-	const r = core.history.list({ before: before ?? undefined, limit: PAGE + 1 });
+	const cursor = before ?? undefined;
+	const r = core.history.list({ before: cursor, limit: PAGE + 1 });
+	const p = core.history.page({ before: cursor, limit: PAGE });
 	// An unknown (or blank) `before` starts again from the newest.
-	if (!r.ok && before !== null) redirect(303, '/history');
+	if ((!r.ok || !p.ok) && before !== null) redirect(303, '/history');
 	const listed: HistoryBatch[] = r.ok ? r.value : [];
-	const older = listed.length > PAGE ? listed[PAGE - 1].id : null;
+	const shown = listed.slice(0, PAGE);
+	const place = p.ok ? p.value : { total: 0, position: 1, hasNewer: false, newerBefore: null };
+	const range: HistoryRange =
+		shown.length === 0
+			? { from: 0, to: 0, total: place.total }
+			: { from: place.position, to: place.position + shown.length - 1, total: place.total };
 
 	const names = namesFrom(core);
 	const days: HistoryDay[] = [];
-	for (const b of listed.slice(0, PAGE)) {
+	for (const b of shown) {
 		const row: BatchRow = {
 			id: b.id,
 			time: formatTime(b.createdAt, zone),
 			label: b.label,
+			touched: touchedLine(b, names),
 			actor: b.actor,
 			count: b.changes.length,
 			state: batchState(b),
@@ -53,15 +67,21 @@ export const load: PageServerLoad = ({ locals, cookies, url }) => {
 		const day = dayHeading(b.createdAt, zone);
 		const last = days.at(-1);
 		if (last?.day === day) last.batches.push(row);
-		else days.push({ day, batches: [row] });
+		else days.push({ day, batches: [row], continues: false });
 	}
+	const next = listed.at(PAGE);
+	const lastDay = days.at(-1);
+	if (next && lastDay && dayHeading(next.createdAt, zone) === lastDay.day) lastDay.continues = true;
 
 	return {
 		days,
-		older,
-		newest: before !== null,
+		range,
+		newer: place.hasNewer ? historyPath(place.newerBefore) : null,
+		older: next ? historyPath(shown[PAGE - 1].id) : null,
 		flash: takeFlash(cookies),
-		back: historyPath(before)
+		back: historyPath(before),
+		// The phone's Select without the script: the page reloaded with its tick boxes.
+		select: url.searchParams.get('select') === '1'
 	};
 };
 

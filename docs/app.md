@@ -30,13 +30,13 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/routes/(app)/admin/backup` | The Backup screen (`+page.svelte`, `+page.server.ts`) and its download route (`download/+server.ts`), admin only. |
 | `src/routes/mcp` | `POST /mcp`, the MCP endpoint, outside the signed-in screens (see [mcp.md](mcp.md)). |
 | `src/routes/(app)/` | Signed-in screens: Today (`/`), `calendar`, `entries` and the entry form (`entries/new`, `entries/[id]`), `copy-out` and its CSV route (`copy-out/csv`), `reports`, `account`, `admin/users`, `admin/backup`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell (see Shell). |
-| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`; `edit.ts`: `withCurrent`, `postedValues`), the entry form's values, pickers, input and refusals (`entry-form.ts`: `valuesFromEntry`, `newValues`, `copyValues`, `templateValues`, `formPickers`, `createInput`, `updateInput`, `previousEnd`, `newEntryValues`, `coreFailure`), the bar's start and restart input (`timer-actions.ts`: `startFromTemplateInput`, `restartInput`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries bulk change (`entries.ts`: `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`) and the filter bar's older search that Copy-out and Reports keep (`readSearch`, `searchInput`, `searchFilters`, `searchPath`), the timesheet's list and pickers (`timesheet.ts`: `listInput`, `timesheetFor`, `filterOptions`), the copy-out's rows and query (`copy-out.ts`: `outputRows`, `readCopyOut`, `copyOutQuery`, `monthRange`, `csvName`, `sheetFor`, and the pieces and options Reports shares: `outputPieces`, `readOptions`, `optionsQuery`), the reports' totals (`reports.ts`: `isoWeek`, `reportTotals`, `readReport`, `reportFor`, `reportQuery`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`), the Calendar's period, pieces and totals (`calendar.ts`: `calendarFor`, `moveInput`). |
+| `src/lib/server/screens/` | Server logic behind the screens, unit-tested: zone resolution (`zone.ts`), today's range and the `HH:mm` / `YYYY-MM-DD` formats (`today.ts`), form input for the core (`actions.ts`; `edit.ts`: `withCurrent`, `postedValues`), the entry form's values, pickers, input and refusals (`entry-form.ts`: `valuesFromEntry`, `newValues`, `copyValues`, `templateValues`, `formPickers`, `createInput`, `updateInput`, `previousEnd`, `newEntryValues`, `coreFailure`), the bar's start and restart input (`timer-actions.ts`: `startFromTemplateInput`, `restartInput`), the flash cookie and undo lookup (`flash.ts`), the safe return path for forms (`back.ts`), the Setup tree (`setup.ts`), the template form's input and pickers (`templates.ts`), the Entries bulk change (`entries.ts`: `readBulk`, `selection`, `bulkUpdates`, `editLabel`, `deleteLabel`, `runBulk`) and the filter bar's older search that Copy-out and Reports keep (`readSearch`, `searchInput`, `searchFilters`, `searchPath`), the timesheet's list and pickers (`timesheet.ts`: `listInput`, `timesheetFor`, `filterOptions`), the copy-out's rows and query (`copy-out.ts`: `outputRows`, `readCopyOut`, `copyOutQuery`, `monthRange`, `csvName`, `sheetFor`, and the pieces and options Reports shares: `outputPieces`, `readOptions`, `optionsQuery`), the reports' totals (`reports.ts`: `isoWeek`, `reportTotals`, `readReport`, `reportFor`, `reportQuery`), the History screen's words and forms (`history.ts`: `namesFrom`, `describeChange`, `batchState`, `dayHeading`, `readChangeIds`, `historyPath`, `touchedLine`), the Calendar's period, pieces and totals (`calendar.ts`: `calendarFor`, `moveInput`). |
 | `src/lib/filter/` | The one filter, pure and unit-tested, shared by Entries and the Calendar: `filter.ts` (`PRESETS`, `presetDays`, `presetHint`, `readFilter` with the kept preset, `readScope`, `filterQuery`, `scopeQuery`, `scopeCount`, `rangeLabel`, `matchesScope`). |
 | `src/lib/components/timesheet/` | The Entries screen's parts, and the Filter the Calendar shares: `Toolbar`, `FilterButton`, `FilterPanel` (the PC popover), `FilterSheet` (the phone), `ScopePicker`, `SearchField`, `FilterChips`, `DayTable` (the PC table), `PhoneList`, `RowMenu`, `BulkBar`, `BulkDialog`, `BulkForm`, `Sheet` (a bottom sheet over a native `<dialog>`); `selection.svelte.ts` (ticks, shift runs), `live.ts` (live filtering and in-place posts), `refusal.svelte.ts`, `rows.ts`, `types.ts`. |
 | `src/lib/components/entries/` | `EntryFilters`, round 1's filter bar, kept for Copy-out and Reports until item 15. |
 | `src/lib/components/copy-out/` | The Copy-out screen's parts: the column and option pickers (`OutputFields`), the option pickers alone (`OutputOptions`, shared with Reports), the Copy button and its status (`CopyRows`), the sheet table (`SheetTable`). |
 | `src/lib/components/reports/` | The Reports screen's part: one totals table (`TotalsTable`, a titled section of label and duration rows with a Total row). |
-| `src/lib/components/history/` | The History screen's parts: a batch's line with its changes (`BatchLine`), and the types its load returns. |
+| `src/lib/components/history/` | The History screen's parts: the PC's ruled table (`HistoryTable`), the phone's rows with their leading Undo and Redo (`PhoneHistory`), a batch's row (`BatchRow`) and its changes (`ChangeList`), the band that is the toolbar or the bulk bar, on the phone the strip with Select or its bar (`HistoryBar`, its state from `barState` in `selection.ts`), and the types its load returns. |
 | `src/lib/calendar/` | The Calendar's pure logic, shared by server and browser and unit-tested: `dates.ts` (`readView`, `periodDays`, `shift`, `isoWeek`, `periodTitle`, `dayName`, `calendarHref`, `hm`), `grid.ts` (`localDate`, `localMinutes`, `instantAt`, `piecesOf`, `lanes`, `overlapping`, `dayTotals` in exact ms, `wholeMinutes` and `spanText` truncating a span to whole minutes as every screen does, `snap`, `halfHourSlot`, `dragRange`), `drag.ts` (`dropTimes`, `clampDay`, `keepIn`) and `gestures.svelte.ts` (the `swipe` attachment, `clockOf`). `drawnExtent` and `growInto` are in `src/lib/components/calendar/block.ts`. |
 | `src/lib/components/calendar/` | The Calendar's parts: `CalendarToolbar`, `DatePicker`, `TimeGrid` (day and week), `EntryBlock`, `NewBlock`, `MonthGrid`, `PhoneMonth`; `block.ts` (a block's text and lines), `drag.svelte.ts` (the PC's `BlockDrag`), `now.svelte.ts` (`nowTicker`) and `types.ts`. |
 | `src/lib/keys.ts` | `screenKey`: whether an unmodified key press is the screen's (outside fields, no dialog or open `data-holds-keys` details), shared by the layout and the Calendar. |
@@ -740,49 +740,125 @@ duration the end was linked from is sent as the duration (`updateInput`).
 ### History (`/history`)
 
 A PC screen (in the sidebar after Setup, under More on the phone) listing every batch the
-user's changes were recorded in, newest first, to undo or redo any batch or chosen
-changes in one step; it stays usable at phone widths. Undo and redo are
-`core.undo` and `core.redo` (see [core.md](core.md)).
+user's changes were recorded in, newest first, to find one batch (what it touched, when,
+who made it) and undo or redo it, or chosen changes, in one step; it has phone rows
+below 1024 px. Undo and redo are `core.undo` and `core.redo` (see [core.md](core.md));
+no rule is enforced in the screen.
 
-**The list** asks `history.list` for 51 batches and shows 50, under a heading per day
-in the request's zone (`dayHeading` gives "2026-10-19, Monday"; the screen shows the
-date beside the weekday). Each batch is one ruled row: its time (`HH:mm`), its label
-as the core stored it, an "Agent" or "System" chip when it was not made in the UI,
-its state ("Undone" when every change is undone, the row muted; "Partly undone, <k>
-of <n>" otherwise; nothing when it stands, from `batchState`), a disclosure "1
-change" / "<n> changes" (a native `<details>`) that opens its changes, and outline
-buttons: Undo when any change stands, Redo when any is undone, both when partly
-undone. Undo and redo batches are listed like any other. When a 51st batch exists an
-"Older" link loads `/history?before=<the 50th batch's id>`; a page reached that way
-has "Newest" back to `/history`. An unknown or blank `before` redirects to
-`/history`. None says "Nothing recorded yet."
+**The page** asks `history.list` for 51 batches and shows 50, and `history.page` (see
+[core.md](core.md)) for the page's place: the number of the user's batches, the place of
+the page's first, and the `before` of the page 50 newer. An unknown or blank `before`
+redirects to `/history`. None says "Nothing recorded yet."
 
-**A change** is one line, in the batch's order (`describeChange`): a checkbox, then
-Created, Changed, Archived, Unarchived or Deleted and the record ("Entry 2026-10-07
-09:00–10:30, CompA › ProjC", "Customer CompA", "Project CompA › ProjC", "Activity
-Travel", "Location Office", "Template Daily standup"; an entry named from its row
-after the change, before it for a delete, its times in its own zones, a running one
-"09:00–running"). An update adds a line per field that differs, "Description: old →
-new", blank written "none", ids as current names (`namesFrom`: every row, archived
-included; an id not found reads "(unknown)"), text cut at 80 characters with "…";
-an entry's start and its zone are one "Start" line, its end and zone one "End" line,
-naming the zones when the two sides differ. Bookkeeping columns and `id` never show.
-An update that changes only `archived_at` reads Archived or Unarchived with no field
-line. An undone change ends in a muted "Undone". A batch of more than 100 changes
-shows the first 100 and "and <n> more; undo or redo the whole batch." with no
-checkboxes.
+**The toolbar** is one 52 px band above the table. At the left "1–50 of 312 batches" (the
+range in semibold figures, "1–7 of 7 batches" when it all fits; "batch" for one); at the
+right outline **Newer** and **Older** with chevrons, each disabled where it leads
+nowhere. Older loads `/history?before=<the 50th batch's id>`; Newer the `before` from
+`history.page`, `/history` on the second page. The same two as links under the table
+(each only when it leads somewhere). A page change clears the ticks and closes the
+batches.
 
-**Undoing and redoing.** The list is one `POST` form. A batch's Undo and Redo post
-its `batchId` to `?/undo` or `?/redo` (the ticks are then ignored). Above the list,
-"Undo selected changes" and "Redo selected changes" post every ticked `changeId`
-(`readChangeIds`: deduped; none says "Select at least one change.", more than 1000
-"Select at most 1000 changes."); with JavaScript a line says "<n> selected" and both
-are disabled at none. The core labels the new batch `Undo "<label>"` / `Redo
-"<label>"` for a batch, `Undo <n> changes` / `Redo 1 change` for chosen changes. No
-confirmation: success redirects (303) to the page posted from (`historyPath`, its
-`before` kept) with the strip, whose Undo returns there. A refusal re-renders that
-page with the core's message in a red-bordered alert above the list, the ticks kept
-and their batches open.
+**The table** (from 1024 px) is Entries' ruled table in a surface panel, never scrolling
+sideways: a caps header (Time, What, By, Changes, State, and the actions), then per day
+a head row, "Wed 2026-10-21" in semibold (`dayHeading`, in the request's zone) with "<n>
+batches" muted at the right (that day's on this page), and its batch rows. A day that
+runs onto the older page ends in "Continues on the older page.". A row, 56 px or more:
+its time (`HH:mm`), a chevron, the label as the core stored it (semibold, cut with "…"),
+under it the **touched line** (`touchedLine`, 12 px muted, from all the batch's changes,
+not only the first 100: an entry's date, times and customer › project, several entries'
+date range and up to three customers › projects then "+<n> more", other records as the
+change lines name them, "3 locations", kinds joined with " · "), an "Agent" or "System"
+chip (none for a batch made in the UI), "1 change" / "<n> changes", the state ("Undone"
+when every change is undone, with the label and time muted; "Partly undone, <k> of
+<n>"; blank when it stands, from `batchState`), and outline 32 px buttons with icons:
+Undo when any change stands, Redo when any is undone, both on a partly undone batch,
+named "Undo <label>" / "Redo <label>". Undo and redo batches are listed like any other.
+The touched line takes one line from 1280 px; from 1024 to 1279 px it may take two, and
+Changes and State share one column, the state under the count in 12 px, so What keeps
+room for the customer › project. A `›` never starts a line.
+
+**Opening a batch.** A click anywhere on the row but its buttons (not while text is
+selected), or Enter or Space on the row's disclosure button (`aria-expanded`), opens its
+changes under it, indented to the What column; several can be open, a second click
+closes it, and the chevron turns. The ticks and open batches survive opening and closing.
+
+**A change** is one line, in the batch's order (`describeChange`): a tick box, the verb
+in semibold (Created, Changed, Archived, Unarchived, Deleted) and the record in sentence
+case ("Changed entry 2026-10-07 09:00–10:30, CompA › ProjC", "Created customer CompA",
+"Archived location Office"; an entry named from its row after the change, before it for
+a delete, its times in its own zones, a running one "09:00–running"). An update adds a
+line per field that differs, "Description: old → new", the field and old value in muted
+text, blank written as a muted italic "none", ids as current names (`namesFrom`: every
+row, archived included; an id not found reads "(unknown)"), text cut at 80 characters
+with "…"; an entry's start and its zone are one "Start" line, its end and zone one "End"
+line. A field whose two sides read the same shows both with a muted "(same as shown)",
+never "none → none". Bookkeeping columns and `id` never show. An update that changes
+only `archived_at` reads Archived or Unarchived with no field line. An undone change is
+muted and ends in a muted caps "Undone". A ticked line fills with the accent. A batch of
+more than 100 changes lists the first 100 without tick boxes and ends "The first 100 of
+<n> are listed. Too many to choose one by one: undo or redo the whole batch."; its row's
+Undo and Redo work as on any row.
+
+**Choosing changes.** Ticking a change puts the bulk bar in the toolbar's place, the same
+52 px band, so nothing below moves; while up the band is sticky under the header and the
+undo strip rides in it, and focus landing on a row is scrolled clear of it. The bar: "<n>
+selected", then muted `of “<label>”` when the ticks are in one batch or "across <k>
+batches" (`barState`), outline **Undo selected** and **Redo selected** with icons, and a
+ghost **Clear**. Undo selected is enabled when every ticked change stands, Redo selected
+when every one is undone; otherwise each stays, disabled (`aria-disabled`, kept in the
+tab order). A mixed selection disables both and the bar says "Tick only standing or only
+undone changes." instead of the scope. The enabled state is a hint; the core decides.
+Clear, or unticking the last box, brings the toolbar back with focus on the last toggled
+tick box.
+
+**Undoing and redoing.** The list is one `POST` form. A batch's Undo and Redo post its
+`batchId` to `?/undo` or `?/redo` (the ticks are then ignored); the bar's buttons post
+every ticked `changeId` (`readChangeIds`: deduped; none says "Select at least one
+change.", more than 1000 "Select at most 1000 changes."). The core labels the new batch
+`Undo "<label>"` / `Redo "<label>"` for a batch, `Undo <n> changes` / `Redo 1 change` for
+chosen changes. No confirmation: success redirects (303) to the page posted from
+(`historyPath`, its `before` kept) with the **strip** (`Done: Undo
+"<label>".`, its Undo, the core's warnings), and focus goes to the strip's Undo. The row
+acted on reads its new state with its buttons flipped, and the new batch heads the
+newest page.
+
+**Refusals.** A refused undo or redo re-renders the page posted from with the core's
+message in a red-bordered alert above the list (`role="alert"`, focus on it, the page
+kept at the top if it was), no strip, the ticks kept and their batches open; nothing
+changed. A refused whole-batch Undo shows the same alert with no ticks. The alert goes
+with the next action or load.
+
+**The phone** (below 1024 px) has the toolbar as a surface strip: "1–50 of 312" at the
+left and an outline **Select** at the right, clear of the "+"'s column; Newer and Older
+are the links under the list. Per day a head ("Wed 2026-10-21", "<n> batches") and
+ruled rows on a surface edge to edge, the right 72 px clear of the "+". A row leads with
+a 44 px icon button where Entries' rows have their ⋯: Undo on a standing batch, Redo on
+an undone one, both on a partly undone one (Undo over Redo), each named for screen
+readers. Then the time, and the text: the label (15 px semibold, wrapping), the touched
+line (12 px, wrapping, never cut) and a meta line with the chip, "<n> changes" as an
+underlined disclosure (44 px target, `aria-expanded`) and "· Undone" / "· Partly undone,
+<k> of <n>". It opens the changes under the row, indented to the text. **Select** puts
+the bar in the strip's place, pinned under the timer strip: "<n> selected" (the scope
+or the mixed reason under it), **Undo**, **Redo** (enabled as on the PC) and **Done**;
+tick boxes (a 20 px box in a 44 px target) appear on the open batches' change lines, the
+leading buttons and the "+" go. Done clears the ticks and returns focus to Select.
+
+**Without JavaScript** the same page: a batch's changes are a native `<details>`, the
+actions are submit buttons (over the summary's actions column on the PC, under it on the
+phone), and Undo selected and Redo selected show at all times above the table, posting
+the ticks. The phone's Select is a link to `?select=1` (the same page with tick boxes,
+kept through a refusal and a redirect back), its bar Undo, Redo and a Done link back.
+Both layouts render, CSS showing one, so the phone's tick boxes and its bar's Undo and
+Redo are in a form of their own (`history-phone`): each layout's buttons post only the
+boxes it shows, and after a refusal an untick and a retry post the new ticks. Newer and
+Older are links.
+
+**Keys and focus.** Tab reaches each row's disclosure, its Undo and Redo, each tick box,
+the bar's buttons and the pager in reading order; a disabled bar action is announced
+disabled. Focus goes to the strip's Undo after an undo or redo, to the alert after a
+refusal, to the last toggled tick box after Clear and to Select after Done. Targets are
+36 px on the PC (the 32 px buttons padded), 44 px on the phone. No button but the header's
+"+ New entry" is primary (a ticked box takes the primary fill); red is only the refusal.
 
 ### Account (`/account`)
 
@@ -945,15 +1021,20 @@ Edit… and Delete in one batch with Undo; ticks clearing; a ticked entry change
 refused by name; the checkbox, accent and focus rules) and the phone list (the toolbar,
 the filter sheet, the row sheet, Select with the bulk sheet and Undo), each with its
 no-JavaScript posts; `history.test.ts` covers History with a user of its own per test, who has
-  no batch until seeded: a batch with its label, time and changes, undo and redo of a
-  batch (checked on Setup), two of a batch's three changes undone (`seedThreeChanges`:
-  Partly undone, 2 of 3), changes of two batches undone as one, a refused undo with
-  the ticks kept, 51 batches paging by Older and Newest and exactly 50 with no Older
-  (`seedBatches`), the Agent chip (`seedAgentCustomer`, through
-  `openCore(db, userId, 'agent')`), a batch's own Undo beating a tick on another
-  batch, an unknown `before` returning to the newest page, a forged batch id showing
-  "Not found.", an undo on an older page landing back there, the sidebar's current item
-  and the no-JavaScript undo of a ticked change; `copy-out.test.ts` covers Copy-out
+  no batch until seeded: finding an edit by what it touched, undoing it from the row and
+  redoing it, a batch's three changes partly undone with a mixed tick saying why, the
+  touched line keeping its customer › project at 1024 px, the last untick bringing the
+  toolbar back with the focus kept, changes of two batches undone as one, a refused undo
+  in view with the focus on it and nothing changed, 51 batches paging by the toolbar and
+  the foot links (System chips on the seeded ones) and exactly 50 with both disabled, an
+  undo on an older page landing back there, a batch of more than 100 changes without
+  tick boxes, a batch's own Undo beating a tick on another batch, a rename's field line,
+  an unknown `before` returning to the newest page, a forged batch id showing "Not
+  found.", the Agent chip, the phone (leading buttons, opening, Select, tick, Undo, Done;
+  short rows; long labels wrapping; a refusal), the phone and PC without JavaScript
+  (`select=1`, ticks posted, a mixed selection refused by the core, an untick and a
+  retry after a refusal, paging by links)
+  and the sidebar's current item; `copy-out.test.ts` covers Copy-out
   with a user of its own per test (`seedCopyOut`: four entries this month, one of
   them overnight, one with a comma, a quote and a line break in its description
   (`QUOTED`) and one starting with `-`, one last month and a running timer): the month

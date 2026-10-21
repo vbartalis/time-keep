@@ -6,6 +6,7 @@ import {
 	describeChange,
 	historyPath,
 	readChangeIds,
+	touchedLine,
 	type Names
 } from './history';
 
@@ -57,7 +58,7 @@ describe('describeChange subjects and verbs', () => {
 		expect(line).toMatchObject({
 			id: 'ch1',
 			verb: 'Created',
-			subject: 'Entry 2026-10-07 09:00–11:30, Acme › Website',
+			subject: 'entry 2026-10-07 09:00–11:30, Acme › Website',
 			fields: [],
 			undone: false
 		});
@@ -69,17 +70,17 @@ describe('describeChange subjects and verbs', () => {
 			names
 		);
 		expect(line.verb).toBe('Deleted');
-		expect(line.subject).toBe('Entry 2026-10-07 09:00–running, Acme › Website');
+		expect(line.subject).toBe('entry 2026-10-07 09:00–running, Acme › Website');
 	});
 
 	it('names the other entities', () => {
 		const sub = (entity: string, row: Record<string, unknown>) =>
 			describeChange(change({ entity, op: 'create', after: row }), names).subject;
-		expect(sub('customer', { name: 'Acme' })).toBe('Customer Acme');
-		expect(sub('project', { name: 'Website', customerId: 'c1' })).toBe('Project Acme › Website');
-		expect(sub('activity', { name: 'Design' })).toBe('Activity Design');
-		expect(sub('location', { name: 'Office' })).toBe('Location Office');
-		expect(sub('template', { name: 'Standup' })).toBe('Template Standup');
+		expect(sub('customer', { name: 'Acme' })).toBe('customer Acme');
+		expect(sub('project', { name: 'Website', customerId: 'c1' })).toBe('project Acme › Website');
+		expect(sub('activity', { name: 'Design' })).toBe('activity Design');
+		expect(sub('location', { name: 'Office' })).toBe('location Office');
+		expect(sub('template', { name: 'Standup' })).toBe('template Standup');
 	});
 
 	it('uses before when after is null and maps archive ops', () => {
@@ -87,7 +88,7 @@ describe('describeChange subjects and verbs', () => {
 			change({ entity: 'customer', op: 'archive', before: { name: 'Acme' } }),
 			names
 		);
-		expect(archived).toMatchObject({ verb: 'Archived', subject: 'Customer Acme' });
+		expect(archived).toMatchObject({ verb: 'Archived', subject: 'customer Acme' });
 		expect(
 			describeChange(
 				change({ entity: 'customer', op: 'unarchive', after: { name: 'Acme' } }),
@@ -101,7 +102,7 @@ describe('describeChange subjects and verbs', () => {
 			change({ op: 'create', after: entry({ projectId: 'gone' }) }),
 			names
 		);
-		expect(line.subject).toBe('Entry 2026-10-07 09:00–11:30, (unknown) › (unknown)');
+		expect(line.subject).toBe('entry 2026-10-07 09:00–11:30, (unknown) › (unknown)');
 	});
 
 	it('carries undone', () => {
@@ -122,8 +123,8 @@ describe('describeChange fields', () => {
 		);
 		expect(line.verb).toBe('Changed');
 		expect(line.fields).toEqual([
-			'Project: Acme › Website → Acme › App',
-			'Description: old notes → none'
+			{ name: 'Project', old: 'Acme › Website', new: 'Acme › App', same: false },
+			{ name: 'Description', old: 'old notes', new: null, same: false }
 		]);
 	});
 
@@ -134,7 +135,12 @@ describe('describeChange fields', () => {
 			names
 		);
 		expect(line.fields).toEqual([
-			'Start: 2026-10-07 09:00 Europe/Budapest → 2026-10-07 08:00 Europe/London'
+			{
+				name: 'Start',
+				old: '2026-10-07 09:00 Europe/Budapest',
+				new: '2026-10-07 08:00 Europe/London',
+				same: false
+			}
 		]);
 	});
 
@@ -147,8 +153,8 @@ describe('describeChange fields', () => {
 			names
 		);
 		expect(line.fields).toEqual([
-			'Start: 2026-10-07 09:00 → 2026-10-07 08:00',
-			'End: running → 2026-10-07 11:30'
+			{ name: 'Start', old: '2026-10-07 09:00', new: '2026-10-07 08:00', same: false },
+			{ name: 'End', old: 'running', new: '2026-10-07 11:30', same: false }
 		]);
 	});
 
@@ -183,8 +189,11 @@ describe('describeChange fields', () => {
 			names
 		);
 		expect(line.verb).toBe('Changed');
-		expect(line.fields).toEqual(['Name: Website → Site', 'Archived: no → yes']);
-		expect(line.subject).toBe('Project Acme › Site');
+		expect(line.fields).toEqual([
+			{ name: 'Name', old: 'Website', new: 'Site', same: false },
+			{ name: 'Archived', old: 'no', new: 'yes', same: false }
+		]);
+		expect(line.subject).toBe('project Acme › Site');
 	});
 
 	it('cuts long sides at 80 characters', () => {
@@ -193,7 +202,9 @@ describe('describeChange fields', () => {
 			change({ before: entry({ description: long }), after: entry({ description: 'short' }) }),
 			names
 		);
-		expect(line.fields).toEqual([`Description: ${'x'.repeat(80)}… → short`]);
+		expect(line.fields).toEqual([
+			{ name: 'Description', old: `${'x'.repeat(80)}…`, new: 'short', same: false }
+		]);
 	});
 
 	it('never shows bookkeeping keys', () => {
@@ -221,7 +232,7 @@ describe('describeChange fields', () => {
 			}),
 			names
 		);
-		expect(line.fields).toEqual(['Name: A → B']);
+		expect(line.fields).toEqual([{ name: 'Name', old: 'A', new: 'B', same: false }]);
 	});
 
 	it('formats template duration and maps ids', () => {
@@ -235,10 +246,206 @@ describe('describeChange fields', () => {
 			names
 		);
 		expect(line.fields).toEqual([
-			'Project: Acme › Website → Acme › App',
-			'Start: 09:00 → 09:30',
-			'Duration: 1:30 → none'
+			{ name: 'Project', old: 'Acme › Website', new: 'Acme › App', same: false },
+			{ name: 'Start', old: '09:00', new: '09:30', same: false },
+			{ name: 'Duration', old: '1:30', new: null, same: false }
 		]);
+	});
+});
+
+describe('describeChange field lines', () => {
+	it('splits a field into its name, old and new sides', () => {
+		const line = describeChange(
+			change({
+				before: entry({ description: 'Standup' }),
+				after: entry({ description: 'Standup and planning' })
+			}),
+			names
+		);
+		expect(line.fields).toEqual([
+			{ name: 'Description', old: 'Standup', new: 'Standup and planning', same: false }
+		]);
+	});
+
+	it('reads a cleared side as null', () => {
+		const line = describeChange(
+			change({ before: entry({ reference: 'T-1' }), after: entry({ reference: null }) }),
+			names
+		);
+		expect(line.fields).toEqual([{ name: 'Reference', old: 'T-1', new: null, same: false }]);
+	});
+
+	it('marks a field whose sides read the same', () => {
+		const twins: Names = {
+			...names,
+			projects: new Map([...names.projects, ['p3', { name: 'Website', customerName: 'Acme' }]])
+		};
+		const line = describeChange(
+			change({ before: entry(), after: entry({ projectId: 'p3' }) }),
+			twins
+		);
+		expect(line.fields).toEqual([
+			{ name: 'Project', old: 'Acme › Website', new: 'Acme › Website', same: true }
+		]);
+	});
+
+	it('marks a blank turned null as the same, never none → none twice over', () => {
+		const line = describeChange(
+			change({ before: entry({ description: '' }), after: entry({ description: null }) }),
+			names
+		);
+		expect(line.fields).toEqual([{ name: 'Description', old: null, new: null, same: true }]);
+	});
+});
+
+describe('touchedLine', () => {
+	const at = (iso: string) => Date.parse(iso);
+	const batchOf = (changes: HistoryChange[]): HistoryBatch => ({
+		id: 'b',
+		actor: 'ui',
+		label: 'x',
+		createdAt: 0,
+		undone: false,
+		undoneBy: null,
+		changes
+	});
+	const created = (id: string, row: Record<string, unknown>, entity = 'entry') =>
+		change({ id: `ch-${id}`, entity, entityId: id, op: 'create', after: row });
+	const on = (date: string, project = 'p1', id = date) =>
+		created(id, {
+			...entry({ id, projectId: project }),
+			startAt: at(`${date}T08:00:00Z`),
+			endAt: at(`${date}T09:00:00Z`)
+		});
+	const more: Names = {
+		...names,
+		projects: new Map([
+			...names.projects,
+			['p3', { name: 'Audit', customerName: 'Globex' }],
+			['p4', { name: 'Support', customerName: 'Initech' }]
+		])
+	};
+
+	it('names one entry by its weekday, date, times and project', () => {
+		expect(touchedLine(batchOf([created('e1', entry())]), names)).toBe(
+			'Wed 2026-10-07 09:00–11:30 · Acme › Website'
+		);
+	});
+
+	it('reads an edited entry as it reads after the change', () => {
+		const edit = change({
+			before: entry({ description: 'old' }),
+			after: entry({ projectId: 'p2', description: 'new' })
+		});
+		expect(touchedLine(batchOf([edit]), names)).toBe('Wed 2026-10-07 09:00–11:30 · Acme › App');
+	});
+
+	it('reads a deleted entry as it read before', () => {
+		const gone = change({ op: 'delete', before: entry(), after: null });
+		expect(touchedLine(batchOf([gone]), names)).toBe('Wed 2026-10-07 09:00–11:30 · Acme › Website');
+	});
+
+	it('reads a running entry', () => {
+		const running = created('e1', entry({ endAt: null, endZone: null }));
+		expect(touchedLine(batchOf([running]), names)).toBe(
+			'Wed 2026-10-07 09:00–running · Acme › Website'
+		);
+	});
+
+	it('names an entry in its own zones', () => {
+		const tokyo = created('e1', entry({ startZone: 'Asia/Tokyo', endZone: 'Asia/Tokyo' }));
+		expect(touchedLine(batchOf([tokyo]), names)).toBe(
+			'Wed 2026-10-07 16:00–18:30 · Acme › Website'
+		);
+	});
+
+	it('uses a project’s current name, renamed since', () => {
+		const renamed: Names = {
+			...names,
+			projects: new Map([['p1', { name: 'Web shop', customerName: 'Acme' }]])
+		};
+		expect(touchedLine(batchOf([created('e1', entry())]), renamed)).toBe(
+			'Wed 2026-10-07 09:00–11:30 · Acme › Web shop'
+		);
+	});
+
+	it('reads an unknown project as such', () => {
+		expect(touchedLine(batchOf([created('e1', entry({ projectId: 'gone' }))]), names)).toBe(
+			'Wed 2026-10-07 09:00–11:30 · (unknown) › (unknown)'
+		);
+	});
+
+	it('names several entries by their date range and distinct projects, newest first', () => {
+		const line = touchedLine(
+			batchOf([on('2026-10-13', 'p1'), on('2026-10-20', 'p2'), on('2026-10-15', 'p1')]),
+			names
+		);
+		expect(line).toBe('2026-10-13 – 2026-10-20 · Acme › App, Acme › Website');
+	});
+
+	it('gives one date when the entries share it', () => {
+		const line = touchedLine(
+			batchOf([on('2026-10-20', 'p1', 'e1'), on('2026-10-20', 'p1', 'e2')]),
+			names
+		);
+		expect(line).toBe('2026-10-20 · Acme › Website');
+	});
+
+	it('lists up to three projects, then how many more', () => {
+		const line = touchedLine(
+			batchOf([
+				on('2026-10-13', 'p1'),
+				on('2026-10-14', 'p2'),
+				on('2026-10-15', 'p3'),
+				on('2026-10-16', 'p4')
+			]),
+			more
+		);
+		expect(line).toBe(
+			'2026-10-13 – 2026-10-16 · Initech › Support, Globex › Audit, Acme › App +1 more'
+		);
+	});
+
+	it('counts an entry changed twice in one batch once', () => {
+		const twice = [created('e1', entry()), change({ before: entry(), after: entry() })];
+		expect(touchedLine(batchOf(twice), names)).toBe('Wed 2026-10-07 09:00–11:30 · Acme › Website');
+	});
+
+	it('names other records as their change lines do, capitalised', () => {
+		const line = (entity: string, row: Record<string, unknown>) =>
+			touchedLine(batchOf([created('r1', row, entity)]), names);
+		expect(line('location', { name: 'Café' })).toBe('Location Café');
+		expect(line('customer', { name: 'CompZ' })).toBe('Customer CompZ');
+		expect(line('project', { name: 'Audit', customerId: 'c1' })).toBe('Project Acme › Audit');
+		expect(line('activity', { name: 'Design' })).toBe('Activity Design');
+		expect(line('template', { name: 'Standup' })).toBe('Template Standup');
+	});
+
+	it('counts several of one kind, and joins kinds', () => {
+		const line = touchedLine(
+			batchOf([
+				created('l1', { name: 'Home' }, 'location'),
+				created('l2', { name: 'Office' }, 'location'),
+				created('l3', { name: 'Café' }, 'location'),
+				created('a1', { name: 'Design' }, 'activity'),
+				created('a2', { name: 'Build' }, 'activity'),
+				created('t1', { name: 'Standup' }, 'template')
+			]),
+			names
+		);
+		expect(line).toBe('3 locations · 2 activities · Template Standup');
+	});
+
+	it('puts the entries first, then the other records', () => {
+		const line = touchedLine(
+			batchOf([created('l1', { name: 'Café' }, 'location'), created('e1', entry())]),
+			names
+		);
+		expect(line).toBe('Wed 2026-10-07 09:00–11:30 · Acme › Website · Location Café');
+	});
+
+	it('is empty for a batch without changes', () => {
+		expect(touchedLine(batchOf([]), names)).toBe('');
 	});
 });
 
@@ -272,10 +479,17 @@ describe('batchState', () => {
 });
 
 describe('dayHeading', () => {
-	it('gives the date and weekday in the zone', () => {
+	it('gives the short weekday and the date in the zone', () => {
 		expect(dayHeading(Date.parse('2026-10-19T10:00:00Z'), 'Europe/Budapest')).toBe(
-			'2026-10-19, Monday'
+			'Mon 2026-10-19'
 		);
+	});
+
+	it('reads the day of the zone across its midnight', () => {
+		// 22:30 UTC on Tuesday is 00:30 on Wednesday in Budapest (summer time).
+		const at = Date.parse('2026-10-20T22:30:00Z');
+		expect(dayHeading(at, 'Europe/Budapest')).toBe('Wed 2026-10-21');
+		expect(dayHeading(at, 'UTC')).toBe('Tue 2026-10-20');
 	});
 });
 

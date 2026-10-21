@@ -12,6 +12,7 @@ import {
 	getHistory,
 	getSchema as historyGetSchema,
 	listHistory,
+	pageHistory,
 	listSchema as historyListSchema
 } from './history';
 import {
@@ -79,7 +80,7 @@ import { inputSchema as undoSchema, redo, redoLabel, undo, undoLabel } from './u
 import { table, type Writer } from './write';
 
 export type { Actor } from './batch';
-export type { HistoryBatch, HistoryChange } from './history';
+export type { HistoryBatch, HistoryChange, HistoryPage } from './history';
 export type { Named, ProjectListItem, ProjectRow } from './reference';
 export type { Entry, EntryItem } from './entries';
 export type { Template, TemplateItem } from './templates';
@@ -226,6 +227,7 @@ export type Core = {
 	history: {
 		list: (input?: { before?: string; limit?: number }) => ReturnType<typeof listHistory>;
 		get(input: unknown): ReturnType<typeof getHistory>;
+		page: (input?: { before?: string; limit?: number }) => ReturnType<typeof pageHistory>;
 	};
 	undo: BatchCore['undo'];
 	redo: BatchCore['redo'];
@@ -427,7 +429,8 @@ export function openCore(
 		},
 		history: {
 			list: (input) => listHistory(db, userId, input),
-			get: (input) => getHistory(db, userId, input)
+			get: (input) => getHistory(db, userId, input),
+			page: (input) => pageHistory(db, userId, input)
 		},
 		undo: own.undo,
 		redo: own.redo,

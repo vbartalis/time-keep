@@ -639,3 +639,22 @@ export async function seedToday(prefix: string, zone: string) {
 	value(core.templates.create({ name: 'On Empty Co', customerId: emptyCo, durationMinutes: 20 }));
 	return { ...user, zone, projects: { projectZ, timeKeep } };
 }
+
+/** A customer created by the system (as the seeded month is): its batch carries the System chip. */
+export const seedSystemCustomer = (userId: string, name: string) =>
+	value(openCore(database(), userId, 'system').customers.create({ name })).id;
+
+/** One batch, labelled `label`, setting `locationId` on each of `entryIds`. */
+export function seedMoveBatch(
+	userId: string,
+	label: string,
+	entryIds: string[],
+	locationId: string
+) {
+	value(
+		asUi(userId).batch(label, (c) => {
+			const results = entryIds.map((id) => c.entries.update({ id, locationId }));
+			return results.find((r) => !r.ok) ?? results[results.length - 1];
+		})
+	);
+}

@@ -90,10 +90,7 @@ const setupLine = setupRow;
 
 /** A History batch's row, found by its label exactly. */
 const batch = (page: Page, label: string) =>
-	page
-		.getByRole('listitem')
-		.filter({ has: page.getByText(label, { exact: true }) })
-		.filter({ has: page.locator('details') });
+	page.locator('[data-batch]').filter({ has: page.getByText(label, { exact: true }) });
 
 test('makes a token shown once, lists it and refuses a duplicate name', async ({ page }) => {
 	const user = await newUser('make');
@@ -138,8 +135,8 @@ test('an agent change with the token shows on History and undoes in one step', a
 	await page.goto('/history');
 	await expect(page.getByRole('heading', { name: 'History', level: 1 })).toBeVisible();
 	const row = batch(page, 'Agent tidy');
-	await expect(row.locator('p').first()).toHaveText('Agent tidy Agent');
-	await row.getByRole('button', { name: 'Undo', exact: true }).click();
+	await expect(row.getByText('Agent', { exact: true })).toBeVisible();
+	await row.getByRole('button', { name: 'Undo Agent tidy', exact: true }).click();
 	await expect(page.getByRole('status')).toContainText('Done: Undo "Agent tidy".');
 
 	await page.goto('/setup');

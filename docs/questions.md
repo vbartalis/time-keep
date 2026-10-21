@@ -20,6 +20,59 @@ The operator answers whenever they like, here (under the entry) or in conversati
 An answer is added to [the operator's voice](operator-voice.md) in their words, and if
 it changes built work, it becomes a roadmap item.
 
+## 2026-10-21 — 15b
+
+- Question: Where should History's paging go: Newer / Older buttons in the toolbar
+  over the list, links at the foot of the list (as round 1 has), or both?
+- Call made: Both. The toolbar holds the page's count with Newer / Older, and the foot
+  keeps round 1's links, so after reading 50 rows you go on without scrolling back up.
+  Nothing on record says where you want them; keeping the foot link removes nothing
+  that exists.
+- If answered differently: one of the two goes (the toolbar's buttons, or the foot's
+  links), and the browser tests that use it change.
+
+## 2026-10-21 — 15b
+
+- Question: On History, how should a changed field's old value look in "Description:
+  old → new": muted and struck through, plain muted text, or plain text?
+- Call made: Plain muted text, not struck through. The arrow already says which is
+  old; a strike makes the old wording harder to read, and reading what an agent
+  rewrote is why the line is there. Nothing on record says how you want it.
+- If answered differently: the old value is struck through (as in the 15b mockups), or
+  drawn in the normal text colour; DESIGN.md's change-line rule follows.
+
+## 2026-10-21 — 15b
+
+- Question: Should a change on History open the record it touched (for example the
+  entry, in its form)?
+- Call made: No, as in round 1. History shows what changed and undoes it; the record
+  is reached from Calendar, Entries or Setup. A record a batch touched may since be
+  deleted, and nothing on record asks for the link. It is the smaller change.
+- If answered differently: a change to an entry that still exists gets an "Open"
+  link that opens item 12's form in place over History (and a template's or a
+  customer's its own form or Setup row); deleted records show no link.
+
+## 2026-10-21 — 15b
+
+- Question: How should a changed field read on History: one line "Description: old →
+  new", a before/after pair of columns, or something else?
+- Call made: One line per field, "Field: old → new", as round 1 has. It is the smaller
+  change and reads at phone width; nothing on record says how you want it shown.
+- If answered differently: the opened changes become a two-column Before / After
+  table on the PC (stacked on the phone), or whichever form you name.
+
+## 2026-10-21 — 15b
+
+- Question: Should History's list be narrowed (by who made the change, user, agent or
+  system; by date range; by what it touched), or stay one list of every batch, newest
+  first, paged?
+- Call made: One list, newest first, paged, under a heading per day, as round 1 has.
+  It is the smaller change; nothing on record asks for a filter, and an agent's batch
+  is already marked by its chip.
+- If answered differently: History gains Entries' Filter control (who made it, a date
+  range, what kind of record), kept in the address, and the core's `history.list`
+  takes the matching inputs (for the agent too).
+
 ## 2026-10-20 — 15a
 
 - Question: In Setup's "Archived" filter, how does an active customer with archived

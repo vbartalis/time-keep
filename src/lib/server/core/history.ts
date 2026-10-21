@@ -2,7 +2,7 @@
  * The history: the user's batches with their changes, each saying whether it is undone
  * and by which batch. Read-only; history rows are never updated or deleted.
  */
-import { and, desc, eq, inArray, isNotNull, lt, or } from 'drizzle-orm';
+import { and, count, desc, eq, gt, gte, inArray, isNotNull, lt, or } from 'drizzle-orm';
 import { z } from 'zod';
 import type { DB } from '../db/index';
 import { batch, change } from '../db/schema';
@@ -140,6 +140,62 @@ export function listHistory(
 		.limit(limit)
 		.all();
 	return ok(withChanges(db, batches));
+}
+
+/** Where a history page sits among the user's batches: what the screen's range and Newer link need. */
+export type HistoryPage = {
+	total: number;
+	/** The 1-based place of the page's first batch. */
+	position: number;
+	hasNewer: boolean;
+	/** The `before` that lists the page `limit` newer; null when that page is the newest. */
+	newerBefore: string | null;
+};
+
+/** The place of the page `listHistory` returns for the same input, without reading its batches. */
+export function pageHistory(
+	db: Handle,
+	userId: string,
+	input?: { before?: string; limit?: number }
+): Result<HistoryPage> {
+	const parsed = listSchema.safeParse(input ?? {});
+	if (!parsed.success) return fromZod(parsed.error);
+	const { before, limit = 50 } = parsed.data;
+	const mine = eq(batch.userId, userId);
+	const total = db.select({ n: count() }).from(batch).where(mine).get()!.n;
+	if (before === undefined) return ok({ total, position: 1, hasNewer: false, newerBefore: null });
+	const from = db
+		.select()
+		.from(batch)
+		.where(and(mine, eq(batch.id, before)))
+		.get();
+	if (!from) return fail('not_found', 'Not found.');
+	// The batches newer than `before`, and `before` itself, come before the page.
+	const upTo = db
+		.select({ n: count() })
+		.from(batch)
+		.where(
+			and(
+				mine,
+				or(
+					gt(batch.createdAt, from.createdAt),
+					and(eq(batch.createdAt, from.createdAt), gte(batch.id, from.id))
+				)
+			)
+		)
+		.get()!.n;
+	let newerBefore: string | null = null;
+	if (upTo > limit) {
+		newerBefore = db
+			.select({ id: batch.id })
+			.from(batch)
+			.where(mine)
+			.orderBy(desc(batch.createdAt), desc(batch.id))
+			.limit(1)
+			.offset(upTo - limit - 1)
+			.get()!.id;
+	}
+	return ok({ total, position: upTo + 1, hasNewer: true, newerBefore });
 }
 
 /** The batches with their changes, in the order given; one read per table for all of them. */

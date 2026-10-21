@@ -1428,7 +1428,104 @@ screens.
     delete refusal's `back`, clearing a template's start, the phone menu by keyboard,
     the round 1 "clearing the description stays cleared" case; the Entries Undo-in-view
     test measures the row above the deletion.
-- **15b. History.**
+- **15b. History — done 2026-10-21.**
+
+  Done 2026-10-21: History redone in item 11's direction and the patterns of 12–14.
+  The core gained one read; `history.list`, its schema and the MCP are unchanged. What
+  was built:
+
+  - `core.history.page` gives the number of the user's batches, the page's place and
+    the Newer page's `before` (not an MCP tool). The toolbar reads "1–50 of 312
+    batches" (phone "1–50 of 312") with Newer and Older, and the links stay at the foot.
+  - The shaper (`screens/history.ts`) gains the touched line (one entry "Tue 2026-10-20
+    10:00–12:00 · CompX › ClientY – ProjectZ"; several as a date range and up to three
+    customers › projects then "+n more"; other records capitalised), field lines split
+    into name, old and new with a `same` flag, sentence-case subjects, and Entries' day
+    heads with the day's batch count and "Continues on the older page."
+  - PC, from `lg`: Entries' ruled table (Time, What, By, Changes, State) with day head
+    rows; a batch row opens its changes in place; outline 32 px Undo and Redo with a
+    36 px hit area on every row, no primary button; tick boxes on change lines; the
+    52 px toolbar turns into the bulk bar at the first tick ("n selected", of
+    "<label>" or across n batches, Undo selected, Redo selected, Clear), so the list
+    does not move; a mixed selection disables both with "Tick only standing or only
+    undone changes."; the strip rides in the band; a refusal shows under it, focused,
+    the ticks kept. A batch over 100 changes lists its first 100 without boxes.
+  - Phone, below `lg`: Entries-style rows with a leading 44 px Undo or Redo (both on a
+    partly undone batch), the touched line wrapping, a meta line, the 72 px gutter;
+    Select shows tick boxes on open batches and pins the bar ("n selected", Undo, Redo,
+    Done).
+  - Without JavaScript: `<details>` for changes, the bar's buttons always shown, pager
+    links, Select as `?select=1`; the phone's ticks post in their own form, so a hidden
+    layout's ticks never post.
+  - Round 1's `e2e/history.test.ts` rewritten (PC and a 390 px describe), round 1's
+    behaviours kept; `BatchLine.svelte` removed.
+
+  Records: spec `docs/superpowers/specs/2026-10-21-history-design.md`, plan
+  `docs/superpowers/plans/2026-10-21-history.md`. `docs/core.md` and `docs/app.md`
+  updated; `DESIGN.md` and `.impeccable/design.json` recorded by impeccable's
+  documenter (History dropped from round 1's carry-overs). No new decision record.
+
+  Checks: 1082 unit tests and the browser suite (334 passed, the rest skipped by
+  project); check and lint clean. impeccable's critique and audit found 0 P0, 0 P1, 4
+  P2 and 6 P3 (the detector found nothing); the P2s and four P3s were fixed and
+  reviewed. The docs review's one Important (the phone tick box's size) was fixed. The
+  final whole-branch review found 1 Important (without JavaScript, a retry after a
+  refusal on the phone reposted the hidden PC ticks); fixed and re-reviewed.
+
+  Calls made in the operator's place, the stand-in's: spec calls 1–19, as recorded in
+  the spec (sources and confidence there), and from the build:
+
+  - **From 1024 to 1279 px the touched line may wrap to a second line before any cut,
+    and Changes and State share one column; one line cut with "…" from 1280 px.**
+    Departs from the spec's "one line, cut". Source: the spec's goal (find a batch on
+    sight), its anti-goal (a row that cannot be told from its neighbours), the phone's
+    "wrapping, never cut"; the build's 1024 px screenshots. Confidence: inferred.
+
+  The builder's: spec calls 20–27. From the build:
+
+  - Several entries sharing one date show the date without the weekday; a running
+    entry's touched line keeps " · customer › project" after "–running"; an entry
+    changed twice in one batch counts once, as the batch left it; date ranges use each
+    entry's start date in its own zone.
+  - A `same` field whose sides are both null reads "<Field>: none (same as shown)", one
+    side, no arrow (call 8 against call 27).
+  - After an undo on an older page the range shifts by one ("52–101 of 142"), since the
+    undo is itself the newest batch and the page keeps its `before`.
+  - Rows are grid rows in lists styled as Entries' table, not a `<table>`; the bar's
+    disabled actions stay focusable; "1–1 of 1 batch" takes the singular.
+  - Phone tick boxes are 20 px in a 44 px target (the app's phone checkbox rule), not
+    the spec's 22 px.
+  - The page stays 50 batches; the phone rows were trimmed instead (76–113 px).
+  - A refusal does not name its batch and Select with nothing open has no hint: the
+    core's refusal carries no batch and the spec gives no copy.
+  - The phone's no-JS ticks have their own form rather than hiding the PC boxes, which
+    broke the PC with `?select=1`.
+  - The page-load cases (a split day, 50 and 51 batches) are tested in
+    `src/routes/(app)/history/history-routes.test.ts`.
+
+  Questions queued in `docs/questions.md`: where paging goes; how a changed field's old
+  value looks; whether a change opens its record; one line per field or a Before /
+  After table; whether the list is filtered; and the rest of 15b's design session.
+
+  Issues: #4 (undo and redo labels nest their quotes, a core matter), #5 (History's
+  tracked minors).
+
+  Deferred minors:
+
+  - In #5: the first "1 selected" is not announced; the strip remounts with the bar;
+    ticks survive narrowing below `lg`; without JavaScript paging drops `select=1`; a
+    hand-made `before` with nothing older reads "Nothing recorded yet.".
+  - Look: at 1024 px a wrapped touched line can start with "– ProjectZ"; the ticked
+    line's accent is an indented band; the phone page is 5760 px for 50 batches; the
+    What head sits 20–28 px left of the labels; dead `max-lg:` classes.
+  - Code: `history.page` and `history.list` each look up `before`; `screens/history.ts`
+    imports `screens/timesheet.ts` for `labelOf`; an import out of order in the core's
+    index.
+  - Test gaps: day heads and "Continues…" unasserted in e2e (route tests cover them);
+    gate e2e seed through the core; the sticky band and the "…" cut; opening a batch in
+    Select; the no-JS phone gutter; a tight row-height bound (≤116 px against 113); a
+    createdAt tie in `history.page`; an edited-then-deleted entry; the "changed twice"
+    test passes whichever change wins.
 - **15c. Copy-out and Reports.** They share round 1's filter bar
   (`components/entries/`), which goes with them.
 - **15d. Account and agent access, Users, Backup and the sign-in page.** The last

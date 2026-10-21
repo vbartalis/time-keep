@@ -344,6 +344,30 @@ components:
   setup-row-phone:
     textColor: "{colors.foreground}"
     height: "48px"
+  history-band:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    padding: "0 8px"
+    height: "52px"
+  history-batch-row:
+    textColor: "{colors.foreground}"
+    typography: "{typography.body-pc}"
+    padding: "8px 12px"
+    height: "56px"
+  history-batch-action:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    padding: "0 10px"
+    height: "32px"
+  history-change-ticked:
+    backgroundColor: "{colors.accent}"
+  phone-history-action:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    size: "44px"
 ---
 
 # Design System: time-keep
@@ -361,7 +385,9 @@ Filter and chips (shared with the Calendar), the row menu, ticking rows, the bul
 and bulk edit, the phone's bottom sheets, and the `checkbox` stroke; and with what item 15a
 (`feat/15a-setup-and-templates`) added: the phone's four-cell bottom bar and More sheet,
 Today's templates and entries, the Templates screen, the template form and sheet, and
-Setup. Where the build differs from the
+Setup; and with what item 15b (`feat/15b-history`) added: History as a ruled table of
+batches and their change lines, its band and bulk bar, and the phone's rows and Select.
+Where the build differs from the
 direction contract (`.impeccable/surfaces/src-routes-app-layout-svelte.md`), the
 build wins and the difference is noted. Light values are the frontmatter's plain keys;
 dark values carry `-dark`. Dark follows the device setting through
@@ -449,11 +475,11 @@ project colours as the only strong colour.
   phone month's chosen-day ring, a drag's landing tag and the current view's
   underline (tags and circles carry `ground` text); the Filter's count badge
   (`ground` figures on a text-colour pill, "+2"), the phone day head's rule in the
-  timesheet, and the PC bulk bar's frame (the text colour at 80 %). **Muted text**
+  timesheet, and the PC bulk bars' frame (Entries and History; the text colour at 80 %). **Muted text**
   (`muted-foreground`): secondary lines, empty states, column heads.
 - **Muted** (`muted`): the table head band. **Accent** (`accent`): hover fills, ticked
   rows (every ticked row in the timesheet fills with it, PC and phone, so a selection
-  across days reads at a glance), a just-changed row while its undo is offered, an
+  across days reads at a glance), a ticked History change line, a just-changed row while its undo is offered, an
   open Filter button, the current view in the Calendar's switch and the date picker's week
   in view. **Shade** (`shade`): the calendar's one shading, the hours before 08:00
   and from 20:00 and the days outside the month; `muted` in light; in dark, where
@@ -524,23 +550,26 @@ ramp below, not from a second face.
   rows, a template's name (semibold) on Today and the phone Templates list, a Setup
   customer (semibold), Today's total (semibold figures), the row sheet's items and its semibold head, the phone timesheet row's start
   and (semibold) duration, the PC timer bar's elapsed time (bold), the Calendar's period title
-  (semibold) in its toolbar.
+  (semibold) in its toolbar, the phone History row's time (figures) and label (semibold).
 - **Body PC** (400, 14 px / `text-sm`, 1.45): PC body and fields from 1024 px, buttons,
   sidebar items, tables (the timesheet's day heads in semibold figures), the undo
   strip, filter chips; the Calendar's totals (semibold figures) in
-  the toolbar, a day head and the month's week column.
+  the toolbar, a day head and the month's week column; History's rows and change lines.
 - **Label** (400, 12 px / `text-xs`, 1.35): meta lines (a timer's "since 09:00"),
   bottom-bar labels, field labels over fields (the phone form, the time row's Start,
   End and Duration) and hints under them, in muted text. On the PC the entry form's
   left-column labels are 14 px semibold in the text colour. In the Calendar: a
   block's text on a 15 px line (the name semibold), the gutter's hours, the phone
-  toolbar's sub-line, the month's lines and the now and landing tags.
+  toolbar's sub-line, the month's lines and the now and landing tags. In History: a
+  batch's touched line, the bulk bar's scope on the phone and, from 1024 to 1279 px, a
+  batch's state under its count.
 - **Caps** (`caps`: 600, 12 px, uppercase, 0.04em): column heads, section heads, badges,
   state labels such as "Running", and group heads in a list or a row of choices (the
   start list's "Start a timer", the project picker's customers, the form's "Fill
   from"), in muted text; the Calendar's weekday heads; the phone timesheet's day heads
   ("MON 2026-10-19") in the text colour; a template's mark, TIMER and LOG, in muted
-  text (TIMER after a 14 px timer icon); the "Archived" chip.
+  text (TIMER after a 14 px timer icon); the "Archived" chip; History's column heads and
+  the muted "Undone" after an undone change's record.
 - **Figures** (`figures`: tabular numbers): every time, date and duration, so columns
   line up and the running time changes in place. Tables get tabular figures by default.
 
@@ -586,8 +615,8 @@ page behind it is inert.
 
 Regions stack 24 px apart. Controls are 44 px on the phone and 36 px on the PC; table
 cells pad 12 px. The screens inside the shell keep round 1's layouts in the new tokens
-until item 15, except Entries (item 14), the Calendar (item 13), and Today, Templates and
-Setup (item 15a).
+until item 15, except Entries (item 14), the Calendar (item 13), Today, Templates and
+Setup (item 15a), and History (item 15b).
 
 Today is one column: the TEMPLATES section, then TODAY · WED 2026-10-21, 32 px apart.
 Each section head sits on its rule; on the PC the template rows are a surface panel with
@@ -624,6 +653,24 @@ phone the bulk bar replaces the toolbar and the "+" gives way; the bar is pinned
 the timer strip as a surface band edge to edge on a `border` rule, above the rows and
 clear of the bottom bar. While the band is up the undo strip rides inside it, over the
 bar, so its Undo stays in view too.
+
+History (item 15b) stacks 24 px apart: the undo strip, the band, the refusal alert when
+there is one, then the table; under it Newer and Older again as in-page links. On the PC
+the band is 52 px tall (`history-band`): the page's place ("1–50 of 108 batches", the
+range semibold in the text colour, the rest muted) at the left and outline ‹ Newer and
+Older › at the right, off at 50 % at an end. At the first tick the bulk bar takes the
+toolbar's place at the same height, so nothing below moves, and the band is pinned under
+the header (an opaque band on the ground) with the undo strip riding in it, over the bar.
+The table is a surface panel inside the 72 rem measure on one grid that the head, the
+rows and the opened changes share, so they line up: from 1280 px Time 56, a 16 px
+disclosure column, What the rest, By 96, Changes 112, State 160 and the actions 176,
+12 px apart; from 1024 to 1279 px Time 44, 12, What, By 64, Changes and State in one
+128 px column (the state under the count), the actions 164, 8 px apart, so What keeps
+room for the customer › project a batch touched. On the phone the band is a surface
+strip edge to edge on a `border` rule, flush under the timer strip: "1–50 of 108" and an
+outline Select, kept out of the "+"'s column (56 px right padding). Select puts the
+selection bar in its place, the band pinned under the timer strip, and the "+" gives
+way. The list runs to the screen's edges on the surface, flush under the band.
 
 The Calendar's phone toolbar is two rows: the view switch (taking the free width),
 the 44 px icon Filter and Today; then ‹, the title and ›, so the title is never
@@ -676,7 +723,10 @@ start sheet) also dim the page with the 40 % black scrim.
 
 ### Named Rules
 An overlapping timesheet row's 2 px red top edge on the PC is drawn with an inset
-`box-shadow` across its cells (a rule, not depth; the phone row uses a border).
+`box-shadow` across its cells (a rule, not depth; the phone row uses a border). A ticked
+History change line's accent band reaches 12 px past the line each side, to the panel's
+edges, by two unblurred `box-shadow` offsets in `accent` (a fill, not depth; its hairline
+keeps its width).
 
 **The Floating Only Rule.** A surface at rest has no shadow. Only a sheet, popover or
 dialog that floats over the page casts one, and a calendar block only while it is
@@ -737,6 +787,10 @@ Flat, firm, quiet until pressed.
   On the phone Calendar it is a 44 px icon button: the funnel and the badge, no
   chevron, "Filter" for screen readers. On the PC Calendar it is the text form without
   a range. Its name reads "Filter", then the range, then "+2 more filters".
+- **Batch Undo / Redo (History):** outline, 32 px tall with 10 px sides on the PC and a
+  36 px hit area, a 16 px Lucide undo-2 or redo-2 before the label; on the phone a 44 px
+  outline icon button (`phone-history-action`), the label for screen readers. Never a
+  primary button: History has no primary action.
 - **Count badge:** 20 px high, at least 20 px wide, a full pill in the text colour with
   12 px semibold `ground` figures ("+2"); it counts the filters on besides the range.
 
@@ -993,6 +1047,16 @@ selection" link. On the phone, no frame: "5 selected" over the total and the set
 Edit…, Delete and an outline Done, which leaves selecting. With nothing ticked, Edit…
 and Delete are off.
 
+History's bulk bar is the same frame at the band's 52 px with 8 px sides: "2 selected"
+in semibold figures and beside it, muted and cut with "…", the scope ("of “Edit 4
+entries”", "across 3 batches"), or with standing and undone changes ticked together
+"Tick only standing or only undone changes."; outline Undo selected and Redo selected
+with their icons, each off at 50 % (still focusable, saying it is off) unless every ticked
+change can take it, and a ghost Clear. On the phone, no frame: "n selected" in semibold
+figures over the scope in 12 px muted, then outline Undo, Redo and Done, 44 px. A refused
+undo or redo is an alert under the band (Messages' error form), which takes the focus;
+the ticks stay ticked and their batches open.
+
 ### Bulk edit
 "Edit 5 entries" as a sheet on the phone and a centred dialog from 1024 px (surface,
 6 px corners, popover-down shadow on the PC). A head row with the 17 px bold title
@@ -1071,6 +1135,55 @@ an existing template; no Fill from, Copy, Restart or Save as template.
   equal halves on the phone, right-aligned on the PC. A refusal stays in it beside the
   field, the typed name kept.
 
+### History table (signature)
+Every recorded change, newest first, grouped by day, each batch undone or redone as a
+whole or change by change.
+- **PC:** the ruled table in a surface panel (4 px corners, `border` stroke): the muted
+  36 px head band of `caps` heads Time, What, By, Changes and State (State from 1280 px)
+  over an `input` rule. Each day opens with Entries' day head row: the date in semibold
+  figures ("Wed 2026-10-21") and "50 batches" muted at the right, on a `border` rule. A
+  day that runs on to the older page ends with "Continues on the older page." in muted
+  text under a rule.
+- **Batch row:** at least 56 px (`history-batch-row`): the time in figures, a 16 px
+  muted chevron that turns a quarter when open (150 ms), the label in semibold over the
+  touched line (12 px muted, what the batch touched: "2026-10-14 – 2026-10-19 · CompX ›
+  ClientY – ProjectZ"; a wrapped line never starts with "›"), By as the Agent or System
+  chip (nothing for the user), "n changes" in figures, the state muted ("Undone",
+  "Partly undone, 2 of 4"; nothing while it stands), and at the right its own Undo and
+  Redo: Undo while a change stands, Redo while one is undone, both on a partly undone
+  batch. From 1280 px the label and the touched line are each one line, cut with "…";
+  from 1024 to 1279 px the touched line may wrap to two lines before a cut and Changes
+  and State share one column, the state under the count in 12 px. An undone batch's time
+  and label are muted (the label medium). The disclosure (Time to What, the 2 px blue
+  ring on focus) or a click anywhere off the buttons opens the changes under the row;
+  hover washes it with accent at 50 %. Without JavaScript it is a native disclosure.
+- **Change lines:** under the open row, indented to the What column, divided by `border`
+  hairlines: an 18 px tick box, the verb in semibold and the record ("**Changed** entry
+  2026-10-19 09:30–09:45, CompX › ClientY – ProjectZ"), then a line per changed field:
+  the field name and the old side muted ("Location: Office"), then "→" and the new side
+  in the text colour. An empty side is a muted italic "none"; both sides empty is one
+  side, never "none → none"; a field whose value matches what is shown adds a muted
+  "(same as shown)". An undone change is muted throughout, a muted `caps` "Undone" after
+  its record. A ticked line takes the accent fill (`history-change-ticked`) as an
+  indented band, reaching 12 px past the line to the panel's edges. A batch of more than
+  100 lists its first 100 without tick boxes and says so in muted text.
+- **Phone rows:** on the surface edge to edge, ruled; the day heads as the PC's (44 px,
+  16 px in, clear of the "+"). The columns: a leading 44 px column, the time 44 px, the
+  text, 8 px apart, then the 72 px right gutter kept clear of the "+". The leading column
+  holds the batch's Undo or Redo where Entries' rows have their ⋯, both on a partly undone
+  batch, Undo over Redo, 4 px apart. Then the time in 15 px figures, the label in 15 px
+  semibold and the touched line in 12 px muted, both wrapping, never cut; then the meta
+  line: the chip, "n changes" in medium figures with an `input` underline and a 14 px
+  chevron (its 44 px target reaching 14 px up over the touched line's foot, so the row is
+  not 44 px taller for it), a muted "·" and the state. The meta line wraps between its
+  parts, the "·" ending a line, never starting one. The change lines open under it in
+  14 px, indented to the time's column.
+- **Select (phone):** Select begins selecting: the leading buttons give way, the open
+  batches' change lines take tick boxes in the time's column (the 20 px box in its 44 px
+  target), and the selection bar takes the strip's place (Bulk bar). Done ends selecting
+  and clears the ticks.
+- **Empty:** "Nothing recorded yet." in muted text on a `border` rule.
+
 ### Bottom sheet
 How the phone shows a choice over the page: the filter, a row's actions and the bulk
 form. A native modal dialog: surface, a `border` top rule, 6 px top corners, the
@@ -1085,7 +1198,9 @@ over its dates, Custom range across both.
 After an action the focus lands where the next step is, never on the page. A done
 Delete (row menu, row sheet or bulk bar) or bulk Apply moves it to the undo strip's
 Undo. Clear selection returns it to the head tick box (PC); Done returns it to Select
-(phone). A closed sheet, menu or popover returns it to its opener.
+(phone). A closed sheet, menu or popover returns it to its opener. On History a done
+Undo or Redo moves it to the strip's Undo and a refusal to its alert; Clear returns it to
+the tick box last toggled (or its batch's disclosure); Done returns it to Select.
 
 ### Section head
 An h2 in `caps` on a 1 px rule in the text colour, with an optional aside on the right
@@ -1110,8 +1225,8 @@ Copy-out and Reports (labels over fields, 1/2/4 columns at phone/640/1280 px, an
 Search and an underlined Clear link; Copy-out's primary Show; Entries replaced it with
 Filter and chips), the selectable ruled table (a 44 px checkbox column, a "Select all"
 link without JavaScript), the change form and the
-in-page delete confirm (only the confirming button is red; it takes the focus), the
-History list and its change lines, Reports' totals tables (a semibold Total row under a text-colour rule), Copy-out's
+in-page delete confirm (only the confirming button is red; it takes the focus),
+Reports' totals tables (a semibold Total row under a text-colour rule), Copy-out's
 sheet table (never stacks; scrolls sideways), Account's token list and shown-once
 token, and Backup's file input and confirm checkbox. In-page links are the text colour
 with an `input` underline that darkens on hover; never blue.

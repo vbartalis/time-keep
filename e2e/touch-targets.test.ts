@@ -130,7 +130,9 @@ test('opened disclosures have 44 px targets', async ({ page }) => {
 		// Open the first disclosure in the page (not the shell's More); on Today, the first
 		// template's sheet.
 		await page
-			.locator('main details > summary, main button[aria-haspopup="dialog"]')
+			.locator(
+				'main details > summary, main button[aria-haspopup="dialog"], main [data-disclosure]'
+			)
 			.first()
 			.click();
 		const list = await offenders(page);

@@ -1,5 +1,6 @@
-/** Pure helpers for the History screen: a change in words, a batch's state, headings, forms. */
+/** Pure helpers for the History screen: a change in words, what a batch touched, headings, forms. */
 import { localParts, type Core, type HistoryBatch, type HistoryChange } from '../core/index';
+import { labelOf } from './timesheet';
 import { formatDate, formatHours, formatTime } from './today';
 
 export type Names = {
@@ -9,11 +10,21 @@ export type Names = {
 	locations: Map<string, string>;
 };
 
+/** One changed field: its name and both sides as shown; `null` reads "none". */
+export type FieldLine = {
+	name: string;
+	old: string | null;
+	new: string | null;
+	/** Both sides read the same text on screen (an id swapped for a namesake, a sub-minute time). */
+	same: boolean;
+};
+
 export type ChangeLine = {
 	id: string;
 	verb: 'Created' | 'Changed' | 'Archived' | 'Unarchived' | 'Deleted';
+	/** The record in sentence case: "entry 2026-10-20 13:30–14:00, CompX › CompY". */
 	subject: string;
-	fields: string[];
+	fields: FieldLine[];
 	undone: boolean;
 };
 
@@ -102,28 +113,26 @@ function subjectOf(entity: string, row: Row, names: Names): string {
 				at === null || zone === null ? UNKNOWN : `${formatDate(at, zone)} ${formatTime(at, zone)}`;
 			const endAt = num(row.endAt);
 			const end = endAt === null ? 'running' : formatTime(endAt, str(row.endZone) ?? zone ?? 'UTC');
-			return `Entry ${when}–${end}, ${projectLabel(row.projectId, names)}`;
+			return `entry ${when}–${end}, ${projectLabel(row.projectId, names)}`;
 		}
-		case 'customer':
-			return `Customer ${str(row.name) ?? UNKNOWN}`;
 		case 'project': {
 			const customer = lookup(names.customers, row.customerId);
-			return `Project ${customer} › ${str(row.name) ?? UNKNOWN}`;
+			return `project ${customer} › ${str(row.name) ?? UNKNOWN}`;
 		}
+		case 'customer':
 		case 'activity':
-			return `Activity ${str(row.name) ?? UNKNOWN}`;
 		case 'location':
-			return `Location ${str(row.name) ?? UNKNOWN}`;
 		case 'template':
-			return `Template ${str(row.name) ?? UNKNOWN}`;
+			return `${entity} ${str(row.name) ?? UNKNOWN}`;
 		default:
 			return entity;
 	}
 }
 
-function show(value: unknown, kind: Kind, names: Names): string {
-	if (value === null || value === undefined) return 'none';
-	if (typeof value === 'string' && value.trim() === '') return 'none';
+/** A side as shown; `null` for an empty one, which reads "none". */
+function show(value: unknown, kind: Kind, names: Names): string | null {
+	if (value === null || value === undefined) return null;
+	if (typeof value === 'string' && value.trim() === '') return null;
 	let text: string;
 	switch (kind) {
 		case 'customer':
@@ -154,21 +163,34 @@ function instant(at: number | null, zone: string | null, withZone: boolean): str
 	return withZone ? `${text} ${zone}` : text;
 }
 
-function entryTimeField(label: string, atKey: string, zoneKey: string, before: Row, after: Row) {
+const field = (name: string, old: string | null, next: string | null): FieldLine => ({
+	name,
+	old,
+	new: next,
+	same: old === next
+});
+
+function entryTimeField(
+	label: string,
+	atKey: string,
+	zoneKey: string,
+	before: Row,
+	after: Row
+): FieldLine | null {
 	if (!differs(before, after, atKey) && !differs(before, after, zoneKey)) return null;
 	const withZone =
 		str(before[zoneKey]) !== null &&
 		str(after[zoneKey]) !== null &&
 		differs(before, after, zoneKey);
 	const side = (row: Row) => instant(num(row[atKey]), str(row[zoneKey]), withZone);
-	return `${label}: ${side(before)} → ${side(after)}`;
+	return field(label, side(before), side(after));
 }
 
-function fieldLines(entity: string, before: Row, after: Row, names: Names): string[] {
-	const lines: string[] = [];
+function fieldLines(entity: string, before: Row, after: Row, names: Names): FieldLine[] {
+	const lines: FieldLine[] = [];
 	const plain = ([label, key, kind]: [string, string, Kind]) => {
 		if (differs(before, after, key))
-			lines.push(`${label}: ${show(before[key], kind, names)} → ${show(after[key], kind, names)}`);
+			lines.push(field(label, show(before[key], kind, names), show(after[key], kind, names)));
 	};
 	if (entity === 'entry') {
 		ENTRY_BEFORE_TIMES.forEach(plain);
@@ -186,7 +208,7 @@ function fieldLines(entity: string, before: Row, after: Row, names: Names): stri
 		(before.archivedAt != null) !== (after.archivedAt != null)
 	) {
 		const was = before.archivedAt != null;
-		lines.push(`Archived: ${was ? 'yes' : 'no'} → ${was ? 'no' : 'yes'}`);
+		lines.push(field('Archived', was ? 'yes' : 'no', was ? 'no' : 'yes'));
 	}
 	return lines;
 }
@@ -225,12 +247,76 @@ export function batchState(batch: HistoryBatch): BatchState {
 	return { state, undone, total };
 }
 
-const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MAX_PROJECTS = 3;
+const PLURAL: Record<string, string> = {
+	customer: 'customers',
+	project: 'projects',
+	activity: 'activities',
+	location: 'locations',
+	template: 'templates'
+};
 
-/** `YYYY-MM-DD, Weekday` of an instant in a zone. */
+const capitalised = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
+
+/** An entry's span in its own zones: `09:00–11:30`, or `09:30–running`. */
+function entrySpan(row: Row): { date: string; text: string } | null {
+	const at = num(row.startAt);
+	const zone = str(row.startZone);
+	if (at === null || zone === null) return null;
+	const endAt = num(row.endAt);
+	const end = endAt === null ? 'running' : formatTime(endAt, str(row.endZone) ?? zone);
+	return { date: formatDate(at, zone), text: `${formatTime(at, zone)}–${end}` };
+}
+
+/** The entries' part: one entry in full, several by their date range and projects. */
+function entriesPart(rows: Row[], names: Names): string {
+	if (rows.length === 1) {
+		const row = rows[0];
+		const span = entrySpan(row);
+		const when = span === null ? UNKNOWN : `${labelOf(span.date)} ${span.text}`;
+		return `${when} · ${projectLabel(row.projectId, names)}`;
+	}
+	const newest = [...rows].sort((a, b) => (num(b.startAt) ?? 0) - (num(a.startAt) ?? 0));
+	const dates = newest
+		.map((row) => entrySpan(row)?.date)
+		.filter((d): d is string => d !== undefined)
+		.sort();
+	const first = dates[0];
+	const last = dates.at(-1);
+	const range = first === undefined ? UNKNOWN : first === last ? first : `${first} – ${last}`;
+	const projects = [...new Set(newest.map((row) => projectLabel(row.projectId, names)))];
+	const listed = projects.slice(0, MAX_PROJECTS).join(', ');
+	const rest = projects.length - MAX_PROJECTS;
+	return `${range} · ${listed}${rest > 0 ? ` +${rest} more` : ''}`;
+}
+
+/**
+ * What a batch touched, in one line, from all its changes: its entries (as each reads
+ * after the batch, before it for a delete), then its other records, kind by kind.
+ */
+export function touchedLine(batch: HistoryBatch, names: Names): string {
+	// The last change to a record holds how the batch left it.
+	const records = new Map<string, Map<string, Row>>();
+	for (const c of batch.changes) {
+		const row = c.after ?? c.before ?? {};
+		const kind = records.get(c.entity) ?? new Map<string, Row>();
+		kind.set(c.entityId, row);
+		records.set(c.entity, kind);
+	}
+	const parts: string[] = [];
+	const entries = records.get('entry');
+	if (entries) parts.push(entriesPart([...entries.values()], names));
+	for (const [entity, rows] of records) {
+		if (entity === 'entry') continue;
+		if (rows.size === 1) parts.push(capitalised(subjectOf(entity, [...rows.values()][0], names)));
+		else parts.push(`${rows.size} ${PLURAL[entity] ?? `${entity}s`}`);
+	}
+	return parts.join(' · ');
+}
+
+/** `Wed 2026-10-21`: the short weekday and the date of an instant in a zone, as Entries' day heads. */
 export function dayHeading(at: number, zone: string): string {
-	const { date } = localParts(at, zone);
-	return `${date}, ${WEEKDAYS[new Date(`${date}T00:00:00Z`).getUTCDay()]}`;
+	return labelOf(localParts(at, zone).date);
 }
 
 /** Every posted `changeId`, deduped, within bounds. */
