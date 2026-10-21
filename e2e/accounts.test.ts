@@ -18,7 +18,7 @@ async function signOut(page: Page) {
 async function openMore(page: Page) {
 	const more = page
 		.getByRole('navigation', { name: 'Main' })
-		.locator('summary', { hasText: 'More' });
+		.locator('summary, button', { hasText: 'More' });
 	if (await more.isVisible()) await more.click();
 }
 
@@ -26,7 +26,7 @@ async function signedInAdmin(browser: Browser, extraHTTPHeaders: Record<string, 
 	const context = await browser.newContext({ extraHTTPHeaders });
 	const page = await context.newPage();
 	await signIn(page, 'admin', 'admin-password-1');
-	await expect(page.getByText('Signed in as admin')).toBeVisible();
+	await expect(page.locator('aside').getByText('admin', { exact: true })).toBeAttached();
 	return { context, page };
 }
 
@@ -39,7 +39,7 @@ test('accounts: sign in, manage users, change password, disable', async ({
 
 	await test.step('admin signs in with a messy username', async () => {
 		await signIn(page, '  ADMIN ', 'admin-password-1');
-		await expect(page.getByText('Signed in as admin')).toBeVisible();
+		await expect(page.locator('aside').getByText('admin', { exact: true })).toBeAttached();
 	});
 
 	await test.step('admin creates a user, and a duplicate is refused', async () => {
@@ -60,7 +60,7 @@ test('accounts: sign in, manage users, change password, disable', async ({
 
 	await test.step('the user has no admin access', async () => {
 		await signIn(page, name, 'first-password-1');
-		await expect(page.getByText(`Signed in as ${name}`)).toBeVisible();
+		await expect(page.locator('aside').getByText(name, { exact: true })).toBeAttached();
 		await openMore(page);
 		await expect(page.getByRole('link', { name: 'Account' })).toBeVisible();
 		await expect(page.getByRole('link', { name: 'Users' })).toHaveCount(0);
@@ -85,7 +85,7 @@ test('accounts: sign in, manage users, change password, disable', async ({
 		await expect(page.getByText('Password changed.')).toBeVisible();
 		await signOut(page);
 		await signIn(page, name, 'second-password-1');
-		await expect(page.getByText(`Signed in as ${name}`)).toBeVisible();
+		await expect(page.locator('aside').getByText(name, { exact: true })).toBeAttached();
 	});
 
 	await test.step('disabling ends the user session', async () => {

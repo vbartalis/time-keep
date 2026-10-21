@@ -171,7 +171,7 @@
 	</div>
 
 	<div class="contents" inert={sheetOpen}>
-		<BottomBar isAdmin={data.user.isAdmin} {current} />
+		<BottomBar isAdmin={data.user.isAdmin} {current} routeId={page.route.id} />
 	</div>
 
 	<!-- The phone's "+", above the bottom bar; main's foot leaves it room. It gives way to the

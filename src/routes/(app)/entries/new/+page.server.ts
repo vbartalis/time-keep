@@ -26,6 +26,7 @@ export const load: PageServerLoad = ({ locals, cookies, url }): EntryFormData =>
 	const values = newEntryValues(c, url.searchParams, zone, now);
 	if (values === null) error(404, 'Not found');
 	return {
+		kind: 'entry',
 		mode: 'new',
 		values,
 		...formPickers(c, {

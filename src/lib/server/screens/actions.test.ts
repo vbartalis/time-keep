@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formFailure, fromTemplateInput, groupProjects } from './actions';
+import { formFailure, fromTemplateInput, groupProjects, sheetTimeRefusals } from './actions';
 
 const form = (fields: Record<string, string>) => {
 	const f = new FormData();
@@ -33,7 +33,7 @@ describe('fromTemplateInput', () => {
 			date: '',
 			start: '',
 			end: '',
-			durationMinutes: ''
+			duration: ''
 		});
 		expect(fromTemplateInput(f, ctx(zoned))).toEqual({ templateId: 't1' });
 	});
@@ -47,6 +47,14 @@ describe('fromTemplateInput', () => {
 		expect(
 			fromTemplateInput(form({ templateId: 't1', projectId: 'p2', reference: 'T-1' }), ctx(zoned))
 		).toEqual({ templateId: 't1', projectId: 'p2', reference: 'T-1' });
+	});
+	it('passes a picked activity and location, and leaves blank ones to the template', () => {
+		expect(
+			fromTemplateInput(form({ templateId: 't1', activityId: 'a1', locationId: 'l1' }), ctx(zoned))
+		).toEqual({ templateId: 't1', activityId: 'a1', locationId: 'l1' });
+		expect(
+			fromTemplateInput(form({ templateId: 't1', activityId: '', locationId: ' ' }), ctx(zoned))
+		).toEqual({ templateId: 't1' });
 	});
 	it('passes a date alone for the template start time to use', () => {
 		expect(fromTemplateInput(form({ templateId: 't1', date: '2026-10-16' }), ctx(zoned))).toEqual({
@@ -102,13 +110,42 @@ describe('fromTemplateInput', () => {
 			fromTemplateInput(form({ templateId: 't1', end: '05:30' }), ctx(overnight, '23:00'))
 		).toEqual({ templateId: 't1', start: '2026-10-18T22:00', end: '2026-10-19T05:30' });
 	});
-	it('sends a duration as a number, and leaves a bad one for the core to refuse', () => {
+	it('reads a duration as the entry form does, into minutes', () => {
+		expect(fromTemplateInput(form({ templateId: 't1', duration: '0:45' }), ctx(zoned))).toEqual({
+			templateId: 't1',
+			durationMinutes: 45
+		});
+		expect(fromTemplateInput(form({ templateId: 't1', duration: '1.5' }), ctx(zoned))).toEqual({
+			templateId: 't1',
+			durationMinutes: 90
+		});
+	});
+	it('reads times and the date forgivingly, as the entry form does', () => {
 		expect(
-			fromTemplateInput(form({ templateId: 't1', durationMinutes: '45' }), ctx(zoned))
-		).toEqual({ templateId: 't1', durationMinutes: 45 });
+			fromTemplateInput(
+				form({ templateId: 't1', date: '20261016', start: '815', end: '10' }),
+				ctx(zoned)
+			)
+		).toEqual({ templateId: 't1', start: '2026-10-16T08:15', end: '2026-10-16T10:00' });
+	});
+});
+
+describe('sheetTimeRefusals', () => {
+	it('says why a typed date, time or duration does not read', () => {
 		expect(
-			fromTemplateInput(form({ templateId: 't1', durationMinutes: 'abc' }), ctx(zoned))
-		).toEqual({ templateId: 't1', durationMinutes: 'abc' });
+			sheetTimeRefusals(
+				form({ date: 'soon', start: '25:00', end: '9:5', duration: 'abc' }),
+				'2026-10-18'
+			)
+		).toEqual({
+			date: 'Not a date. Type 2026-10-18, 20261018 or 10.18.',
+			start: 'Not a time of day.',
+			end: 'Minutes take two digits, as in 9:05.',
+			duration: 'Not a duration. Type 5:30, 5.5, 5h30 or 90 (minutes).'
+		});
+	});
+	it('is empty when every typed one reads or none is typed', () => {
+		expect(sheetTimeRefusals(form({ start: '9', duration: '' }), '2026-10-18')).toEqual({});
 	});
 });
 

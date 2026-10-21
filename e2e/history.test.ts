@@ -11,6 +11,7 @@ import {
 	seedProject,
 	seedThreeChanges
 } from './seed';
+import { setupRow } from './setup';
 
 const zone = noonZone();
 test.use({ timezoneId: zone });
@@ -66,8 +67,7 @@ const change = (row: Locator, subject: string) =>
 const state = (row: Locator) => row.locator('p').first();
 
 /** The line of a Setup row: its name, rename and archive controls. */
-const setupLine = (page: Page, name: string) =>
-	page.locator('details', { has: page.locator('summary', { hasText: name }) }).locator('..');
+const setupLine = setupRow;
 
 const selectedBar = (page: Page) => page.getByRole('button', { name: 'Undo selected changes' });
 
@@ -122,7 +122,7 @@ test('undoes a batch from the list, then redoes it', async ({ page }) => {
 
 	await page.goto('/setup');
 	await expect(setupLine(page, 'Acme')).toBeVisible();
-	await expect(page.locator('summary', { hasText: 'Acme Ltd' })).toHaveCount(0);
+	await expect(setupLine(page, 'Acme Ltd')).toHaveCount(0);
 
 	await openHistory(page);
 	await batch(page, label).getByRole('button', { name: 'Redo', exact: true }).click();
@@ -167,8 +167,8 @@ test('undoes two of a batch’s three changes: partly undone, the third stands',
 
 	await page.goto('/setup');
 	await expect(setupLine(page, 'Globex')).toBeVisible();
-	await expect(page.locator('summary', { hasText: 'Travel' })).toHaveCount(0);
-	await expect(page.locator('summary', { hasText: 'Office' })).toHaveCount(0);
+	await expect(setupLine(page, 'Travel')).toHaveCount(0);
+	await expect(setupLine(page, 'Office')).toHaveCount(0);
 });
 
 test('undoes changes from two batches in one step', async ({ page }) => {
@@ -277,7 +277,7 @@ test('a batch’s own Undo beats a tick on another batch', async ({ page }) => {
 
 	await page.goto('/setup');
 	await expect(setupLine(page, 'Acme')).toBeVisible();
-	await expect(page.locator('summary', { hasText: 'Initech' })).toHaveCount(0);
+	await expect(setupLine(page, 'Initech')).toHaveCount(0);
 });
 
 test('an unknown before goes back to the newest page', async ({ page }) => {
@@ -373,8 +373,8 @@ test('the sidebar shows History current on /history', async ({ page }) => {
 			'aria-current',
 			'page'
 		);
-		await main.locator('summary', { hasText: 'More' }).click();
-		await expect(main.getByRole('link', { name: 'History' })).toHaveAttribute(
+		await main.getByRole('button', { name: 'More' }).click();
+		await expect(page.getByRole('dialog').getByRole('link', { name: 'History' })).toHaveAttribute(
 			'aria-current',
 			'page'
 		);

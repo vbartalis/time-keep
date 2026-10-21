@@ -9,7 +9,7 @@ import type {
 } from '#lib/components/timesheet/types.js';
 import type { Filter } from '#lib/filter/filter.js';
 import { colourOf } from '#lib/project-colour.js';
-import type { Core, Named } from '../core/index';
+import type { Core, EntryItem, Named } from '../core/index';
 import { formFailure, rows } from './actions';
 import { formatDate, formatTime, startOfDay } from './today';
 
@@ -36,7 +36,41 @@ export function listInput(filter: Filter, zone: string): Record<string, unknown>
 const dayNumber = (date: string) => Date.parse(`${date}T00:00:00Z`) / 86_400_000;
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const labelOf = (date: string) => `${WEEKDAYS[new Date(`${date}T00:00:00Z`).getUTCDay()]} ${date}`;
+export const labelOf = (date: string) =>
+	`${WEEKDAYS[new Date(`${date}T00:00:00Z`).getUTCDay()]} ${date}`;
+
+/**
+ * One entry as a table row: times in its own zones, its project's colour, and whether it
+ * overlaps. `since` is the start date when it is before the day shown (Today), else null.
+ */
+export function tableRow(
+	e: EntryItem,
+	ctx: { colours: Map<string, number>; overlaps: Set<string>; since: string | null }
+): TableRow {
+	const date = formatDate(e.startAt, e.startZone);
+	return {
+		id: e.id,
+		version: e.version,
+		startAt: e.startAt,
+		endAt: e.endAt,
+		start: formatTime(e.startAt, e.startZone),
+		end: e.endAt === null ? null : formatTime(e.endAt, e.endZone ?? e.startZone),
+		plusDays:
+			e.endAt === null
+				? 0
+				: dayNumber(formatDate(e.endAt, e.endZone ?? e.startZone)) - dayNumber(date),
+		running: e.endAt === null,
+		customer: e.customerName,
+		project: e.projectName,
+		colour: ctx.colours.get(e.projectId) ?? 1,
+		activity: e.activityName,
+		location: e.locationName,
+		reference: e.reference,
+		description: e.description,
+		overlaps: ctx.overlaps.has(e.id),
+		since: ctx.since
+	};
+}
 
 /**
  * The filtered entries as days of rows, newest first. A row's day is its start date in
@@ -75,28 +109,7 @@ export function timesheetFor(core: Core, filter: Filter, zone: string, now: numb
 		const ms = Math.max(0, (e.endAt ?? now) - e.startAt);
 		day.totalMs += ms;
 		totalMs += ms;
-		const row: TableRow = {
-			id: e.id,
-			version: e.version,
-			startAt: e.startAt,
-			endAt: e.endAt,
-			start: formatTime(e.startAt, e.startZone),
-			end: e.endAt === null ? null : formatTime(e.endAt, e.endZone ?? e.startZone),
-			plusDays:
-				e.endAt === null
-					? 0
-					: dayNumber(formatDate(e.endAt, e.endZone ?? e.startZone)) - dayNumber(date),
-			running: e.endAt === null,
-			customer: e.customerName,
-			project: e.projectName,
-			colour: colours.get(e.projectId) ?? 1,
-			activity: e.activityName,
-			location: e.locationName,
-			reference: e.reference,
-			description: e.description,
-			overlaps: overlaps.has(e.id)
-		};
-		day.rows.push(row);
+		day.rows.push(tableRow(e, { colours, overlaps, since: null }));
 	}
 	const ordered = [...days.values()]
 		.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))

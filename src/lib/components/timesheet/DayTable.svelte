@@ -20,6 +20,8 @@
 	 * instead (`PhoneList`).
 	 * The tick boxes post with the bulk bar's form; with the script, the head's and each
 	 * day's box tick many at once (mixed when some are) and shift-click ticks a run.
+	 * Today draws one day without tick boxes or a day head row (`selectable`, `dayHeads`
+	 * false); a row that started on an earlier day says "Since <date>" under its start.
 	 */
 	let {
 		days,
@@ -29,7 +31,9 @@
 		warnings,
 		selection,
 		enhanced,
-		versions
+		versions,
+		selectable = true,
+		dayHeads = true
 	}: {
 		days: TableDay[];
 		/** The table's own address: where the form, the menu and ▶ return to. */
@@ -45,6 +49,10 @@
 		enhanced: boolean;
 		/** Versions to post in place of the loaded ones: a refused selection's, as posted. */
 		versions: Record<string, string>;
+		/** The tick box column; Today has none. */
+		selectable?: boolean;
+		/** A head row per day (its date and total); Today's day is in its section head. */
+		dayHeads?: boolean;
 	} = $props();
 
 	const every = $derived(days.flatMap((d) => d.rows.map((r) => r.id)));
@@ -106,30 +114,33 @@
 <table class="w-full border-separate border-spacing-0 text-sm lg:table-fixed">
 	<thead>
 		<tr class="bg-muted">
-			<th class="{head} w-11 border-b border-input">
-				{#if enhanced}
-					<input
-						type="checkbox"
-						class={box}
-						checked={all === 'all'}
-						indeterminate={all === 'some'}
-						onchange={() => selection.setMany(every, all !== 'all')}
-						aria-label="Select all shown"
-						data-select-all
-					/>
-				{:else}
-					<!-- Without the script: every row ticked by the server (call 39). -->
-					<!-- eslint-disable svelte/no-navigation-without-resolve -- `back` is resolved -->
-					<a
-						href="{back}&all=1"
-						data-nojs
-						class="rounded-sm text-xs font-semibold text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
-						>Select all</a
-					>
-					<!-- eslint-enable svelte/no-navigation-without-resolve -->
-				{/if}
-			</th>
-			<th class="{head} w-[4.5rem] border-b border-input">Start</th>
+			{#if selectable}
+				<th class="{head} w-11 border-b border-input">
+					{#if enhanced}
+						<input
+							type="checkbox"
+							class={box}
+							checked={all === 'all'}
+							indeterminate={all === 'some'}
+							onchange={() => selection.setMany(every, all !== 'all')}
+							aria-label="Select all shown"
+							data-select-all
+						/>
+					{:else}
+						<!-- Without the script: every row ticked by the server (call 39). -->
+						<!-- eslint-disable svelte/no-navigation-without-resolve -- `back` is resolved -->
+						<a
+							href="{back}&all=1"
+							data-nojs
+							class="rounded-sm text-xs font-semibold text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
+							>Select all</a
+						>
+						<!-- eslint-enable svelte/no-navigation-without-resolve -->
+					{/if}
+				</th>
+			{/if}
+			<!-- Without the tick box column, room for "Since <date>" under a start. -->
+			<th class="{head} border-b border-input {selectable ? 'w-[4.5rem]' : 'w-28'}">Start</th>
 			<th class="{head} w-20 border-b border-input">End</th>
 			<th class="{head} w-16 border-b border-input text-right">Hours</th>
 			<!-- Fixed and wide: the project is what a month-end scan reads (`pc-table`). -->
@@ -144,32 +155,37 @@
 	</thead>
 	{#each days as d (d.date)}
 		{@const ticks = selection.state(dayIds(d))}
-		<tbody aria-labelledby="day-{d.date}">
-			<tr>
-				<td class="border-b border-border pl-3 align-middle">
-					{#if enhanced}
-						<input
-							type="checkbox"
-							class={box}
-							checked={ticks === 'all'}
-							indeterminate={ticks === 'some'}
-							onchange={() => selection.setMany(dayIds(d), ticks !== 'all')}
-							aria-label="Select {d.label}"
-						/>
+		<tbody aria-labelledby={dayHeads ? `day-${d.date}` : undefined}>
+			{#if dayHeads}
+				<tr>
+					{#if selectable}
+						<td class="border-b border-border pl-3 align-middle">
+							{#if enhanced}
+								<input
+									type="checkbox"
+									class={box}
+									checked={ticks === 'all'}
+									indeterminate={ticks === 'some'}
+									onchange={() => selection.setMany(dayIds(d), ticks !== 'all')}
+									aria-label="Select {d.label}"
+								/>
+							{/if}
+						</td>
 					{/if}
-				</td>
-				<th
-					id="day-{d.date}"
-					scope="colgroup"
-					colspan="2"
-					class="{cell} border-b border-border text-left font-semibold whitespace-nowrap figures"
-				>
-					{d.label}
-				</th>
-				<td class="{cell} border-b border-border text-right font-semibold figures">{dayTotal(d)}</td
-				>
-				<td colspan="7" class="border-b border-border"></td>
-			</tr>
+					<th
+						id="day-{d.date}"
+						scope="colgroup"
+						colspan="2"
+						class="{cell} border-b border-border text-left font-semibold whitespace-nowrap figures"
+					>
+						{d.label}
+					</th>
+					<td class="{cell} border-b border-border text-right font-semibold figures"
+						>{dayTotal(d)}</td
+					>
+					<td colspan="7" class="border-b border-border"></td>
+				</tr>
+			{/if}
 			{#each d.rows as r (r.id)}
 				{@const marks = marksOf(r.id)}
 				{@const edge = r.overlaps ? 'lg:shadow-[inset_0_2px_0_var(--destructive)]' : ''}
@@ -182,25 +198,32 @@
 						? 'bg-accent'
 						: 'hover:bg-accent/50'}"
 				>
-					<td class="border-b border-border pl-3 align-middle {edge}">
-						<input
-							type="checkbox"
-							name="id"
-							value={r.id}
-							form="bulk"
-							class={box}
-							checked={selection.has(r.id)}
-							onclick={(e) => ontick(e, r.id)}
-							aria-label="Select {d.date} {r.start}, {where(r)}"
-						/>
-						<input
-							type="hidden"
-							name="version.{r.id}"
-							value={versions[r.id] ?? String(r.version)}
-							form="bulk"
-						/>
+					{#if selectable}
+						<td class="border-b border-border pl-3 align-middle {edge}">
+							<input
+								type="checkbox"
+								name="id"
+								value={r.id}
+								form="bulk"
+								class={box}
+								checked={selection.has(r.id)}
+								onclick={(e) => ontick(e, r.id)}
+								aria-label="Select {d.date} {r.start}, {where(r)}"
+							/>
+							<input
+								type="hidden"
+								name="version.{r.id}"
+								value={versions[r.id] ?? String(r.version)}
+								form="bulk"
+							/>
+						</td>
+					{/if}
+					<td class="{cell} border-b border-border figures {edge}">
+						{r.start}
+						{#if r.since}
+							<span class="block text-xs text-muted-foreground">Since {r.since}</span>
+						{/if}
 					</td>
-					<td class="{cell} border-b border-border figures {edge}">{r.start}</td>
 					<td class="{cell} border-b border-border figures {edge}">
 						{#if r.end === null}
 							<span class="text-xs caps text-live">Running</span>

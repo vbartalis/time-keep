@@ -13,6 +13,8 @@
 		labelledby,
 		onclose,
 		dialog = false,
+		narrow = false,
+		above,
 		children
 	}: {
 		open: boolean;
@@ -20,6 +22,10 @@
 		labelledby: string;
 		onclose: () => void;
 		dialog?: boolean;
+		/** As a dialog, 440 px wide instead of 620 (a small form: Setup's create). */
+		narrow?: boolean;
+		/** A CSS length: the sheet sits that far above the screen's foot, the scrim still behind it. */
+		above?: string;
 		children: Snippet;
 	} = $props();
 
@@ -40,7 +46,7 @@
 
 	const frame = $derived(
 		dialog
-			? 'lg:inset-0 lg:m-auto lg:h-fit lg:max-h-[calc(100dvh-4rem)] lg:w-[calc(100%-2rem)] lg:max-w-[38.75rem] lg:rounded-lg lg:border-0 lg:shadow-[0_8px_24px_rgb(0_0_0/0.12)]'
+			? `lg:inset-0 lg:m-auto lg:h-fit lg:max-h-[calc(100dvh-4rem)] lg:w-[calc(100%-2rem)] ${narrow ? 'lg:max-w-[27.5rem]' : 'lg:max-w-[38.75rem]'} lg:rounded-lg lg:border-0 lg:shadow-[0_8px_24px_rgb(0_0_0/0.12)]`
 			: ''
 	);
 </script>
@@ -49,6 +55,8 @@
 <dialog
 	bind:this={node}
 	aria-labelledby={labelledby}
+	style:bottom={above}
+	style:padding-bottom={above ? '0' : undefined}
 	class="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[85dvh] w-full max-w-none flex-col overflow-hidden rounded-t-lg border-0 border-t border-border bg-card p-0 pb-[env(safe-area-inset-bottom)] text-foreground shadow-[0_-8px_24px_rgb(0_0_0/0.12)] backdrop:bg-black/40 open:flex {frame}"
 	oncancel={(e) => {
 		e.preventDefault();

@@ -7,6 +7,7 @@ import {
 	type ProjectListItem,
 	type Result
 } from '../core/index';
+import { readClock, readDate, readDuration, type Read } from '#lib/time-input.js';
 import { flashAfter, setFlash } from './flash';
 
 /** The rows of a list result; none when it failed. */
@@ -37,9 +38,12 @@ export function given(form: FormData, name: string): string | undefined {
 }
 
 /**
- * The input of `entries.fromTemplate` from the template sheet. Blank fields are left
- * out so the template's apply. The device zone is sent only when the template has no
- * zone of its own. Changed times are local `HH:mm` on the date (today by default); an
+ * The input of `entries.fromTemplate` from the template sheet. Blank fields (project,
+ * activity, location, reference, description, times) are left out so the template's
+ * apply. The device zone is sent only when the template has no zone of its own. The
+ * date, times and duration are read as the entry form reads them (`9`, `900`, `1.5`);
+ * one that does not read is sent as typed, for `sheetTimeRefusals` to have caught.
+ * Changed times are local `HH:mm` on the date (today by default); an
  * end not after the start falls on the next day. A typed end without a typed start
  * sends the template's start too, on the day the core would pick (yesterday for an
  * overnight template whose start today is still ahead), so both share one day.
@@ -57,14 +61,20 @@ export function fromTemplateInput(
 	const t = ctx.template;
 	const input: Record<string, unknown> = { templateId: given(form, 'templateId') ?? '' };
 	if (t.timeZone === null) input.timeZone = ctx.zone;
-	for (const key of ['projectId', 'reference', 'description'] as const) {
+	for (const key of [
+		'projectId',
+		'activityId',
+		'locationId',
+		'reference',
+		'description'
+	] as const) {
 		const value = given(form, key);
 		if (value !== undefined) input[key] = value;
 	}
-	const date = given(form, 'date');
-	const typedStart = given(form, 'start');
-	const end = given(form, 'end');
-	const duration = given(form, 'durationMinutes');
+	const date = readOr(given(form, 'date'), (text) => readDate(text, ctx.today));
+	const typedStart = readOr(given(form, 'start'), readClock);
+	const end = readOr(given(form, 'end'), readClock);
+	const duration = readOr(given(form, 'duration'), readDuration);
 
 	let start = typedStart;
 	let day = date ?? ctx.today;
@@ -78,8 +88,36 @@ export function fromTemplateInput(
 	if (end !== undefined) {
 		input.end = `${start !== undefined && end <= start ? nextDate(day) : day}T${end}`;
 	}
-	if (duration !== undefined) input.durationMinutes = wholeNumber(duration);
+	if (duration !== undefined) input.durationMinutes = duration;
 	return input;
+}
+
+/** The text's reading when it reads; else the text as typed (undefined stays so). */
+function readOr<T>(text: string | undefined, read: (t: string) => Read<T>): T | string | undefined {
+	if (text === undefined) return undefined;
+	const r = read(text);
+	return r.ok ? r.value : text;
+}
+
+/**
+ * Why the template sheet's typed date, start, end or duration does not read, by field;
+ * empty when each typed one reads. `today` completes a date typed without its year.
+ */
+export function sheetTimeRefusals(form: FormData, today: string): Record<string, string> {
+	const readers: Record<string, (t: string) => Read<unknown>> = {
+		date: (t) => readDate(t, today),
+		start: readClock,
+		end: readClock,
+		duration: readDuration
+	};
+	const fields: Record<string, string> = {};
+	for (const [name, read] of Object.entries(readers)) {
+		const text = given(form, name);
+		if (text === undefined) continue;
+		const r = read(text);
+		if (!r.ok) fields[name] = r.reason;
+	}
+	return fields;
 }
 
 /**

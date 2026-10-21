@@ -379,7 +379,9 @@ describe('valuesFromEntry', () => {
 			locationId: '',
 			reference: 'R',
 			description: '',
-			running: false
+			running: false,
+			name: '',
+			customerId: ''
 		});
 	});
 	it('shows a running entry with no end or duration', () => {
@@ -441,7 +443,9 @@ describe('newValues and templateValues', () => {
 			locationId: '',
 			reference: '',
 			description: '',
-			running: false
+			running: false,
+			name: '',
+			customerId: ''
 		});
 		expect(newValues({ date: '2026-10-19', zone }).start).toBe('');
 	});

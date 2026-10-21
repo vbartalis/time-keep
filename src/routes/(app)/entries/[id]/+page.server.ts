@@ -24,6 +24,7 @@ export const load: PageServerLoad = ({ locals, params, url }): EntryFormData => 
 	if (!r.ok) error(404, 'Entry not found');
 	const e = r.value;
 	return {
+		kind: 'entry',
 		mode: 'edit',
 		values: valuesFromEntry(e),
 		...formPickers(c, e),

@@ -292,8 +292,8 @@ test('the sidebar shows Copy-out current; the phone has it in More', async ({ pa
 		);
 	} else {
 		await expect(main.getByRole('link', { name: 'Copy-out' })).toHaveCount(0);
-		await main.locator('summary', { hasText: 'More' }).click();
-		await expect(main.getByRole('link', { name: 'Copy-out' })).toHaveAttribute(
+		await main.getByRole('button', { name: 'More' }).click();
+		await expect(page.getByRole('dialog').getByRole('link', { name: 'Copy-out' })).toHaveAttribute(
 			'aria-current',
 			'page'
 		);

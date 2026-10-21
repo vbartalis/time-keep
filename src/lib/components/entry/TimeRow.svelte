@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { untrack } from 'svelte';
 	import { durationText, endAfter, readClock, readDate, readDuration } from '#lib/time-input.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 
@@ -18,7 +19,9 @@
 		date,
 		zone,
 		errors,
-		running = false
+		running = false,
+		template = false,
+		linked = null
 	}: {
 		start: string;
 		end: string;
@@ -35,6 +38,13 @@
 		errors: Record<string, string>;
 		/** The entry is the running timer: no end keeps it running. */
 		running?: boolean;
+		/**
+		 * A template's times of day: no date, the start may stay blank, no "previous end",
+		 * and the template's note in place of the hint line.
+		 */
+		template?: boolean;
+		/** Which of end and duration the loaded values hold (a template keeps one of them). */
+		linked?: 'end' | 'duration' | null;
 	} = $props();
 
 	type Field = 'start' | 'end' | 'duration';
@@ -50,8 +60,11 @@
 
 	/** Fields typed into since they were last read. */
 	const typing: Record<Field, boolean> = { start: false, end: false, duration: false };
-	/** Which of end and duration the user gave last; it holds when the start moves. */
-	let lastTyped: 'end' | 'duration' | null = null;
+	/**
+	 * Which of end and duration the user gave last; it holds when the start moves. It starts
+	 * as the one the values were loaded with (read once: what was loaded).
+	 */
+	let lastTyped: 'end' | 'duration' | null = untrack(() => linked);
 	/** The end is no longer the loaded instant (typed, filled or linked). */
 	let endTyped = false;
 
@@ -100,6 +113,12 @@
 		typing[name] = false;
 		const text = (name === 'start' ? start : name === 'end' ? end : duration).trim();
 		if (name === 'start') {
+			if (template && text === '') {
+				// A template's start may stay blank: it is asked when the template is used.
+				local.start = '';
+				start = '';
+				return true;
+			}
 			const r = readClock(text);
 			if (!r.ok) {
 				local.start = r.reason;
@@ -150,6 +169,15 @@
 		return (['start', 'end', 'duration'] as const).map(settle).every(Boolean);
 	}
 
+	/**
+	 * Which of end and duration a template keeps: the one typed last, else the one it was
+	 * loaded with, else the end when there is one.
+	 */
+	export function kept(): 'end' | 'duration' | '' {
+		if (end === '' && duration === '') return '';
+		return lastTyped ?? (end !== '' ? 'end' : 'duration');
+	}
+
 	/** A template filled the times: what it gave holds, as if typed. */
 	export function filled(from: 'end' | 'duration' | null) {
 		lastTyped = from;
@@ -164,7 +192,7 @@
 		const d = readDate(date, '2000-01-01');
 		const before = startClock();
 		const tz = zone();
-		if (!d.ok || !tz) {
+		if (template || !d.ok || !tz) {
 			previous = null;
 			return;
 		}
@@ -249,7 +277,7 @@
 	{/each}
 </div>
 <div class="flex flex-col gap-1 pt-1.5 text-xs text-muted-foreground">
-	{#if end === '' && duration === ''}
+	{#if !template && end === '' && duration === ''}
 		<p class="text-foreground">
 			{running ? 'No end: the timer keeps running.' : 'No end: this starts a timer.'}
 		</p>
@@ -261,5 +289,9 @@
 			onclick={startAtPrevious}>Start at previous end {previous}</button
 		>
 	{/if}
-	<p id="entry-time-hint">Times: 9, 900, 9:00, 1330 · Duration: 5:30, 5.5, 5h30, 90 (minutes)</p>
+	{#if template}
+		<p id="entry-time-hint">Any field may stay blank; only the blanks are asked when it is used.</p>
+	{:else}
+		<p id="entry-time-hint">Times: 9, 900, 9:00, 1330 · Duration: 5:30, 5.5, 5h30, 90 (minutes)</p>
+	{/if}
 </div>

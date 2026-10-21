@@ -103,8 +103,11 @@
 	</li>
 	{#if templates.length === 0}
 		<li>
+			<!-- The template form, opened in place over the screen. -->
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved, plus its back -->
 			<a
-				href={resolve('/(app)/templates/new')}
+				href="{resolve('/(app)/templates/new')}?back={backQuery}"
+				data-entry-form
 				class="{row} text-foreground underline decoration-input underline-offset-4 hover:decoration-foreground"
 				>Create a template</a
 			>

@@ -603,3 +603,39 @@ export async function seedGateMonth(prefix: string, zone: string) {
 		.slice(0, 10);
 	return { ...user, today, from };
 }
+
+/**
+ * Today's tests' user: the gate's month (Standup and Ticket, nothing today) and four
+ * more templates. "Daily" fills every field but the description; "On CompX" names the
+ * customer CompX and no project; "On Empty Co" names a customer with no active project.
+ */
+export async function seedToday(prefix: string, zone: string) {
+	const user = await seedGateMonth(prefix, zone);
+	const core = asUi(user.id);
+	const named = <T extends { id: string; name: string }>(list: Result<T[]>, name: string) => {
+		const found = value(list).find((r) => r.name === name);
+		if (!found) throw new Error(`seed: no ${name}`);
+		return found.id;
+	};
+	const compX = named(core.customers.list(), 'CompX');
+	const projectZ = named(core.projects.list(), 'ClientY – ProjectZ');
+	const timeKeep = named(core.projects.list(), 'time-keep');
+	const meeting = named(core.activities.list(), 'Meeting');
+	const office = named(core.locations.list(), 'Office');
+	const emptyCo = value(core.customers.create({ name: 'Empty Co' })).id;
+	value(
+		core.templates.create({
+			name: 'Daily',
+			customerId: compX,
+			projectId: projectZ,
+			activityId: meeting,
+			locationId: office,
+			reference: 'DAILY',
+			startTime: '08:00',
+			endTime: '08:10'
+		})
+	);
+	value(core.templates.create({ name: 'On CompX', customerId: compX, durationMinutes: 20 }));
+	value(core.templates.create({ name: 'On Empty Co', customerId: emptyCo, durationMinutes: 20 }));
+	return { ...user, zone, projects: { projectZ, timeKeep } };
+}

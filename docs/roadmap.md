@@ -1313,6 +1313,127 @@ that stops at the screen's height) are gone.
 Exit: the usability gate passes every one of these screens on phone and PC, and none
 still uses round 1's look or patterns.
 
+Split when it was brainstormed (2026-10-20) into four parts, worked in this order.
+Today is in the item too: it still had round 1's layout, and the exit cannot be met
+while it does (the stand-in's call, inferred). Each part's exit is the item's, for its
+screens.
+
+- **15a. Today, templates and Setup — done 2026-10-21.** Today, the Templates screen
+  and the template form, Setup (customers › projects, activities, locations), and the
+  phone's bottom bar and More, so the navigation reaches every screen, and what is
+  left of round 1's rail that stops at the screen's height.
+
+  Done 2026-10-21: the four screens redone in item 11's direction and the patterns of
+  12–14; no core, database or MCP change. What was built:
+
+  - The phone's bottom bar is four cells, Today, Calendar, Entries, More; More is a
+    bottom sheet above the bar (Templates, Setup, Copy-out, Reports, History, Account,
+    and Users and Backup for an admin, a rule, Sign out), closed by a choice, Escape,
+    the scrim or Back; a `<details>` without JavaScript. Every screen is within two
+    taps. `Sheet` gained `above` and `narrow`.
+  - Today: TEMPLATES (by name, the project dot, a muted line of what each fills, the
+    TIMER or LOG mark, Manage) over "Today · Tue 2026-10-20" with the ticking total of
+    the entries that started today, and today's entries in Entries' rows and menus
+    (`todayFor`, `tableRow` shared with `timesheetFor`; no tick boxes or day heads; an
+    entry still running from yesterday marked "Since <date>" and not counted). A
+    template tap opens a sheet (a dialog on the PC) asking only for what the template
+    leaves blank, the project from its customer's active projects ("No active projects
+    for <customer>." and Log off when there are none), Description always, "Change
+    times" folded; `fromTemplate` takes activity, location and `back`. The date,
+    "Signed in as" and zone lines are gone.
+  - The template form is item 12's entry form in a template kind (`templateFormData`,
+    `templateFromForm`): Name first, times of day with "next day", a customer alone as
+    a choice in the picker, Time zone with the zone list, Delete at once with Undo,
+    opened in place from Templates, Today and the Start list, back where it was opened;
+    a page without JavaScript, where a changed duration or an unchanged duration-only
+    template keeps its duration. Round 1's template form and its confirm are gone.
+  - Templates: an outline New template and the count; the ruled table on the PC
+    (Activity and Location from 1280 px) and wrapping rows on the phone, a row menu
+    (Edit, Log… or Start timer… opening the sheet over Templates, Delete at once).
+  - Setup: Active | Archived | All in the address (`?archived=1` reads as All); two
+    columns from `lg`, stacked on the phone; ⋯ row menus (Rename, Add project,
+    Archive or Unarchive; Rename only under an archived customer), rename in place,
+    create in a 440 px dialog or a phone sheet, refusals beside the field with the
+    typed name kept; archived rows muted with a chip; an active customer stands over
+    its archived projects in Archived without a menu. Without JavaScript, `?rename=`
+    and `?new=` forms and a `<details>` menu.
+  - Phone rows' meta lines wrap between parts, a part breaking only when wider than the
+    column (Entries too). The PC sidebar fills the window's height (checked; no change).
+  - Round 1's e2e for Today, Templates and Setup were rewritten; the History, Backup
+    and agent suites drive the new Setup through `e2e/setup.ts`; an Entries test that
+    failed on some dates (a row gone after the delete) was made date-proof.
+
+  Records: spec `docs/superpowers/specs/2026-10-20-today-templates-setup-design.md`,
+  plan `docs/superpowers/plans/2026-10-20-today-templates-setup.md`. `docs/app.md` is
+  updated; `DESIGN.md` and `.impeccable/design.json` were updated by impeccable's
+  documenter. No new decision record.
+
+  Checks: 1042 unit tests and the browser suite; check and lint clean. impeccable's
+  critique and audit found 0 P0, 0 P1, 2 P2 and 4 P3 (the detector's one hit the 4 px
+  project bar, a false positive); all six were fixed and reviewed. The final
+  whole-branch review found 1 Important (a no-JS template save dropping a changed
+  duration); it was fixed with four Minors, its own regression (a duration-only
+  template losing its duration) was caught in re-review and fixed.
+
+  Calls made in the operator's place, the stand-in's: spec calls 1–15, as recorded in
+  the spec (sources and confidence there), and from the build:
+
+  - **The TIMER mark is muted caps with a muted timer icon, not blue;** LOG stays
+    muted. Departs from the spec's "TIMER in blue `caps`". Source: DESIGN.md's One
+    Blue Rule, the spec's anti-goal, the build's screenshots (a blue TIMER read as
+    running). Confidence: inferred.
+  - Today's overlaps are judged against all the user's entries; an unchanged template
+    save shows no strip; Back closes More (tested); the template form's Time zone
+    keeps the zone list. Source: the spec. Confidence: inferred, grounded, grounded,
+    grounded (the plan's approval).
+
+  The builder's, from the design session: spec calls 16–22. From the build:
+
+  - Each task left the build green: Tasks 4 and 7 kept round 1's template and Setup
+    pages compiling until Tasks 5 and 8 replaced them.
+  - Gate task 1 reads "asks only for what Standup leaves blank" (the seeded Standup has
+    no location or reference); the "only the description" case is tested with a fully
+    filled template.
+  - A create made on Setup's Archived lands on All, so the new row is seen.
+  - Without JavaScript, the Templates menu's Log… goes to Today's template panel.
+  - The final review's residual (the duration-only regression) took one more fix round
+    than the process's single fix wave, since it lost data.
+  - DESIGN.md's One Blue Rule and its Don'ts allow the current bottom-bar cell's blue
+    icon, which had already shipped.
+
+  Questions queued in `docs/questions.md`: how Archived shows an active customer with
+  archived projects; one Setup screen or one per kind; the order templates are offered
+  in; what the PC opens on and whether Today is used there; whether templates stay one
+  thing called Templates; where templates are made and changed; what is done in Setup
+  and on which device.
+
+  Deferred minors:
+
+  - Today: the overlap read has no upper bound; "Since" and the total use the start
+    zone's date (untested across zones); the sheet's Change times does not link End and
+    Duration; a refused project does not take focus; Today's load builds unused
+    templates.
+  - The template form: on a template with no start and a duration, typing an end leaves
+    the old duration shown (only the end is sent); with no stored end, a typed end and
+    a changed duration keep the duration without JavaScript; one `aria-describedby`
+    for the project and customer refusals; the picker's group label is announced twice.
+  - Setup: the filter's address is written in four places; after a dismissed refusal
+    the previous strip comes back.
+  - More: the sheet sits about 1 px over the bar and can clip on a short landscape
+    screen; a tap before hydration is lost; the scrim dims the bar.
+  - The project-dot classes, the TIMER/LOG mark and the customer › project text are
+    each written in several places; `today.ts` and `timesheet.ts` import each other.
+  - Test gaps: the zone and midnight edges of `todayFor`, Archived without archived
+    projects, a stable colour across filters, Setup's refusal shape as a route test, the
+    delete refusal's `back`, clearing a template's start, the phone menu by keyboard,
+    the round 1 "clearing the description stays cleared" case; the Entries Undo-in-view
+    test measures the row above the deletion.
+- **15b. History.**
+- **15c. Copy-out and Reports.** They share round 1's filter bar
+  (`components/entries/`), which goes with them.
+- **15d. Account and agent access, Users, Backup and the sign-in page.** The last
+  part also checks that no screen still uses round 1's look or patterns.
+
 ### 16. Usability check
 
 The usability gate run over every task in the app, on a seeded month, on phone and

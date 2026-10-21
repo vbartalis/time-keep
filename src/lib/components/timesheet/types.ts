@@ -23,6 +23,8 @@ export type TableRow = {
 	description: string | null;
 	/** Intersects another finished entry, whether or not that one is shown. */
 	overlaps: boolean;
+	/** `YYYY-MM-DD` of the start when it is before the day shown (Today); null on Entries. */
+	since: string | null;
 };
 
 /** A day's rows, newest start first; an entry counts whole in its start day. */

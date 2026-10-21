@@ -192,8 +192,8 @@ test('the sidebar shows Reports after Copy-out and current; the phone has it in 
 		);
 	} else {
 		await expect(main.getByRole('link', { name: 'Reports' })).toHaveCount(0);
-		await main.locator('summary', { hasText: 'More' }).click();
-		await expect(main.getByRole('link', { name: 'Reports' })).toHaveAttribute(
+		await main.getByRole('button', { name: 'More' }).click();
+		await expect(page.getByRole('dialog').getByRole('link', { name: 'Reports' })).toHaveAttribute(
 			'aria-current',
 			'page'
 		);

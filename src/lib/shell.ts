@@ -48,12 +48,26 @@ export function sidebarItems(isAdmin: boolean): NavItem[] {
 
 /** The phone bottom bar's items. */
 export function barItems(): NavItem[] {
-	return [TODAY, { ...CALENDAR, href: '/calendar?view=day' }, ENTRIES, TEMPLATES];
+	return [TODAY, { ...CALENDAR, href: '/calendar?view=day' }, ENTRIES];
 }
 
 /** The phone's More sheet (Sign out is a form, not an item). */
 export function moreItems(isAdmin: boolean): NavItem[] {
-	return [SETUP, COPY_OUT, REPORTS, HISTORY, ACCOUNT, ...(isAdmin ? [USERS, BACKUP] : [])];
+	return [
+		TEMPLATES,
+		SETUP,
+		COPY_OUT,
+		REPORTS,
+		HISTORY,
+		ACCOUNT,
+		...(isAdmin ? [USERS, BACKUP] : [])
+	];
+}
+
+/** Whether a route is one of More's screens or a sub-screen of one (More's cell is then current). */
+export function inMore(routeId: string | null, isAdmin: boolean): boolean {
+	if (routeId === null) return false;
+	return moreItems(isAdmin).some((i) => routeId === i.route || routeId.startsWith(`${i.route}/`));
 }
 
 const TITLES: Record<string, string> = {

@@ -15,10 +15,19 @@
 	 */
 	const entry = $derived(page.state.entryForm ?? null);
 	const editing = $derived(entry?.mode === 'edit');
-	const action = $derived(
-		entry?.mode === 'edit'
-			? `${resolve('/(app)/entries/[id]', { id: entry.values.id ?? '' })}?/save`
-			: resolve('/(app)/entries/new')
+	const isTemplate = $derived(entry?.kind === 'template');
+	const action = $derived.by(() => {
+		const id = entry?.values.id ?? '';
+		if (isTemplate)
+			return editing
+				? `${resolve('/(app)/templates/[id]', { id })}?/save`
+				: resolve('/(app)/templates/new');
+		return editing
+			? `${resolve('/(app)/entries/[id]', { id })}?/save`
+			: resolve('/(app)/entries/new');
+	});
+	const title = $derived(
+		isTemplate ? (editing ? 'Edit template' : 'New template') : editing ? 'Edit entry' : 'New entry'
 	);
 
 	let dialog = $state<HTMLDialogElement | null>(null);
@@ -47,7 +56,8 @@
 
 	/** The screen under the form, as it was: refreshed, at the same scroll position. */
 	function done(location: string) {
-		const id = entry?.mode === 'edit' ? entry.values.id : undefined;
+		// A saved entry's row is kept clear of the strip; a template's screen has no such row.
+		const id = entry?.mode === 'edit' && !isTemplate ? entry.values.id : undefined;
 		// eslint-disable-next-line svelte/no-navigation-without-resolve -- the action's own redirect
 		void goto(location, { replace: true, refreshAll: true, reset: false }).then(
 			() => {
@@ -117,7 +127,7 @@
 			class="flex shrink-0 items-center justify-between gap-4 border-b border-border px-4 py-3 lg:px-5"
 		>
 			<h2 id="entry-overlay-title" tabindex="-1" class="text-lg font-bold outline-none">
-				{editing ? 'Edit entry' : 'New entry'}
+				{title}
 			</h2>
 			<!-- The phone has one way to close: Cancel, at the sheet's foot. -->
 			<button

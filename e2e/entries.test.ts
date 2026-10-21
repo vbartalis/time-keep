@@ -929,19 +929,20 @@ test.describe('the PC table', () => {
 		await expect(bulk(page)).toContainText('1 selected');
 
 		const gone = far.nth(1);
-		const kept = far.nth(2);
+		// The ticked row above the deleted one: it stays where it is when the page does not move.
+		// (Not a row below: the day may have no more than three rows, and those move up.)
+		const keptAt = (await rect(far.first())).y;
 		await menuButton(gone).click();
-		const keptAt = (await rect(kept)).y;
 		await menu(page).getByRole('menuitem', { name: 'Delete' }).click();
 		await expect(strip(page)).toContainText('Done: Delete entry');
 		await expect(undo(page)).toBeFocused();
 		await expect(bulk(page)).toContainText('1 selected');
-		// Undo is in view and on top; the page did not move: the next row still sits where it was.
+		// Undo is in view and on top; the page did not move: the row above still sits where it was.
 		expect(await onTop(undo(page))).toBe(true);
 		const band = await rect(page.locator('[data-bulk-band]'));
 		expect(band.y + band.height).toBeLessThan(450);
 		expect(await onTop(bulk(page).getByRole('button', { name: 'Edit…' }))).toBe(true);
-		expect(Math.abs((await rect(kept)).y - keptAt)).toBeLessThan(1);
+		expect(Math.abs((await rect(far.first())).y - keptAt)).toBeLessThan(1);
 		await undo(page).click();
 		await expect(strip(page)).toContainText('Undone.');
 		expect(await onTop(strip(page))).toBe(true);
@@ -1431,6 +1432,29 @@ test.describe('the phone list', () => {
 			expect(Math.abs((await scrollTop(page)) - before)).toBeLessThan(20);
 			expect(await focusInView(page)).toBe(true);
 		});
+	});
+
+	test('a meta part wider than the column breaks inside the row, no sideways scroll', async ({
+		page
+	}) => {
+		const user = await gateMonth('phone-long-part');
+		await openEntries(page, user, user.path);
+		const lines = list(page).locator('[data-what] > span').filter({ hasText: /T-\d+/ });
+		expect(await lines.count()).toBeGreaterThan(0);
+		// A reference like a URL: one unbroken part far wider than the 390 px column.
+		const long = 'https://example.test/tickets/' + 'x'.repeat(120);
+		const report = await lines.first().evaluate((el, text) => {
+			const parts = el.querySelectorAll(':scope > span');
+			parts[parts.length - 1]!.textContent = text;
+			const row = el.closest('li')!.getBoundingClientRect();
+			const own = el.getBoundingClientRect();
+			return {
+				rowInside: row.right <= window.innerWidth + 0.5,
+				lineInside: own.right <= row.right + 0.5,
+				noSideways: document.documentElement.scrollWidth <= window.innerWidth
+			};
+		}, long);
+		expect(report).toEqual({ rowInside: true, lineInside: true, noSideways: true });
 	});
 
 	test('every row shows its activity, location and reference in full, wrapping', async ({

@@ -22,25 +22,38 @@ const rememberZone = (context: BrowserContext) =>
 	]);
 
 const main = (page: Page) => page.getByRole('navigation', { name: 'Main' });
-const more = (page: Page) => main(page).locator('summary', { hasText: 'More' });
+/** More's trigger: a button with the script, the <details>' summary without. */
+const more = (page: Page) => main(page).locator('summary, button', { hasText: 'More' });
+/** What More lists: its sheet with the script, the nav's own <details> without. */
+const sheet = (page: Page) => page.getByRole('dialog', { name: 'More' });
 
 /** Opens an item from the navigation: the sidebar on the PC, the bar or More on the phone. */
 async function open(page: Page, item: NavItem) {
 	const inMore = !isPc() && !barItems().some((i) => i.route === item.route);
-	const link = main(page).getByRole('link', { name: item.label, exact: true });
 	if (inMore) await more(page).click();
+	const link = (inMore ? sheet(page) : main(page)).getByRole('link', {
+		name: item.label,
+		exact: true
+	});
 	await link.click();
 	await expect(page.getByRole('heading', { name: item.label, level: 1 })).toBeVisible();
-	// More closes on navigation; its items are only exposed while it is open.
-	if (inMore) await more(page).click();
+	if (!inMore) {
+		await expect(link).toHaveAttribute('aria-current', 'page');
+		return;
+	}
+	// More closes on navigation; its cell is current, and so is the item in the reopened sheet.
+	await expect(sheet(page)).toBeHidden();
+	await expect(more(page)).toHaveAttribute('aria-current', 'true');
+	await more(page).click();
 	await expect(link).toHaveAttribute('aria-current', 'page');
-	if (inMore) await more(page).click();
+	await page.keyboard.press('Escape');
+	await expect(sheet(page)).toBeHidden();
 }
 
 async function signOutIsThere(page: Page) {
 	if (!isPc()) await more(page).click();
 	await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
-	if (!isPc()) await more(page).click();
+	if (!isPc()) await page.keyboard.press('Escape');
 }
 
 test('every screen is reachable from the navigation', async ({ page }) => {
@@ -67,14 +80,55 @@ test("the screen's title is its one h1", async ({ page }) => {
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Reports');
 });
 
-test('More is a sheet that closes when an item is chosen', async ({ page }) => {
+test('the bar has four equal cells and More lists the items in order', async ({ page }) => {
+	test.skip(isPc(), 'the phone’s bar');
+	await page.setViewportSize({ width: 390, height: 844 });
+	const user = await seedEmptyUser('phone-more-list');
+	await signIn(page, user.username);
+	const cells = main(page).locator('li');
+	await expect(cells).toHaveCount(4);
+	const widths = await cells.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().width));
+	for (const w of widths) expect(Math.abs(w - widths[0])).toBeLessThan(1);
+	await expect(main(page).locator('li > a, li > button')).toHaveText([
+		/Today/,
+		/Calendar/,
+		/Entries/,
+		/More/
+	]);
+	await more(page).click();
+	await expect(sheet(page)).toBeVisible();
+	await expect(sheet(page).getByRole('heading', { name: 'More' })).toBeAttached();
+	await expect(sheet(page).getByRole('link')).toHaveText(
+		moreItems(false).map((i) => new RegExp(`^\\s*${i.label}\\s*$`))
+	);
+	// Each row is 48 px; the sheet sits above the bar.
+	const row = (await sheet(page).getByRole('link').first().boundingBox())!;
+	expect(row.height).toBeGreaterThanOrEqual(48);
+	const box = (await sheet(page).boundingBox())!;
+	const nav = (await main(page).boundingBox())!;
+	expect(box.y + box.height).toBeLessThanOrEqual(nav.y + 1);
+});
+
+test('Templates is two taps away and More is current there', async ({ page }) => {
+	test.skip(isPc(), 'the phone’s More');
+	const user = await seedEmptyUser('phone-more-templates');
+	await signIn(page, user.username);
+	await more(page).click();
+	await sheet(page).getByRole('link', { name: 'Templates', exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'Templates', level: 1 })).toBeVisible();
+	await expect(sheet(page)).toBeHidden();
+	await expect(more(page)).toHaveAttribute('aria-current', 'true');
+	// A sub-screen of Templates keeps More current.
+	await page.goto('/templates/new');
+	await expect(more(page)).toHaveAttribute('aria-current', 'true');
+});
+
+test('More closes when an item is chosen', async ({ page }) => {
 	test.skip(isPc(), 'the phone’s More');
 	const user = await seedEmptyUser('phone-more');
 	await signIn(page, user.username);
 	await more(page).click();
-	const reports = main(page).getByRole('link', { name: 'Reports', exact: true });
-	await expect(reports).toBeVisible();
-	await reports.click();
+	await sheet(page).getByRole('link', { name: 'Reports', exact: true }).click();
 	await expect(page.getByRole('heading', { name: 'Reports', level: 1 })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Sign out' })).toBeHidden();
 });
@@ -84,10 +138,36 @@ test('Escape closes More and returns focus to it', async ({ page }) => {
 	const user = await seedEmptyUser('phone-more-escape');
 	await signIn(page, user.username);
 	await more(page).click();
-	await main(page).getByRole('link', { name: 'Reports', exact: true }).focus();
+	await sheet(page).getByRole('link', { name: 'Reports', exact: true }).focus();
 	await page.keyboard.press('Escape');
-	await expect(page.getByRole('button', { name: 'Sign out' })).toBeHidden();
+	await expect(sheet(page)).toBeHidden();
 	await expect(more(page)).toBeFocused();
+});
+
+test('a tap on the scrim closes More and returns focus to it', async ({ page }) => {
+	test.skip(isPc(), 'the phone’s More');
+	const user = await seedEmptyUser('phone-more-scrim');
+	await signIn(page, user.username);
+	await more(page).click();
+	await expect(sheet(page)).toBeVisible();
+	await page.mouse.click(195, 40);
+	await expect(sheet(page)).toBeHidden();
+	await expect(more(page)).toBeFocused();
+});
+
+test("the browser's Back closes More and leaves the screen as it was", async ({ page }) => {
+	test.skip(isPc(), 'the phone’s More');
+	const user = await seedEmptyUser('phone-more-back');
+	await signIn(page, user.username);
+	// In-app navigation, so Back is a popstate within the page, not a reload.
+	await main(page).getByRole('link', { name: 'Entries', exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'Entries', level: 1 })).toBeVisible();
+	await more(page).click();
+	await expect(sheet(page)).toBeVisible();
+	await page.goBack();
+	await expect(sheet(page)).toBeHidden();
+	await expect(page).toHaveURL(/\/entries$/);
+	await expect(page.getByRole('heading', { name: 'Entries', level: 1 })).toBeVisible();
 });
 
 const bar = (page: Page) => page.getByRole('region', { name: 'Timer', exact: true });
@@ -221,6 +301,8 @@ test.describe('without JavaScript', () => {
 		const user = await seedEmptyUser('phone-more-nojs');
 		await signIn(page, user.username);
 		await more(page).click();
+		const names = await main(page).locator('details').getByRole('link').allInnerTexts();
+		expect(names.map((n) => n.trim())).toEqual(moreItems(false).map((i) => i.label));
 		await main(page).getByRole('link', { name: 'History', exact: true }).click();
 		await expect(page.getByRole('heading', { name: 'History', level: 1 })).toBeVisible();
 		await more(page).click();

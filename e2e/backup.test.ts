@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import Database from 'better-sqlite3';
 import { expect, test, type Download, type Page } from '@playwright/test';
 import { PASSWORD, seedEmptyUser } from './seed';
+import { createCustomer } from './setup';
 
 // A restore signs every session out, so each test signs in itself afterwards and
 // restores the backup it just downloaded: other tests' seeded users survive.
@@ -17,7 +18,7 @@ async function signIn(page: Page, username: string, password: string) {
 
 const signInAdmin = async (page: Page) => {
 	await signIn(page, 'admin', 'admin-password-1');
-	await expect(page.getByText('Signed in as admin')).toBeVisible();
+	await expect(page.locator('aside').getByText('admin', { exact: true })).toBeAttached();
 };
 
 /** Whether the downloaded file starts with the SQLite header. */
@@ -46,22 +47,14 @@ async function restoreFrom(page: Page, download: Download) {
 	await expect(page.getByText("Restored. Sign in with the backup's passwords.")).toBeVisible();
 }
 
-async function addCustomer(page: Page, name: string) {
-	await page.goto('/setup');
-	const form = page.locator('form', { has: page.locator('[aria-label="New customer"]') });
-	await form.getByLabel('New customer').fill(name);
-	await form.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.getByText(name).first()).toBeVisible();
-}
-
 test('backup: a user who is not an admin has no access', async ({ page }, testInfo) => {
 	const user = await seedEmptyUser(`${testInfo.project.name}-nobackup`);
 	await signIn(page, user.username, PASSWORD);
-	await expect(page.getByText(`Signed in as ${user.username}`)).toBeVisible();
+	await expect(page.locator('aside').getByText(user.username, { exact: true })).toBeAttached();
 	// On the phone the screens past the bar are in More.
 	const more = page
 		.getByRole('navigation', { name: 'Main' })
-		.locator('summary', { hasText: 'More' });
+		.locator('summary, button', { hasText: 'More' });
 	if (await more.isVisible()) await more.click();
 	await expect(page.getByRole('link', { name: 'Account' })).toBeVisible();
 	await expect(page.getByRole('link', { name: 'Backup' })).toHaveCount(0);
@@ -73,7 +66,7 @@ test('backup: a user who is not an admin has no access', async ({ page }, testIn
 test('backup: download, restore, and the copy from before the restore', async ({ page }) => {
 	await signInAdmin(page);
 	const backup = await downloadBackup(page);
-	await addCustomer(page, 'After backup');
+	await createCustomer(page, 'After backup');
 
 	await restoreFrom(page, backup);
 	await signInAdmin(page);
@@ -127,7 +120,7 @@ test.describe('without JavaScript', () => {
 	test('backup: the download link and a full restore work', async ({ page }) => {
 		await signInAdmin(page);
 		const backup = await downloadBackup(page);
-		await addCustomer(page, 'After backup nojs');
+		await createCustomer(page, 'After backup nojs');
 		await restoreFrom(page, backup);
 		await signInAdmin(page);
 		await page.goto('/setup');

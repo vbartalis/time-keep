@@ -127,8 +127,12 @@ test('opened disclosures have 44 px targets', async ({ page }) => {
 	for (const path of ['/', '/setup', '/history']) {
 		await page.goto(path);
 		await page.waitForLoadState('networkidle');
-		// Open the first disclosure in the page (not the shell's More).
-		await page.locator('main details > summary').first().click();
+		// Open the first disclosure in the page (not the shell's More); on Today, the first
+		// template's sheet.
+		await page
+			.locator('main details > summary, main button[aria-haspopup="dialog"]')
+			.first()
+			.click();
 		const list = await offenders(page);
 		if (list.length) found[path] = list;
 	}

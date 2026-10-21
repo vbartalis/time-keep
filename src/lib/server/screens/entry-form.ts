@@ -60,7 +60,9 @@ export function valuesFromEntry(e: EntryItem): EntryFormValues {
 		locationId: e.locationId ?? '',
 		reference: e.reference ?? '',
 		description: e.description ?? '',
-		running: !finished
+		running: !finished,
+		name: '',
+		customerId: ''
 	};
 }
 
@@ -81,7 +83,9 @@ export function newValues(opts: { date: string; zone: string; start?: string }):
 		locationId: '',
 		reference: '',
 		description: '',
-		running: false
+		running: false,
+		name: '',
+		customerId: ''
 	};
 }
 
@@ -453,15 +457,43 @@ const FORM_FIELDS = [
 ] as const;
 
 /** The core's names for fields the form names otherwise. */
-const CORE_FIELDS: Record<string, string> = { durationMinutes: 'duration' };
+const CORE_FIELDS: Record<string, string> = {
+	durationMinutes: 'duration',
+	startTime: 'start',
+	endTime: 'end'
+};
+
+/** The fields the template form shows, by the names it posts. */
+const TEMPLATE_FORM_FIELDS = [
+	'name',
+	'customerId',
+	'projectId',
+	'activityId',
+	'locationId',
+	'start',
+	'end',
+	'duration',
+	'timeZone',
+	'reference',
+	'description'
+] as const;
+
+/** What a refusal is about: the entry form, or the template form. */
+export type FormKind = EntryFormData['kind'];
 
 /**
  * The form as posted, for a refusal to put back: every field it shows, its version and
  * zone, and `extra` (a template's name).
  */
-function postedForm(form: FormData, extra: readonly string[] = []): Record<string, string> {
+function postedForm(
+	form: FormData,
+	extra: readonly string[] = [],
+	kind: FormKind = 'entry'
+): Record<string, string> {
+	const names =
+		kind === 'template' ? [...TEMPLATE_FORM_FIELDS, 'linked'] : [...FORM_FIELDS, ...extra];
 	return Object.fromEntries(
-		[...FORM_FIELDS, 'version', 'timeZone', ...extra].map((name) => {
+		[...names, 'version', 'timeZone'].map((name) => {
 			const value = form.get(name);
 			return [name, typeof value === 'string' ? value : ''];
 		})
@@ -475,27 +507,38 @@ const postedBack = (form: FormData) => {
 };
 
 /** A form that could not be read: each message beside its field. */
-export function unreadFailure(fields: Record<string, string>, form: FormData): EntryFormFailure {
+export function unreadFailure(
+	fields: Record<string, string>,
+	form: FormData,
+	kind: FormKind = 'entry'
+): EntryFormFailure {
 	return {
 		action: 'save',
 		error: 'The input is not valid.',
 		fields,
 		conflict: false,
 		gone: false,
-		values: postedForm(form),
+		values: postedForm(form, [], kind),
 		back: postedBack(form)
 	};
 }
 
-/** The refusal for an entry deleted elsewhere. */
-export function goneFailure(action: EntryFormFailure['action'], form: FormData): EntryFormFailure {
+/** The refusal for an entry (or template) deleted elsewhere. */
+export function goneFailure(
+	action: EntryFormFailure['action'],
+	form: FormData,
+	kind: FormKind = 'entry'
+): EntryFormFailure {
 	return {
 		action,
-		error: 'This entry was deleted elsewhere.',
+		error:
+			kind === 'template'
+				? 'This template was deleted elsewhere.'
+				: 'This entry was deleted elsewhere.',
 		fields: {},
 		conflict: false,
 		gone: true,
-		values: postedForm(form, action === 'saveAsTemplate' ? ['name'] : []),
+		values: postedForm(form, action === 'saveAsTemplate' ? ['name'] : [], kind),
 		back: postedBack(form)
 	};
 }
@@ -509,14 +552,20 @@ export function coreFailure(
 	action: EntryFormFailure['action'],
 	error: CoreError,
 	form: FormData,
-	opts: { stale?: boolean } = {}
+	opts: { stale?: boolean; kind?: FormKind } = {}
 ): EntryFormFailure {
-	const values = postedForm(form, action === 'saveAsTemplate' ? ['name'] : []);
+	const kind = opts.kind ?? 'entry';
+	const values = postedForm(form, action === 'saveAsTemplate' ? ['name'] : [], kind);
 	const back = postedBack(form);
 	if (error.code === 'conflict' && opts.stale === true) {
 		return { action, error: error.message, fields: {}, conflict: true, gone: false, values, back };
 	}
-	const shown: readonly string[] = action === 'saveAsTemplate' ? ['name'] : FORM_FIELDS;
+	const shown: readonly string[] =
+		action === 'saveAsTemplate'
+			? ['name']
+			: kind === 'template'
+				? TEMPLATE_FORM_FIELDS
+				: FORM_FIELDS;
 	const renamed = Object.fromEntries(
 		Object.entries(error.fields ?? {}).map(([k, v]) => [CORE_FIELDS[k] ?? k, v])
 	);

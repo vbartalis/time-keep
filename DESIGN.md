@@ -324,6 +324,26 @@ components:
     textColor: "{colors.foreground}"
     rounded: "{rounded.lg}"
     width: "620px"
+  create-dialog:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.lg}"
+    width: "440px"
+  template-row:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    typography: "{typography.body}"
+    padding: "10px 14px"
+  template-mark:
+    textColor: "{colors.muted-foreground}"
+    typography: "{typography.caps}"
+  setup-row:
+    textColor: "{colors.foreground}"
+    typography: "{typography.body-pc}"
+    height: "40px"
+  setup-row-phone:
+    textColor: "{colors.foreground}"
+    height: "48px"
 ---
 
 # Design System: time-keep
@@ -338,7 +358,10 @@ the Calendar, its day, week and month views, its toolbar and date picker, and cr
 moving and resizing entries on its grid; and with what item 14
 (`feat/14-timesheet-table`) added: Entries as a timesheet table grouped by day, its
 Filter and chips (shared with the Calendar), the row menu, ticking rows, the bulk bar
-and bulk edit, the phone's bottom sheets, and the `checkbox` stroke. Where the build differs from the
+and bulk edit, the phone's bottom sheets, and the `checkbox` stroke; and with what item 15a
+(`feat/15a-setup-and-templates`) added: the phone's four-cell bottom bar and More sheet,
+Today's templates and entries, the Templates screen, the template form and sheet, and
+Setup. Where the build differs from the
 direction contract (`.impeccable/surfaces/src-routes-app-layout-svelte.md`), the
 build wins and the difference is noted. Light values are the frontmatter's plain keys;
 dark values carry `-dark`. Dark follows the device setting through
@@ -381,7 +404,7 @@ project colours as the only strong colour.
 - **Kimai Blue** (`primary`; dark `primary-dark`): the running timer (live dot, its
   ring, "Running" labels and running hours, exposed as `live`, and the live square in
   every Stop), the one primary button per form, the shell's one primary action (the PC
-  header's New entry button and the phone's round "+"), the focus ring, the current bottom-bar item, ticked checkboxes (and
+  header's New entry button and the phone's round "+"), the focus ring, the current bottom-bar item and the current row of the More sheet, ticked checkboxes (and
   a mixed one, a day's box with some of its rows ticked, filled blue with a white
   dash), the caret and text selection. A sheet's one primary action is blue: the
   filter sheet's "Show n entries" and the bulk form's "Apply to n entries". In the Calendar it marks the running block (a 2 px dashed foot
@@ -450,16 +473,18 @@ project colours as the only strong colour.
   so it still reads as the darkest thing on the screen. `sidebar-primary` fills the
   current item, `sidebar-accent` is hover, `sidebar-border` divides.
 - **Scrim** (black at 40 %, not a token): dims the page under the entry dialog, the
-  entry sheet, the phone start sheet, and every bottom sheet and the bulk dialog
-  (filter, row actions, bulk edit).
+  entry sheet, the phone start sheet, and every bottom sheet and dialog (filter, row
+  actions, bulk edit, More, a template's sheet, Setup's create).
 - **Strip** (`sidebar-strip`; dark `sidebar-strip-dark`): the phone timer strip's own
   tone, a step off the top bar above it (darker in light, #1c1c1c under #262626; lighter in dark, #18191a
   under #0f0f10), so what is running reads as its own band rather than as the lower
   half of the title bar. The strip's "+N" list uses it too.
 
 ### Named Rules
-**The One Blue Rule.** Blue means running or the primary action, and focus. It is never
-decoration, never a heading, never an icon tint.
+**The One Blue Rule.** Blue means running or the primary action, and focus (and, on the
+phone, where you are: the current bottom-bar cell and More row). It is never decoration,
+never a heading, never an icon tint beyond that current cell. A property of a row is not
+running: a template's TIMER mark is muted, with a timer icon, never blue.
 
 **The Red Means Wrong Rule.** Red appears only for something irregular or destructive.
 A running timer is blue, never red.
@@ -467,7 +492,9 @@ A running timer is blue, never red.
 **The Project Ink Rule.** A project is one colour, used identically wherever its time
 appears. Today the timer dot, the start list, Fill from, the project picker, the
 Calendar (block edge, fill and ink, month dots, the phone day list's bar) and Entries
-(the table's 8 px dot, the project chip's dot, the phone row's 4 px bar) use it; the
+(the table's 8 px dot, the project chip's dot, the phone row's 4 px bar) use it, and so do
+Today's template rows and entries, the Templates table and list (an 8 px dot before the
+name; none without a project) and Setup's project rows (the dot at 50 % when archived); the
 other screens' tables and phone rows take it as item 15 rebuilds them. No other
 element borrows a project colour.
 
@@ -494,7 +521,8 @@ ramp below, not from a second face.
   bulk dialog's heading ("Filter", "Edit 5 entries"); at semibold, the
   date in a phone week column's head and the phone create bar's times.
 - **Body** (400, 15 px / `text-base`, 1.45): phone body and fields, the More sheet's
-  rows, the row sheet's items and its semibold head, the phone timesheet row's start
+  rows, a template's name (semibold) on Today and the phone Templates list, a Setup
+  customer (semibold), Today's total (semibold figures), the row sheet's items and its semibold head, the phone timesheet row's start
   and (semibold) duration, the PC timer bar's elapsed time (bold), the Calendar's period title
   (semibold) in its toolbar.
 - **Body PC** (400, 14 px / `text-sm`, 1.45): PC body and fields from 1024 px, buttons,
@@ -511,7 +539,8 @@ ramp below, not from a second face.
   state labels such as "Running", and group heads in a list or a row of choices (the
   start list's "Start a timer", the project picker's customers, the form's "Fill
   from"), in muted text; the Calendar's weekday heads; the phone timesheet's day heads
-  ("MON 2026-10-19") in the text colour.
+  ("MON 2026-10-19") in the text colour; a template's mark, TIMER and LOG, in muted
+  text (TIMER after a 14 px timer icon); the "Archived" chip.
 - **Figures** (`figures`: tabular numbers): every time, date and duration, so columns
   line up and the running time changes in place. Tables get tabular figures by default.
 
@@ -523,7 +552,8 @@ move.
 screens.
 
 **The Caps Are Heads Rule.** `caps` sets a column head, a section head (which is the
-heading itself, an h2 on a rule), a group head in a list, a badge or a state label.
+heading itself, an h2 on a rule), a group head in a list, a badge, a state label or a
+template's mark.
 Never a kicker above a heading.
 
 ## Layout
@@ -538,8 +568,10 @@ entry button.
 On the phone the shell is one column: a sticky 56 px top bar in the rail colour with
 the screen's title (the wordmark is the PC's), the 64 px timer strip under it in its
 own tone, the screen (16 px sides, 24 px top), and a fixed bottom bar of four equal
-56 px cells: Today, Calendar (which opens the day view), Entries, Templates and More,
-whose sheet holds the rest and Sign out. A round 56 px "+" floats at the right, 16 px in and 81 px above the bottom edge
+56 px cells: Today, Calendar (which opens the day view), Entries and More. More's sheet
+rises from the bar's top edge (the bar stays in view under the scrim) and holds
+Templates, Setup, Copy-out, Reports, History, Account (and Users and Backup for an
+admin), a rule, then Sign out. A round 56 px "+" floats at the right, 16 px in and 81 px above the bottom edge
 (plus the safe area), over the bottom bar's top. Main reserves 156 px plus the safe
 area at its foot, so the last line clears both. Controls at a screen's right edge
 move out of the "+"'s column on the phone (a row's ▶ leads the row or sits under its
@@ -554,7 +586,25 @@ page behind it is inert.
 
 Regions stack 24 px apart. Controls are 44 px on the phone and 36 px on the PC; table
 cells pad 12 px. The screens inside the shell keep round 1's layouts in the new tokens
-until item 15, except Entries (item 14) and the Calendar (item 13).
+until item 15, except Entries (item 14), the Calendar (item 13), and Today, Templates and
+Setup (item 15a).
+
+Today is one column: the TEMPLATES section, then TODAY · WED 2026-10-21, 32 px apart.
+Each section head sits on its rule; on the PC the template rows are a surface panel with
+4 px corners and the day's entries Entries' table panel, on the phone both run to the
+screen's edges. The "Manage" link keeps its 44 px target in the margins, not in the
+head's height, so TEMPLATES sits 24 px under the strip like other screens' first rows.
+
+Templates stacks 12 px apart: an outline "+ New template" (full width on the phone,
+clear of the "+"'s column) with the count at the right on the PC, then the table panel
+(PC) or ruled rows edge to edge (phone).
+
+Setup is the Active | Archived | All filter, then the lists, 24 px apart. From 1024 px
+the lists are two columns 24 px apart: Customers and projects at the left; Activities
+over Locations at the right, 32 px between sections. Below it one column. Each list is a
+section head with its outline "+ New …" (on the PC at the head's right, the rule under
+both; on the phone under the rule, at the left), then a surface panel of ruled rows on
+the PC, ruled rows on the ground edge to edge on the phone.
 
 Entries (item 14) stacks 12 px apart: the toolbar, the filter chips while a filter
 other than the range is on, then the table. On the PC the toolbar is one row: Filter
@@ -583,7 +633,8 @@ A bottom sheet rises from the bottom edge at full width, at most 85 % of the dyn
 viewport tall, with the safe area under it; its head and foot stay put and its body
 scrolls. The bulk form is the same sheet below 1024 px and a centred dialog from
 there (620 px wide at most, the viewport less 32 px; at most the viewport less 64 px
-tall).
+tall). The template sheet is the same dialog from 1024 px; Setup's create form is the
+narrow one (440 px).
 
 The header names the screen with a fixed title. The contract's raise that a view's
 header names the span in view was settled by item 13: the Calendar's header keeps
@@ -610,14 +661,16 @@ start sheet) also dim the page with the 40 % black scrim.
 ### Shadow Vocabulary
 - **Sheet up** (`box-shadow: 0 -8px 24px rgb(0 0 0 / 0.12)`): the phone's sheets: More
   above the bottom bar, the start sheet and the entry sheet; every bottom sheet (the
-  filter sheet, the row sheet, the bulk sheet).
+  filter sheet, the row sheet, the bulk sheet, the template sheet, Setup's create
+  sheet).
 - **Popover down** (`box-shadow: 0 8px 24px rgb(0 0 0 / 0.12)`): the PC timer bar's
   list of other running timers, the PC start popover, the project picker's list and
   the PC entry dialog, and the undo strip while it is pinned under the bars (scrolled
   past its place at the top of the screen, it stays in view over the page); the
   Calendar's date picker, and a calendar block lifted in a drag; the Filter popover
   (and the phone Calendar's no-JavaScript filter panel), the row menu, the filter's
-  project list and the PC bulk dialog.
+  project list and the PC bulk dialog; the PC template sheet, Setup's create dialog, and
+  the Templates and Setup row menus.
 - **Strip list down** (`box-shadow: 0 8px 24px rgb(0 0 0 / 0.25)`): the phone strip's
   list of other running timers.
 
@@ -649,6 +702,10 @@ line at now is 2 px with an 8 px dot; today's date sits in a full circle (32 px 
 PC grid, 28 px on the phone and in the month); the date picker's days are circles
 (36 px, phone 44 px); the phone month's cells have 4 px corners, the chosen one a 2 px
 ring. The phone's new block has 14 px round handles.
+
+Setup's filter takes the view switch's form: joined segments, 4 px outer corners, the
+current one's 2 px text-colour foot. A Setup project's dot is indented under its
+customer (36 px on the phone after the ⋯ column, 40 px on the PC).
 
 In Entries, a phone row carries its project as a 4 px bar the full height of its left
 edge; the phone day head sits on a 1 px text-colour rule; the PC table's rows divide
@@ -687,7 +744,8 @@ Flat, firm, quiet until pressed.
 - **Style:** `caps`, 20 px tall, 2 px corners, a 1 px outline and no fill. A chip never
   runs past its row: a long one wraps onto a second line inside its outline.
 - **State:** default (text at 70 %, e.g. Admin), outline (`input`), live (blue),
-  spent (muted and struck through, e.g. Disabled), destructive (red).
+  spent (muted and struck through, e.g. Disabled), destructive (red). Setup's
+  "Archived" is the outline chip in muted text, after an archived row's muted name.
 
 ### Filter chips
 The filters on besides the range, one removable chip each, under the toolbar (Entries
@@ -728,10 +786,16 @@ and the PC Calendar). The range has no chip; the Filter button names it.
   `sidebar-foreground`. Hover fills with `sidebar-accent`. The current item fills with
   `sidebar-primary`, turns white and semibold, and carries the 3 px blue bar. The user
   and Sign out sit at the foot.
-- **Phone bottom bar:** surface fill, top rule, five 56 px cells of a 20 px icon over a
-  12 px label in muted text; the current cell (and More when the current screen is in
-  its sheet) turns blue and semibold. More is a native disclosure that opens without
-  JavaScript into a sheet of 44 px rows over the page, never pushing it down.
+- **Phone bottom bar:** surface fill, top rule, four equal 56 px cells (Today, Calendar,
+  Entries, More) of a 20 px icon over a 12 px label in muted text; the current cell (and
+  More when the current screen is in its sheet) turns blue and semibold.
+- **More sheet:** with the script a bottom sheet that sits on the bar's top edge (the
+  bar stays visible under the scrim): 48 px rows of a 20 px line icon and the 15 px name,
+  2 px corners, accent on hover; the current screen's row fills with accent and turns
+  blue and semibold. A `border` rule, then Sign out as a row. Opening it focuses the
+  first row; Escape, the scrim and Back close it onto More. Without JavaScript it is a
+  native disclosure with the same rows, fixed over the page above the bar, never
+  pushing it down.
 
 ### Timer bar (signature)
 The running timer on every screen.
@@ -894,11 +958,16 @@ Entries, newest first, grouped by day: Kimai's timesheet in this system's ruled 
   (15 px figures) over end (12 px muted), customer › project in 14 px semibold
   wrapping to two lines at most (never cut to one), then activity · location ·
   reference and then the description in 12 px muted text, each wrapping as long as it
-  needs (never cut, so the row says what the entry was; the row grows), and the duration at the
+  needs (never cut, so the row says what the entry was; the row grows); the meta line
+  wraps between its parts, a part ("T-1234") broken only when it is wider than the
+  column, and the duration at the
   right in 15 px semibold figures, all clear of the "+"'s column. The columns: the
   44 px ⋯, 60 px times (the width of "RUNNING"), the text, the duration, 8 px apart,
   then 72 px kept clear of the "+" at the screen's edge. A tap opens the form. While
   selecting, tick boxes take the ⋯'s place and each day head gains one.
+- **On Today:** the same table and rows for one day, without tick boxes, the head tick
+  box or day heads (the section head carries the date and total). A row that began on an
+  earlier day says "Since 2026-10-20" in 12 px muted figures under its start.
 
 ### Row menu
 A row's ⋯: Restart (▶ filled), Copy, Edit, a `border` rule, Delete in red, each with a
@@ -934,6 +1003,73 @@ with a "Clear it" checkbox, Description as Find and Replace with), a 12 px muted
 Cancel and primary "Apply to 5 entries" on the surface over a `border` rule, two equal
 halves on the phone and right-aligned from 640 px; only the fields scroll. A refusal is
 an alert at the top of the fields naming the entry, with Reload on a conflict.
+
+### Template row (Today)
+How a template is used: one tap, then only the blanks.
+- **Row:** the project's 8 px dot (an empty slot without a project), the name in 15 px
+  semibold over a 12 px muted figures line of what it fills (customer › project ·
+  activity · location · times, or "Any project"); 10 px tall padding, `border` hairlines,
+  accent at 50 % on hover. On the PC the mark and a 16 px muted chevron sit at the right;
+  on the phone the mark leads the muted line ("TIMER · …"), clear of the "+".
+- **Mark:** what a tap does, in muted `caps`: TIMER (the result would run) after a 14 px
+  Lucide timer icon, LOG plain. Never blue: blue is for what is running.
+- **Without JavaScript** each row is a disclosure holding the same form.
+
+### Template sheet
+A template's form over any screen: a bottom sheet on the phone, a centred 620 px dialog
+from 1024 px. A head with the name (17 px bold) and a 44 px (PC 36 px) ghost ×, a `border`
+rule, the muted fills line, then a field for every one the template leaves blank and
+only those (the picker, Activity, Location, Reference), Description always (the
+template's own as its placeholder). On the PC labels sit in the entry form's 136 px
+column. "Change times" is an underlined disclosure with a turning chevron over Date,
+Start, End and Duration (four columns from 640 px, two below) and a muted hint. The foot
+is pinned on a `border` rule: outline Cancel and the primary "Log" or "Start timer", two
+equal halves on the phone, right-aligned on the PC. The first field takes the focus; a
+done post returns focus to Undo.
+
+### Templates screen
+- **PC table:** the ruled table in a surface panel, by name: Name (the dot, the name
+  semibold, a link to the form), Customer › project (the customer muted), Activity and
+  Location (from 1280 px), Times in figures, Mark, ⋯; an empty cell is a muted "—". A
+  click on a row opens the template form in place.
+- **Phone list:** ruled rows edge to edge, a leading 44 px ⋯, then the dot and the name
+  (15 px semibold), customer › project (14 px), and activity · location · times · the mark
+  (12 px muted), each wrapping, never cut, 72 px kept clear of the "+".
+- **Row menu:** Edit, Log… (Start timer… for a TIMER template), a rule, Delete in red,
+  with 14 px icons: Entries' row menu on the PC, the row sheet on the phone (the name in
+  15 px semibold over customer › project, 48 px rows).
+
+### Template form
+Item 12's entry form in a template kind, opened in place over Templates or Today: a Name
+first; the project picker where a customer heading is itself a choice (a template may
+name a customer alone); Activity, Location, Reference, Description; the time row as
+times of day with no date, any of them blank, its hint "Any field may stay blank; only
+the blanks are asked when it is used."; a Time zone field with the browser's zones and
+"Blank uses the device's zone" muted under it. The foot as the entry form's, Delete on
+an existing template; no Fill from, Copy, Restart or Save as template.
+
+### Setup
+- **Filter:** Active | Archived | All, three links in the view switch's dress (44 px and
+  equal on the phone, clear of the "+"'s column; 36 px on the PC). The filter is the
+  address.
+- **Lists:** rows by name, 40 px on the PC (14 px padding at the left, the ⋯ at the
+  right), 48 px on the phone (the 44 px ⋯ leading, 56 px kept clear at the right). A
+  customer is 15 px semibold with its projects indented under it, each after its
+  8 px dot; activities and locations are 14 px. An archived row is muted with the
+  Archived chip; in Archived, an active customer named over its archived projects is a
+  muted heading without ⋯. Empty: "No customers yet." (Archived: "No archived …") in
+  muted text.
+- **Row menu:** Rename, Add project (a customer), a rule, Archive or Unarchive, with 14 px
+  icons; never red (Archive is undone from the strip). A 208 px popover on the PC, the
+  row sheet on the phone (the name over its kind, "CompX · project", in 12 px muted).
+- **Rename in place:** the row becomes its 36 px (phone 44 px) field, outline Cancel and
+  primary Save, at the row's height on the PC; on the phone the field takes the width and
+  the buttons go under it. Escape returns focus to the row's ⋯; a refusal shows red under it.
+- **Create:** "New location" and its kin, the name only (a project adds its customer's
+  select): the 440 px dialog on the PC (`create-dialog`), the bottom sheet on the phone.
+  Head and × as the template sheet's; the foot outline Cancel and primary Create, two
+  equal halves on the phone, right-aligned on the PC. A refusal stays in it beside the
+  field, the typed name kept.
 
 ### Bottom sheet
 How the phone shows a choice over the page: the filter, a row's actions and the bulk
@@ -975,9 +1111,7 @@ Search and an underlined Clear link; Copy-out's primary Show; Entries replaced i
 Filter and chips), the selectable ruled table (a 44 px checkbox column, a "Select all"
 link without JavaScript), the change form and the
 in-page delete confirm (only the confirming button is red; it takes the focus), the
-History list and its change lines, the template form and sheet (Timer marked in blue
-`caps`, Log muted), Setup's indented customer and project list with in-place rename,
-Reports' totals tables (a semibold Total row under a text-colour rule), Copy-out's
+History list and its change lines, Reports' totals tables (a semibold Total row under a text-colour rule), Copy-out's
 sheet table (never stacks; scrolls sideways), Account's token list and shown-once
 token, and Backup's file input and confirm checkbox. In-page links are the text colour
 with an `input` underline that darkens on hover; never blue.
@@ -1000,14 +1134,18 @@ with an `input` underline that darkens on hover; never blue.
 - **Do** fill every ticked row with `accent`, not only its box.
 - **Do** show a phone choice over the page as a native modal bottom sheet over the scrim, closed by Escape, the scrim and Back, with its primary action pinned in view.
 - **Do** stroke every checkbox with `checkbox` and keep `input` for fields and buttons.
+- **Do** mark a template by what a tap does, TIMER or LOG, in muted `caps`, TIMER with its timer icon.
+- **Do** let a phone row's meta line wrap between its parts, keeping a reference such as "T-1234" whole.
 - **Do** return focus after an action: to Undo after a done change, to the head tick box or Select after a clear (when in view; else to the last ticked row, never scrolling the page).
 
 ### Don't:
-- **Don't** use blue or red for decoration, headings or icons; red is never the running state.
+- **Don't** use blue or red for decoration, headings or icons, beyond the current
+  bottom-bar cell's blue icon; red is never the running state.
 - **Don't** store a project's colour or let anything but a project use the project palette.
 - **Don't** give a surface at rest a shadow; only floating sheets, popovers and dialogs, and a calendar block while lifted in a drag, cast one.
 - **Don't** add text sizes beyond 12, 14, 15, 17 and 21 px on working screens.
 - **Don't** set `caps` as a kicker or eyebrow above a heading.
 - **Don't** build stat-tile dashboards or put a themed concept over the tool.
 - **Don't** add entrance animations.
+- **Don't** colour a template's TIMER mark blue; blue is for the timer that is running.
 - **Don't** cut a project to one line on the phone or let a pinned foot scroll out of a sheet.

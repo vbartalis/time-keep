@@ -1,21 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { postedValues, withCurrent } from './edit';
-
-const form = (fields: Record<string, string>) => {
-	const f = new FormData();
-	for (const [k, v] of Object.entries(fields)) f.set(k, v);
-	return f;
-};
-const unchanged = {
-	version: '3',
-	start: '2026-10-18T09:00',
-	end: '2026-10-18T16:30',
-	projectId: 'p1',
-	activityId: 'a1',
-	locationId: '',
-	reference: 'WEB-1',
-	description: 'Fixed the build'
-};
+import { withCurrent } from './edit';
 
 describe('withCurrent', () => {
 	const active = [
@@ -40,19 +24,5 @@ describe('withCurrent', () => {
 	});
 	it('ignores a current id that is nowhere', () => {
 		expect(withCurrent(active, all, 'gone')).toHaveLength(2);
-	});
-});
-
-describe('postedValues', () => {
-	it('echoes the posted version with the named fields, so a refused form keeps its version', () => {
-		const values = postedValues(form({ ...unchanged, version: '3' }), ['start', 'description']);
-		expect(values).toEqual({
-			version: '3',
-			start: '2026-10-18T09:00',
-			description: 'Fixed the build'
-		});
-	});
-	it('uses empty text for what was not posted', () => {
-		expect(postedValues(form({}), ['end'])).toEqual({ version: '', end: '' });
 	});
 });

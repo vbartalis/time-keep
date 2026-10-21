@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
+import { openCore, type Result } from '../core/index';
+import { user } from '../db/schema';
+import { newId } from '../id';
+import { createTestDb } from '../testing/db';
 import {
 	earlierDate,
 	formatDate,
 	formatHours,
 	formatTime,
 	toLocalInput,
+	templateCards,
+	todayFor,
 	todayRange
 } from './today';
 
@@ -85,5 +91,97 @@ describe('earlierDate', () => {
 		// 2026-10-17T23:30Z is already the 18th in Budapest, still the 17th in UTC.
 		expect(earlierDate(Date.parse('2026-10-17T23:30:00Z'), 'Europe/Budapest', now)).toBeNull();
 		expect(earlierDate(Date.parse('2026-10-17T23:30:00Z'), 'UTC', now)).toBe('2026-10-17');
+	});
+});
+
+describe('todayFor', () => {
+	const ZONE = 'Europe/Budapest';
+	const NOW = Date.parse('2026-10-20T10:00:00Z'); // 12:00 in Budapest
+	const val = <T>(r: Result<T>): T => {
+		if (!r.ok) throw new Error(r.error.message);
+		return r.value;
+	};
+	const setup = () => {
+		const db = createTestDb();
+		const uid = newId();
+		db.insert(user)
+			.values({ id: uid, username: 'u', passwordHash: 'x', createdAt: 1, updatedAt: 1 })
+			.run();
+		const core = openCore(db, uid, 'ui', () => NOW);
+		const customer = val(core.customers.create({ name: 'C' }));
+		const p1 = val(core.projects.create({ customerId: customer.id, name: 'P1' }));
+		const p2 = val(core.projects.create({ customerId: customer.id, name: 'P2' }));
+		const make = (project: { id: string }, start: string, end?: string) =>
+			val(core.entries.create({ projectId: project.id, start, end, timeZone: ZONE }));
+		return { core, p1, p2, make };
+	};
+
+	it('lists today newest start first and totals the day', () => {
+		const { core, p1, make } = setup();
+		make(p1, '2026-10-20T09:30', '2026-10-20T09:45');
+		make(p1, '2026-10-20T10:00', '2026-10-20T12:18');
+		make(p1, '2026-10-19T09:00', '2026-10-19T10:00');
+		const t = todayFor(core, ZONE, NOW);
+		expect(t.day.date).toBe('2026-10-20');
+		expect(t.day.label).toBe('Tue 2026-10-20');
+		expect(t.day.rows.map((r) => r.start)).toEqual(['10:00', '09:30']);
+		expect(t.day.totalMs).toBe(153 * 60_000);
+		expect(t.day.rows.every((r) => r.since === null)).toBe(true);
+	});
+
+	it('lists an entry running since yesterday as since, outside the total', () => {
+		const { core, p1, make } = setup();
+		make(p1, '2026-10-19T22:00');
+		make(p1, '2026-10-20T09:00', '2026-10-20T10:00');
+		const t = todayFor(core, ZONE, NOW);
+		expect(t.day.rows.map((r) => [r.start, r.since])).toEqual([
+			['09:00', null],
+			['22:00', '2026-10-19']
+		]);
+		expect(t.day.totalMs).toBe(60 * 60_000);
+	});
+
+	it('flags an overlapping pair', () => {
+		const { core, p1, p2, make } = setup();
+		make(p1, '2026-10-20T09:00', '2026-10-20T10:00');
+		make(p2, '2026-10-20T09:30', '2026-10-20T10:30');
+		make(p1, '2026-10-20T11:00', '2026-10-20T11:30');
+		const t = todayFor(core, ZONE, NOW);
+		expect(t.day.rows.map((r) => r.overlaps)).toEqual([false, true, true]);
+	});
+
+	it('judges overlap against entries from before today, however long ago they began', () => {
+		const { core, p1, p2, make } = setup();
+		make(p1, '2026-10-17T12:00', '2026-10-20T09:30');
+		make(p2, '2026-10-20T09:00', '2026-10-20T10:00');
+		const t = todayFor(core, ZONE, NOW);
+		expect(t.day.rows.map((r) => [r.start, r.overlaps])).toEqual([
+			['09:00', true],
+			['12:00', true]
+		]);
+	});
+
+	it('lists templates by name with colour and whether they run', () => {
+		const { core, p2 } = setup();
+		val(core.templates.create({ name: 'Zeta', projectId: p2.id }));
+		val(core.templates.create({ name: 'Alpha', startTime: '09:00', endTime: '09:30' }));
+		const t = todayFor(core, ZONE, NOW);
+		expect(t.templates.map((x) => [x.name, x.colour, x.runs])).toEqual([
+			['Alpha', null, false],
+			['Zeta', 2, true]
+		]);
+	});
+
+	it('gives the Templates screen the same cards, each with its version', () => {
+		const { core, p2 } = setup();
+		const zeta = val(core.templates.create({ name: 'Zeta', projectId: p2.id }));
+		val(core.templates.update({ id: zeta.id, expectedVersion: zeta.version, name: 'zeta' }));
+		val(core.templates.create({ name: 'Alpha', durationMinutes: 30 }));
+		const cards = templateCards(core);
+		expect(cards.map((c) => [c.name, c.version, c.colour, c.runs])).toEqual([
+			['Alpha', 1, null, false],
+			['zeta', 2, 2, true]
+		]);
+		expect(todayFor(core, ZONE, NOW).templates).toEqual(cards);
 	});
 });

@@ -1,25 +1,12 @@
 /** What the Today screen shows; built by its load from the core's rows. */
 
-export type EntryRow = {
-	id: string;
-	projectName: string;
-	customerName: string;
-	description: string | null;
-	/** `HH:mm` in the start zone. */
-	in: string;
-	/** `YYYY-MM-DD` in the start zone when that is not today; else null. */
-	startDate: string | null;
-	/** `HH:mm` in the end zone; null while running. */
-	out: string | null;
-	/** `h:mm`; for a running entry, up to the load. */
-	hours: string;
-};
-
 export type ProjectOption = { id: string; name: string };
 export type ProjectGroup = { customerId: string; customerName: string; projects: ProjectOption[] };
 
 export type TemplateCard = {
 	id: string;
+	/** The version shown: a Delete from the Templates screen's menu posts it. */
+	version: number;
 	name: string;
 	customerId: string | null;
 	customerName: string | null;
@@ -33,6 +20,8 @@ export type TemplateCard = {
 	timeZone: string | null;
 	reference: string | null;
 	description: string | null;
+	/** The project's palette index (`bg-project-N`); null when the template has no project. */
+	colour: number | null;
 	/** Whether a tap with nothing changed starts a timer rather than logging. */
 	runs: boolean;
 };
@@ -57,19 +46,5 @@ export type ActionFailure = {
 	fields: Record<string, string>;
 	/** The template of a failed sheet. */
 	subject?: string;
-	values?: Record<string, string>;
-};
-
-/** A refused save or delete on the edit screen. */
-export type EditFailure = {
-	action: 'save' | 'delete' | 'saveAsTemplate';
-	error: string;
-	fields: Record<string, string>;
-	/** The entry changed elsewhere since the form was filled: the screen offers a reload. */
-	conflict: boolean;
-	/** The entry no longer exists (deleted elsewhere): the screen offers a way back to Today. */
-	gone?: boolean;
-	/** The search the entry was opened from, kept across a refusal (no-JS reloads lose the query). */
-	back?: string;
 	values?: Record<string, string>;
 };

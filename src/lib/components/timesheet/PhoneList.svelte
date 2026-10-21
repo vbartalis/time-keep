@@ -19,6 +19,9 @@
 	 * description wrap, never cut, so the row says what the entry was. A tap on a row opens its form in place. ⋯ opens
 	 * the row's sheet (without the script, the row menu's `<details>`). While `selecting`,
 	 * tick boxes take the ⋯'s place and each day head gains one (with the script).
+	 * Today draws one day without a day head (`dayHeads` false: its section head says it)
+	 * and never selects (`selectable` false); a row that started on an earlier day says
+	 * "Since <date>" under its start.
 	 */
 	let {
 		days,
@@ -29,7 +32,9 @@
 		selection,
 		enhanced,
 		selecting,
-		versions
+		versions,
+		selectable = true,
+		dayHeads = true
 	}: {
 		days: TableDay[];
 		/** The table's own address: where the form and the menu return to. */
@@ -46,7 +51,12 @@
 		selecting: boolean;
 		/** Versions to post in place of the loaded ones: a refused selection's, as posted. */
 		versions: Record<string, string>;
+		/** Rows can be ticked (Select); Today's cannot. */
+		selectable?: boolean;
+		/** A head per day (its date and total); Today's day is in its section head. */
+		dayHeads?: boolean;
 	} = $props();
+	const ticking = $derived(selectable && selecting);
 
 	const dayIds = (d: TableDay) => d.rows.map((r) => r.id);
 	const marksOf = (id: string) => warnings.filter((w) => w.subject === id);
@@ -55,7 +65,7 @@
 	const dayTotal = (d: TableDay) =>
 		spanText(d.totalMs + d.rows.filter((r) => r.running).length * since);
 	const bar = (r: TableRow) => `var(--project-${((r.colour - 1) % 8) + 1})`;
-	const meta = (r: TableRow) => [r.activity, r.location, r.reference].filter(Boolean).join(' · ');
+	const meta = (r: TableRow) => [r.activity, r.location, r.reference].filter(Boolean);
 
 	/** The row whose ⋯ was tapped, and its day; kept while the sheet closes. */
 	let menu = $state<{ row: TableRow; day: string } | null>(null);
@@ -71,20 +81,24 @@
 <div data-phone-list class="-mx-4 flex flex-col">
 	{#each days as d (d.date)}
 		{@const ticks = selection.state(dayIds(d))}
-		<section aria-labelledby="pday-{d.date}">
-			<div class="mx-4 flex min-h-11 items-center gap-1 border-b border-foreground pt-3 pr-14 pl-1">
-				{#if selecting && enhanced}
-					<input
-						type="checkbox"
-						checked={ticks === 'all'}
-						indeterminate={ticks === 'some'}
-						onchange={() => selection.setMany(dayIds(d), ticks !== 'all')}
-						aria-label="Select {d.label}"
-					/>
-				{/if}
-				<h2 id="pday-{d.date}" class="min-w-0 flex-1 text-xs caps figures">{d.label}</h2>
-				<span data-day-total class="text-sm font-semibold figures">{dayTotal(d)}</span>
-			</div>
+		<section aria-labelledby={dayHeads ? `pday-${d.date}` : undefined}>
+			{#if dayHeads}
+				<div
+					class="mx-4 flex min-h-11 items-center gap-1 border-b border-foreground pt-3 pr-14 pl-1"
+				>
+					{#if ticking && enhanced}
+						<input
+							type="checkbox"
+							checked={ticks === 'all'}
+							indeterminate={ticks === 'some'}
+							onchange={() => selection.setMany(dayIds(d), ticks !== 'all')}
+							aria-label="Select {d.label}"
+						/>
+					{/if}
+					<h2 id="pday-{d.date}" class="min-w-0 flex-1 text-xs caps figures">{d.label}</h2>
+					<span data-day-total class="text-sm font-semibold figures">{dayTotal(d)}</span>
+				</div>
+			{/if}
 			<ul>
 				{#each d.rows as r (r.id)}
 					{@const marks = marksOf(r.id)}
@@ -92,11 +106,11 @@
 						data-row={r.id}
 						class="flex min-h-16 border-b border-l-4 border-border {r.overlaps
 							? 'border-t-2 border-t-destructive'
-							: ''} {marks.length > 0 || (selecting && selection.has(r.id)) ? 'bg-accent' : ''}"
+							: ''} {marks.length > 0 || (ticking && selection.has(r.id)) ? 'bg-accent' : ''}"
 						style:border-left-color={bar(r)}
 					>
 						<div class="flex w-11 shrink-0 justify-center pt-2.5">
-							{#if selecting}
+							{#if ticking}
 								<input
 									type="checkbox"
 									name="id"
@@ -131,7 +145,7 @@
 							href={editHref(r, back)}
 							data-entry-form
 							aria-label={nameOf(r)}
-							class="mr-18 grid min-w-0 flex-1 grid-cols-[3.75rem_minmax(0,1fr)_auto] items-start gap-x-2 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+							class="mr-18 grid min-w-0 flex-1 grid-cols-[minmax(3.75rem,auto)_minmax(0,1fr)_auto] items-start gap-x-2 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
 						>
 							<!-- eslint-enable svelte/no-navigation-without-resolve -->
 							<span class="flex flex-col figures">
@@ -143,15 +157,23 @@
 										>{r.end}{#if r.plusDays > 0}+{r.plusDays}{/if}</span
 									>
 								{/if}
+								{#if r.since}
+									<span class="text-xs text-muted-foreground">Since {r.since}</span>
+								{/if}
 							</span>
 							<span data-what class="flex min-w-0 flex-col">
 								<!-- Two lines at most: the project after the › is what must read. -->
 								<span class="line-clamp-2 text-sm leading-tight font-semibold"
 									>{r.customer} › {r.project}</span
 								>
-								{#if meta(r)}
-									<!-- Wrapped, never cut: the reference at its end finds the ticket. -->
-									<span class="text-xs wrap-break-word text-muted-foreground">{meta(r)}</span>
+								{#if meta(r).length > 0}
+									<!-- A part stays whole when it fits ("T-1234"); one wider than the column breaks. -->
+									<span class="text-xs text-muted-foreground"
+										>{#each meta(r) as part, i (i)}{i > 0 ? ' ' : ''}<span
+												class="inline-block max-w-full wrap-break-word"
+												>{part}{i < meta(r).length - 1 ? ' ·' : ''}</span
+											>{/each}</span
+									>
 								{/if}
 								{#if r.description}
 									<!-- Wrapped in full too: the row says what the entry was. -->

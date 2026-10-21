@@ -2,11 +2,17 @@ import { goto, preloadData, pushState, replaceState } from '$app/navigation';
 import { page } from '$app/state';
 import type { EntryFormData } from '#lib/components/entry/types.js';
 
-/** The routes that show the entry form as a page. */
-const FORM_PAGES = new Set(['/(app)/entries/new', '/(app)/entries/[id]']);
+/** The routes that show the entry form as a page (a template's in its template kind). */
+const FORM_PAGES = new Set([
+	'/(app)/entries/new',
+	'/(app)/entries/[id]',
+	'/(app)/templates/new',
+	'/(app)/templates/[id]'
+]);
 
 /**
- * Opens the entry form at `href` (`/entries/new?…` or `/entries/<id>?…`) over the
+ * Opens the entry form at `href` (`/entries/new?…`, `/entries/<id>?…`, or a template's
+ * `/templates/new?…`, `/templates/<id>?…`) over the
  * current screen, through shallow routing: the address shows the form's URL, so the
  * browser's Back closes it. Over a form already open (Copy) the new one takes its place
  * in history, so Back still returns to the screen. When the form cannot be loaded in

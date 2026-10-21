@@ -1,38 +1,32 @@
 import { fail } from '@sveltejs/kit';
-import type { EditFailure } from '#lib/components/today/types.js';
 import { openCore } from '#lib/server/core/index.js';
 import { getDb } from '#lib/server/db/index.js';
 import { requireUser } from '#lib/server/guards.js';
-import { done, formFailure } from '#lib/server/screens/actions.js';
-import { postedValues } from '#lib/server/screens/edit.js';
+import { done, text } from '#lib/server/screens/actions.js';
+import { safeBack } from '#lib/server/screens/back.js';
+import { coreFailure, unreadFailure } from '#lib/server/screens/entry-form.js';
 import {
 	customerOf,
-	TEMPLATE_FIELDS,
-	templateChoices,
-	templateInput
+	templateFormData,
+	templateFromForm,
+	templateUnread
 } from '#lib/server/screens/templates.js';
 import type { Actions, PageServerLoad } from './$types';
 
 const core = (locals: App.Locals) => openCore(getDb(), requireUser(locals).id, 'ui');
 
-export const load: PageServerLoad = ({ locals }) => ({
-	choices: templateChoices(core(locals))
-});
+export const load: PageServerLoad = ({ locals, url }) =>
+	templateFormData(core(locals), null, url.searchParams.get('back') ?? '');
 
 export const actions: Actions = {
-	save: async ({ request, locals, cookies }) => {
+	default: async ({ request, locals, cookies }) => {
 		const form = await request.formData();
 		const c = core(locals);
-		const r = c.templates.create(templateInput(form, customerOf(c)));
-		if (!r.ok) {
-			const failure: EditFailure = {
-				action: 'save',
-				conflict: false,
-				...formFailure(r.error, TEMPLATE_FIELDS),
-				values: postedValues(form, TEMPLATE_FIELDS)
-			};
-			return fail(400, failure);
-		}
-		done(c, cookies, r, '/templates');
+		const back = safeBack(text(form, 'back'));
+		const unread = templateUnread(form);
+		if (Object.keys(unread).length > 0) return fail(400, unreadFailure(unread, form, 'template'));
+		const r = c.templates.create(templateFromForm(form, customerOf(c)));
+		if (!r.ok) return fail(400, coreFailure('save', r.error, form, { kind: 'template' }));
+		done(c, cookies, r, back);
 	}
 };

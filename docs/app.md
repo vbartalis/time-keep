@@ -40,13 +40,13 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/calendar/` | The Calendar's pure logic, shared by server and browser and unit-tested: `dates.ts` (`readView`, `periodDays`, `shift`, `isoWeek`, `periodTitle`, `dayName`, `calendarHref`, `hm`), `grid.ts` (`localDate`, `localMinutes`, `instantAt`, `piecesOf`, `lanes`, `overlapping`, `dayTotals` in exact ms, `wholeMinutes` and `spanText` truncating a span to whole minutes as every screen does, `snap`, `halfHourSlot`, `dragRange`), `drag.ts` (`dropTimes`, `clampDay`, `keepIn`) and `gestures.svelte.ts` (the `swipe` attachment, `clockOf`). `drawnExtent` and `growInto` are in `src/lib/components/calendar/block.ts`. |
 | `src/lib/components/calendar/` | The Calendar's parts: `CalendarToolbar`, `DatePicker`, `TimeGrid` (day and week), `EntryBlock`, `NewBlock`, `MonthGrid`, `PhoneMonth`; `block.ts` (a block's text and lines), `drag.svelte.ts` (the PC's `BlockDrag`), `now.svelte.ts` (`nowTicker`) and `types.ts`. |
 | `src/lib/keys.ts` | `screenKey`: whether an unmodified key press is the screen's (outside fields, no dialog or open `data-holds-keys` details), shared by the layout and the Calendar. |
-| `src/lib/components/narrowing.svelte.ts` | Customer and project pickers that narrow each other with JavaScript, shared by the template form and Copy-out's and Reports' filter bar. |
-| `src/lib/components/templates/` | The template form shared by the new and edit screens. |
+| `src/lib/components/narrowing.svelte.ts` | Customer and project pickers that narrow each other with JavaScript, used by the filter bar Copy-out and Reports share. |
 | `src/lib/components/account/` | The Account screen's Agent access parts: the token list with its revoke confirm (`TokenList`), the shown-once token with its Copy button (`NewToken`). |
-| `src/lib/components/setup/` | The Setup screen's parts: a rename-in-place row, the add lines, the Add project disclosure. |
-| `src/lib/components/today/` | The Today screen's parts: template sheets, today's entries, the ticking elapsed time (also the timer bar's). |
-| `src/lib/components/entry/` | The entry form: `EntryForm` (the form, for a new entry and an existing one), `TimeRow` (Start, End and Duration), `ProjectPicker` (with `match.ts`, `matchProjects`), `fill.ts` (`fillValues`, a template's values into the form), `EntryOverlay` (the form over the current screen), and the types its pages load. |
-| `src/lib/entry-link.ts` | `openForm` and `openInPlace`: open the entry form over the current screen through shallow routing (`pushState`), or go to its page when it cannot be loaded in place or the form is already shown as a page. |
+| `src/lib/components/setup/` | The Setup screen's parts: `ShowFilter` (Active, Archived, All), `SetupList` (one list's ruled rows), `SetupMenu` (a row's ⋯), `RenameRow` (rename in place), `CreateDialog` (the create dialog or sheet); `act.ts` (`setupHref`, `actionOf`, `menuButtonOf`, `act`, the `use:enhance` for its posts). |
+| `src/lib/components/templates/` | The Templates screen's parts: `TemplateTable` (the PC), `TemplateList` (the phone's rows and row sheet), `TemplateMenu` (a template's ⋯); `rows.ts` (`editHref`, `whereOf`, `useLabel`, `dotOf`). |
+| `src/lib/components/today/` | The Today screen's parts: the template rows and their sheet (`TemplateSheet`, usable over any screen, its fields `TemplateSheetForm`), the section head, the ticking elapsed time (the timer bar's). |
+| `src/lib/components/entry/` | The entry form: `EntryForm` (the form, for a new entry and an existing one, and in its template kind the template form), `TimeRow` (Start, End and Duration), `ProjectPicker` (with `match.ts`, `matchProjects`, and `matchChoices` for a customer chosen alone), `fill.ts` (`fillValues`, a template's values into the form), `EntryOverlay` (the form over the current screen), and the types its pages load. |
+| `src/lib/entry-link.ts` | `openForm` and `openInPlace`: open the entry form (or a template's, at `/templates/new` and `/templates/<id>`) over the current screen through shallow routing (`pushState`), or go to its page when it cannot be loaded in place or the form is already shown as a page. |
 | `src/lib/time-input.ts` | The forgiving readers for the form's times, durations and dates (`readClock`, `readDuration`, `readDate`, `durationText`, `minutesBetween`, `endAfter`), pure and shared by the browser script and the server actions. |
 | `src/lib/components/UndoStrip.svelte` | The undo strip every screen shows after an action; posts to `/undo`. |
 | `src/lib/components/focus-clear.ts` | Keeps keyboard focus clear of a band pinned over the page (`scrollsWithPage`, `clearOf`): the undo strip's and the Entries bulk bar's. |
@@ -85,8 +85,8 @@ It is the same on every screen; no screen draws its own title or navigation.
   after the timer bar; on the phone a round "+" (56 px, "New entry") fixed at the right
   just above the bottom bar, with room left for it at the foot of the content. Below `lg`
   the controls that sit at the right edge keep out of its column, so it never hides a
-  control at any scroll position: the rows' ▶ lead the row on Today and the leading ⋯ leads it on Entries,
-  Copy-out's and Reports' filter Clear row and "Edit templates" keep a 3.5 rem right
+  control at any scroll position: the leading ⋯ leads the rows on Entries and Today,
+  Copy-out's and Reports' filter Clear row and Today's "Manage" keep a 3.5 rem right
   margin, and the undo strip's buttons go under its message. Both link
   to `/entries/new?back=<this screen>` and carry `data-entry-form`, so the form opens over
   the screen; without JavaScript they are plain links to the page.
@@ -105,11 +105,16 @@ It is the same on every screen; no screen draws its own title or navigation.
   unmodified, outside fields and while no dialog is open. Ctrl+Enter or Cmd+Enter saves
   the form.
 - **Phone (below 1024 px).** A near-black top bar with the same title, the timer strip
-  under it, one column of content, and a fixed bottom bar: Today, Calendar (opening
-  `/calendar?view=day`), Entries, Templates and More. More is a `<details>` sheet over the page, just above the bar, so it works
-  without JavaScript; choosing an item or pressing Escape closes it (Escape returns
-  the focus to More). It lists Setup, Copy-out, Reports, History, Account, for an admin
-  Users and Backup, and Sign out. Every screen is within two taps.
+  under it, one column of content, and a fixed bottom bar of four equal cells (`BottomBar`,
+  items from `barItems`): Today, Calendar (opening `/calendar?view=day`), Entries and More.
+  The current screen's cell is blue and semibold. With JavaScript More is a button opening
+  a `Sheet` just above the bar (`moreItems`): 48 px rows with their icons for Templates,
+  Setup, Copy-out, Reports, History, Account, for an admin Users and Backup, then a rule
+  and Sign out (a post to `/logout`); the current screen's row is marked, and More's cell
+  is current on any of them or their sub-routes (`inMore`). A choice (a navigation),
+  Escape, the scrim and Back close it. Without JavaScript More is a `<details>` over the
+  page, just above the bar, with the same rows; Escape closes it and returns the focus to
+  More. Every screen is within two taps.
 - **Timer bar.** The layout load (`shellTimers`) lists the running timers, newest
   start first. With one running: a blue live dot, the elapsed time (ticking with
   JavaScript, the server's value without), the project colour dot, customer ›
@@ -127,7 +132,7 @@ It is the same on every screen; no screen draws its own title or navigation.
   `templateId` to `/timers/start` at once; one without opens a description line
   (focused, may stay empty, Enter starts); one without a project links to
   `/entries/new?template=<id>&timer=1`. With no templates the list also offers "Create
-  a template". On the PC it is a popover under Start; on the phone a sheet from the
+  a template" (`/templates/new?back=<screen>`, opened in place over the screen). On the PC it is a popover under Start; on the phone a sheet from the
   bottom over a scrim that leaves the strip uncovered, so ▶ closes it without
   JavaScript (the sticky top raises over the bottom bar while it is open). With
   JavaScript, Escape, an outside click, a link in it, or a navigation close it, and
@@ -170,31 +175,43 @@ Copy-out and Reports only read: they have no actions.
 
 ### Today (`/`)
 
-In thumb order, one column; on the PC it keeps the width of a two-column layout, the side track left empty:
+One column on both surfaces (`pc-today`, `ph-today`), in thumb order; no date, user or
+zone lines (the date is in the entries' head, the zone is the device's):
 
-1. **Templates**: one row per template, opening a sheet (a `<details>` panel, so it
-   works without JavaScript) that shows the template's filled fields and asks for a
-   description; a reference when the template has none, and a project when it has
-   none (from its customer's projects when it has a customer). The button is "Start
-   timer" when the result would run, else "Log". "Change times" offers date, start,
-   end or minutes. Submits `entries.fromTemplate`.
-2. **Today's entries**: entries whose interval touches today in the user's zone, with
-   in, out (or Running), hours, customer › project, "Since YYYY-MM-DD" when it
-   started on an earlier day, and description; each row is a `data-entry-form` link
-   to `/entries/<id>?back=/`, so it opens the entry form over Today. A finished row
-   has a ▶ beside its link (a form posting to `/timers/restart`, named "Restart
-   <customer › project>", 44 px below `lg`).
+1. **Templates** (`components/today/Templates.svelte`): the TEMPLATES head with
+   "Manage templates" ("Manage" on the phone, clear of the "+") to `/templates`, then a
+   row per template by name on a ruled surface: the project's dot, the name, a muted
+   line of what it fills (customer › project, activity, location, reference, times; "Any
+   project" when it names none), and its mark, TIMER when the result would run (no end and
+   no duration) and LOG otherwise: both muted caps, TIMER with a timer icon, since blue is
+   for a running timer (at the right with a chevron on the PC, leading the line on the
+   phone). A row opens the template's sheet (`TemplateSheet.svelte`, a `Sheet` that is
+   a centred dialog from `lg`): its name and ×, the muted line, then a field for every
+   field the template leaves blank and only those: Customer › project (item 12's
+   picker; from the template's customer's active projects when it has one, and with
+   none "No active projects for <customer>." with Log off), Activity, Location and
+   Reference; Description always, the template's own as placeholder. "Change times"
+   discloses date, start, end and duration, read as the entry form reads them
+   (`9`, `900`, `1.5`); blank keeps the template's. The pinned foot is Cancel and
+   "Log" or "Start timer". It posts `/?/fromTemplate` with `back` (any screen may host
+   the sheet) and returns there with the strip, the focus on Undo; a refusal stays in
+   the sheet beside the fields. Escape, the scrim, × and Back close it, keeping
+   nothing. Without JavaScript each row is a `<details>` panel holding the same form.
+   No templates: "No templates yet." with "Create a template", which opens the template
+   form over Today (`/templates/new?back=%2F`).
+2. **Today's entries**: the head "Today · Tue 2026-10-20" (`caps`) with the day's total
+   at the right, ticking: only the entries that started today count, a running one to
+   now. The entries whose interval touches today, newest start first, drawn as Entries
+   draws a day (`DayTable` on the PC, `PhoneList` on the phone) without tick boxes or a
+   day head (`selectable`, `dayHeads` false); one started on an earlier day says
+   "Since YYYY-MM-DD" under its start. A row opens the entry form over Today (`back`
+   `/`); ▶ restarts a finished row (PC); ⋯ is Entries' row menu (PC popover, phone row
+   sheet): Restart, Copy, Edit, Delete (at once, Undo in the strip). Overlaps carry
+   the red top edge, judged against all the user's entries. Nothing today: "Nothing
+   logged today."
 
 Timers start and run in the shell's timer bar (its Start list), not on Today; a Stop
-there on Today shows its Undo in Today's strip.
-
-Empty states have no dead buttons: Templates says "Templates
-are set up on the PC." with a "Create a template" link to `/templates/new` when there
-are none; the Templates head always links "Edit templates" to `/templates`. A refused
-action re-renders the form it came from with the core's field messages beside the
-fields; a message that belongs to no shown field is shown under the fields (the
-template sheet, the edit form) or beside the action; the template sheet and the edit
-form focus the first refused field.
+there on Today shows its Undo in Today's strip, which Today draws itself.
 
 ### Calendar (`/calendar`)
 
@@ -333,50 +350,122 @@ opens the form. Without JavaScript blocks are links only.
 
 ### Setup (`/setup`)
 
-Customers and projects, activities and locations on one screen (a second column for
-activities and locations from 1280 px). Customers are heavy lines with their projects
-indented on hairlines beneath; each line has Rename and Archive (Unarchive when
-archived), a customer also Add project. Rename opens in place (a `<details>` with the
-name, Save and Cancel; one open at a time) and sends `rename` with the row's
-`expectedVersion` (a rename to the same name stores no batch and returns without a strip). Archive and Unarchive are one press, undone from the strip. Each
-region ends with an add line (Add project opens one under its customer). Archived rows
-are hidden unless the "Show archived" link (`?archived=1`) is on, and then show struck
-through with an `Archived` badge; an archived customer lists all its projects, an
-active one with none active says "No active projects.". Every action is one core call
-(`create`, `rename`, `archive`, `unarchive`, with `kind` customer, project, activity
-or location) and returns to `/setup` (or `/setup?archived=1`, as posted) with the
-strip. A refusal re-renders the form that was posted, open, with the posted name and
-the core's message beside the field, focused; a stale version shows the message with a
-Reload link on that row; any other refusal (unarchiving a project under an archived
-customer) shows on the row. `setupTree` (`screens/setup.ts`) shapes the tree from the
-core's lists read with archived rows included.
+Customers and projects, activities and locations on one screen (`pc-setup`, `ph-setup`),
+reached from the sidebar and from More on the phone.
+
+**The filter** (`ShowFilter`) is three links joined as the Calendar's view switch, **Active
+| Archived | All**, Active by default, in the address (`?show=archived`, `?show=all`;
+round 1's `?archived=1` reads as All, `readShow`). It takes the phone's width but for the
+"+" column. The strip and every action keep the filter: a refusal and a done action return
+to `/setup` under it. A create made on Archived lands on All, where the new (active) row
+shows.
+
+**The lists** are, on the PC from `lg`, two columns: CUSTOMERS AND PROJECTS at the left,
+ACTIVITIES then LOCATIONS at the right; on the phone they stack in that order. Each has a
+`caps` head with an outline "+ New customer" / "+ New activity" / "+ New location" (aside
+on the PC, under the head on the phone), over a ruled surface panel (`SetupList`) sorted
+by name, edge to edge on the phone. A customer is a 15 px semibold line; its projects are
+indented beneath on hairlines with the project's colour dot (`colourOf`; the others have
+none). Every row has a ⋯ at the right on the PC and leading it on the phone. Empty lists
+say so: "No customers yet.", "No archived activities.". `setupTree` (`screens/setup.ts`)
+shapes the lists from the core's lists read with archived rows included.
+
+**The row menu** (`SetupMenu`, `pc-setup-menu`, `ph-setup-menu`): a customer has Rename,
+Add project, a rule, Archive; a project, activity or location has Rename, a rule, Archive;
+an archived row has Rename, a rule, Unarchive. Archive and Unarchive act at once with Undo
+in the strip, not in red (nothing is lost). It is Entries' menu-button pattern (a PC
+popover: arrows, Home and End move, Escape closes and returns the focus to ⋯) and, below
+`lg` with JavaScript, the row's sheet (`Sheet`) of 48 px rows headed by the row's name over
+its kind ("CompX · project", "customer"). Without JavaScript it is a `<details>` whose
+Rename and Add project are links (`?rename=<id>`, `?new=project&customer=<id>`) and
+Archive a post button.
+
+**Rename in place** (`RenameRow`): the row becomes a field holding the name, selected,
+with outline Cancel and the primary Save at its right (under the field on the phone);
+Enter saves, Escape cancels and returns the focus to the row's ⋯; one row at a time. It
+sends `rename` with the row's `expectedVersion`; a rename to the same name stores no
+batch and returns without a strip. A refusal (an empty or taken name) keeps the row in
+rename with the typed name and the core's message beside the field, focused; a stale
+version shows the message with a Reload link; any other refusal (unarchiving a project
+under an archived customer) shows under the row. Without JavaScript the same row is
+rendered by `?rename=<id>`.
+
+**Create** (`CreateDialog`, `pc-setup-create`): "+ New …" and a customer's Add project open
+a 440 px dialog on the PC and a sheet on the phone: "New customer", "New project", "New
+activity", "New location", with the name only, plus the customer for a project (a select
+of the active customers, set to the one it came from). The name is focused, Enter
+creates, the foot is Cancel and the primary "Create". A refusal (an empty or taken
+name) shows beside the field and keeps the dialog open with the typed name. Escape, the
+scrim and Back close it. Without JavaScript the buttons are links to `?new=<kind>` and the
+same form shows as a panel in the screen.
+
+**Archived rows** (`pc-setup-archived`) show in Archived and All, muted with an `Archived`
+chip. In All an archived customer lists all its projects and an active one its active and
+archived projects. In Archived only archived rows are rows: an active customer with
+archived projects is not a row of its own, its name stands over them in muted text with no
+⋯. A project under an archived customer keeps its own stored state but is shown by its
+effect (`underArchived`): gone from Active with its customer, muted with the chip in
+Archived and All, and its ⋯ holds only Rename (the core refuses its unarchive under an
+archived customer). Unarchiving the customer brings it back as it was.
+
+Every action is one core call (`create`, `rename`, `archive`, `unarchive`, with `kind`
+customer, project, activity or location), posted with the filter (`show`), and returns
+to `/setup` under it with the strip, the focus going to Undo (`act`). Setup draws its own
+undo strip.
 
 ### Templates (`/templates`, `/templates/new`, `/templates/[id]`)
 
-`/templates` is a ruled table sorted by name: name (a link to its edit screen),
-customer › project, activity, location, times and a Timer or Log
-mark as on Today; the phone keeps name, times and mark (customer › project under the
-name) and the narrower PC widths drop activity and location. "New template" is the one
-primary button; with no templates the page says "No templates yet." beside the same
-button. The undo strip shows after a save or delete.
+`/templates` (`pc-templates`, `ph-templates`) is reached from the sidebar and from More on
+the phone. Above the list, an outline "New template" (a plus; the header's "+ New entry"
+stays the one primary; full width and clear of the "+" on the phone) opens the template
+form in place (`data-entry-form`, `back` `/templates`), and at the right the count ("3
+templates", "1 template"). With none: "No templates yet." beside the button. The undo strip
+(drawn by the screen) shows after a save, a delete or a stop; a refused Delete shows its
+message above the list, with Reload when stale.
 
-`/templates/new` and `/templates/[id]` share one ruled form: name, customer, project,
-activity, location, start time, end time, duration in minutes, time zone (a text field
-with the browser's zones as a `<datalist>` filled by script; blank means the device's
-zone at use), reference, description. The pickers list active rows plus the template's
-current archived ones marked "(archived)". With JavaScript, choosing a project sets its
-customer and choosing a customer lists only its projects; without it both are sent as
-chosen. `templateInput` (`screens/templates.ts`) shapes the post for the core: the name
-as posted, every other field trimmed with blank sent as `null` (which clears it on an
-update), and a project with no customer sent with the project's customer. Save sends
-`templates.create`, or `templates.update` with every field and the form's
-`expectedVersion`, and returns to `/templates` with the strip. Refusals re-render the
-form with the posted values and the core's messages beside the fields (a message for
-no shown field goes under the form), focusing the first refused field; a stale version
-shows the message with a Reload link; a save that changed nothing returns without a strip. Delete asks on the page ("Yes, delete it" /
-"Keep it"), then sends `templates.delete` with the version; a template deleted
-elsewhere says so with a link back to the list, and a missing one is a 404. The shell's
-Templates item stays current on both sub-routes.
+**The PC** (`TemplateTable`, from `lg`) is Entries' ruled table in a surface panel, sorted
+by name: Name (the project's dot, the name in semibold, a link for the keyboard),
+Customer › project (customer muted), Activity and Location (dropped under 1280 px), Times
+("09:30–09:45", "0:30", or "—"), the mark (TIMER with a timer icon, LOG, both muted) and
+⋯. A click on a row off its controls opens the template form in place. **The phone**
+(`TemplateList`) has ruled rows to the screen's edges, a leading ⋯, the dot and name (15 px
+semibold), customer › project, then activity · location · times · the mark in a muted
+wrapping line; a tap opens the form, ⋯ opens the row's sheet (`Sheet`, headed by the
+name over customer › project; without JavaScript the menu's `<details>`).
+
+**The row menu** (`TemplateMenu`, `pc-templates-menu`): Edit (the form in place), Log…
+("Start timer…" for a TIMER template), a rule, Delete in red. Log… opens the template's
+sheet over the screen (`TemplateSheet`, as a tap on a Today row does, returning to
+`/templates`); without JavaScript it links to Today. Delete posts `templates.delete` at once
+with the version shown, and the strip offers it back. Entries' menu-button pattern:
+arrows, Home and End move, Escape closes and returns the focus to ⋯.
+
+**The template form** is the entry form in its template kind (`EntryFormData.kind`
+`'template'`, loaded by `templateFormData`): opened in place over the screen by
+`openForm` and `EntryOverlay` ("New template", "Edit template"), from Templates, Today's
+"Create a template" and the Start list's; a page at `/templates/new` and
+`/templates/[id]` without JavaScript. Fields in order: Name (required, focused first);
+Start, End and Duration as times of day with no date (`TimeRow` with `template`: the
+start may stay blank, an end not after the start reads "next day", the note "Any field
+may stay blank; only the blanks are asked when it is used." in place of the hint line);
+Customer › project, where a customer heading is a choice of its own (`ProjectPicker`
+with `customers`: it posts `customerId` with an empty `projectId`; without JavaScript a
+Customer select above the project's); Activity; Location; Reference; Description; Time
+zone (a text field with the browser's zones as a `<datalist>`, hint "Blank uses the
+device's zone"). The pickers list active rows plus the template's current archived ones
+marked "(archived)". A template holds an end or a duration: with JavaScript the form
+posts `linked` naming the one typed last (else the one it was loaded with), and
+`templateFromForm` (`screens/templates.ts`) sends only that one; without it a typed end
+wins. The name goes as posted, every other field trimmed with blank sent as `null`
+(which clears it on an update), and a project with no customer with the project's
+customer. Save sends `templates.create`, or `templates.update` with the form's
+`expectedVersion`; a save that changed nothing returns without a strip. Delete (an
+existing template; no Copy, Restart or Save as template) sends `templates.delete` at
+once with the version; the strip offers it back. Both return to `back`, the screen the
+form was opened over. Refusals show beside their fields, a stale version offers Reload,
+a template deleted elsewhere says so with a link back ("Back to Templates" from
+there); a missing one is a 404.
+The shell's Templates item stays current on both sub-routes.
 
 ### Entries (`/entries`)
 

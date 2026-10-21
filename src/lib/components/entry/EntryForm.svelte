@@ -14,9 +14,11 @@
 	import type { EntryFormData, EntryFormFailure, EntryFormValues, FillTemplate } from './types';
 
 	/**
-	 * The one form for a new entry and an existing one. A page form without JavaScript;
-	 * with `onDone` a successful action's redirect is handed to it instead of followed,
-	 * and with `onFailure` a refusal is handed to it instead of becoming the page's form.
+	 * The one form for a new entry and an existing one, and in its template kind for a
+	 * template (a name, times of day with no date, a customer alone allowed, its own zone).
+	 * A page form without JavaScript; with `onDone` a successful action's redirect is
+	 * handed to it instead of followed, and with `onFailure` a refusal is handed to it
+	 * instead of becoming the page's form.
 	 */
 	let {
 		data,
@@ -35,6 +37,7 @@
 
 	const v = $derived(data.values);
 	const editing = $derived(data.mode === 'edit');
+	const isTemplate = $derived(data.kind === 'template');
 	const failure = $derived(data.failure);
 	const saveFailure = $derived(failure?.action === 'save' ? failure : null);
 	const templateFailure = $derived(failure?.action === 'saveAsTemplate' ? failure : null);
@@ -59,7 +62,19 @@
 	let locationId = $derived(shown('locationId'));
 	let reference = $derived(shown('reference'));
 	let description = $derived(shown('description'));
-	let timeZone = $derived(typed?.timeZone || v.timeZone);
+	let name = $derived(shown('name'));
+	let customerId = $derived(shown('customerId'));
+	// A template's zone may be blank (the device's): a refused blank stays blank.
+	let timeZone = $derived(
+		isTemplate && typed ? (typed.timeZone ?? '') : typed?.timeZone || v.timeZone
+	);
+	/** Which of end and duration a template holds, as loaded or as refused. */
+	const linked = $derived.by((): 'end' | 'duration' | null => {
+		if (typed?.linked === 'end' || typed?.linked === 'duration') return typed.linked;
+		return end !== '' ? 'end' : duration !== '' ? 'duration' : null;
+	});
+	/** The browser's zones, offered in a template's Time zone field. */
+	let zones = $state<string[]>([]);
 	const version = $derived(typed?.version ?? v.version);
 	/** The zone is the entry's own (or a template's): the layout must not replace it. */
 	let zoneFixed = $state(false);
@@ -69,7 +84,13 @@
 	const back = $derived(failure?.back ?? data.back);
 	// Actions other than Save live at the form's address: `?/save` → `?/delete`.
 	const base = $derived(action.split('?')[0]);
-	const entryPath = $derived(v.id ? resolve('/(app)/entries/[id]', { id: v.id }) : '');
+	const entryPath = $derived(
+		!v.id
+			? ''
+			: isTemplate
+				? resolve('/(app)/templates/[id]', { id: v.id })
+				: resolve('/(app)/entries/[id]', { id: v.id })
+	);
 	const reloadHref = $derived(
 		back === '/' ? entryPath : `${entryPath}?back=${encodeURIComponent(back)}`
 	);
@@ -78,7 +99,13 @@
 	);
 	const fillHref = (t: FillTemplate) =>
 		`${resolve('/(app)/entries/new')}?template=${t.id}&date=${v.date}&back=${encodeURIComponent(back)}`;
-	const backLabel = $derived(back.startsWith('/entries') ? 'Back to Entries' : 'Back to Today');
+	const backLabel = $derived(
+		back.startsWith('/entries')
+			? 'Back to Entries'
+			: back.startsWith('/templates')
+				? 'Back to Templates'
+				: 'Back to Today'
+	);
 
 	let hydrated = $state(false);
 	let formEl = $state<HTMLFormElement | null>(null);
@@ -136,7 +163,8 @@
 				activityId !== v.activityId ||
 				locationId !== v.locationId ||
 				reference !== v.reference ||
-				description !== v.description)
+				description !== v.description ||
+				(isTemplate && (name !== v.name || customerId !== v.customerId || timeZone !== v.timeZone)))
 	);
 	$effect(() => {
 		if (dirty && templateDetails) templateDetails.open = false;
@@ -150,6 +178,8 @@
 	function focusFirst() {
 		const refused = formEl?.querySelector<HTMLElement>('[aria-invalid="true"]');
 		if (refused) return refused.focus();
+		// A template's name comes first and is the one field it needs.
+		if (isTemplate) return document.getElementById('entry-name')?.focus();
 		const heading = document.getElementById('entry-overlay-title');
 		if (editing && heading && !window.matchMedia('(min-width: 1024px)').matches)
 			return heading.focus();
@@ -159,6 +189,13 @@
 
 	onMount(() => {
 		hydrated = true;
+		if (isTemplate) {
+			try {
+				zones = Intl.supportedValuesOf('timeZone');
+			} catch {
+				zones = [];
+			}
+		}
 		void tick().then(() => {
 			if (templateFailure) templateName?.focus();
 			else focusFirst();
@@ -233,9 +270,13 @@
 			void tick().then(() => formEl?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
 			return;
 		}
-		for (const [name, value] of Object.entries({ date, start, end, duration })) {
-			formData.set(name, value);
+		for (const [field, value] of Object.entries(
+			isTemplate ? { start, end, duration } : { date, start, end, duration }
+		)) {
+			formData.set(field, value);
 		}
+		// A template keeps an end or a duration: the one the user gave last goes.
+		if (isTemplate) formData.set('linked', timeRow?.kept() ?? '');
 		return after;
 	};
 
@@ -282,7 +323,7 @@
 {/snippet}
 
 <div class="flex flex-col gap-5" {@attach ctrlEnter}>
-	{#if !editing && data.templates.length > 0}
+	{#if !editing && !isTemplate && data.templates.length > 0}
 		<div class="flex flex-wrap items-center gap-2">
 			<span class="mr-1 text-xs caps text-muted-foreground lg:w-[8.5rem] lg:shrink-0"
 				>Fill from</span
@@ -316,45 +357,65 @@
 	>
 		{#if editing}<input type="hidden" name="version" value={version} />{/if}
 		<input type="hidden" name="back" value={back} />
-		<input
-			bind:this={zoneEl}
-			id="entry-zone"
-			type="hidden"
-			name="timeZone"
-			value={timeZone}
-			data-zone-fixed={keepZone ? '' : undefined}
-		/>
+		{#if isTemplate}
+			<div class={row}>
+				<label for="entry-name" class={labelClass}>Name</label>
+				<Input
+					id="entry-name"
+					name="name"
+					required
+					autocomplete="off"
+					bind:value={name}
+					aria-invalid={fields.name ? 'true' : undefined}
+					aria-describedby={describe('name')}
+				/>
+				{@render fieldError('name')}
+			</div>
+		{:else}
+			<input
+				bind:this={zoneEl}
+				id="entry-zone"
+				type="hidden"
+				name="timeZone"
+				value={timeZone}
+				data-zone-fixed={keepZone ? '' : undefined}
+			/>
+		{/if}
 
-		<div class={row}>
-			<label for="entry-date" class={labelClass}>Date</label>
-			<div class="flex flex-col gap-1.5">
-				<div class="flex flex-wrap items-center gap-2">
-					<Input
-						id="entry-date"
-						name="date"
-						type="text"
-						inputmode="decimal"
-						autocomplete="off"
-						class="w-40 figures"
-						value={date}
-						oninput={(e) => {
-							date = e.currentTarget.value;
-							dateTyped = true;
-						}}
-						onblur={settleDate}
-						aria-invalid={dateMessage ? 'true' : undefined}
-						aria-describedby={dateMessage ? 'date-error' : undefined}
-					/>
-					{#if hydrated}
-						<Button variant="outline" onclick={() => setDate(today())}>Today</Button>
-						<Button variant="outline" onclick={() => setDate(dayBefore(today()))}>Yesterday</Button>
+		{#if !isTemplate}
+			<div class={row}>
+				<label for="entry-date" class={labelClass}>Date</label>
+				<div class="flex flex-col gap-1.5">
+					<div class="flex flex-wrap items-center gap-2">
+						<Input
+							id="entry-date"
+							name="date"
+							type="text"
+							inputmode="decimal"
+							autocomplete="off"
+							class="w-40 figures"
+							value={date}
+							oninput={(e) => {
+								date = e.currentTarget.value;
+								dateTyped = true;
+							}}
+							onblur={settleDate}
+							aria-invalid={dateMessage ? 'true' : undefined}
+							aria-describedby={dateMessage ? 'date-error' : undefined}
+						/>
+						{#if hydrated}
+							<Button variant="outline" onclick={() => setDate(today())}>Today</Button>
+							<Button variant="outline" onclick={() => setDate(dayBefore(today()))}
+								>Yesterday</Button
+							>
+						{/if}
+					</div>
+					{#if dateMessage}
+						<p id="date-error" class="text-sm text-irregular">{dateMessage}</p>
 					{/if}
 				</div>
-				{#if dateMessage}
-					<p id="date-error" class="text-sm text-irregular">{dateMessage}</p>
-				{/if}
 			</div>
-		</div>
+		{/if}
 
 		<div class={row} role="group" aria-labelledby="entry-time-label">
 			<span id="entry-time-label" class="hidden text-sm font-semibold lg:block">Time</span>
@@ -370,6 +431,8 @@
 					{date}
 					zone={() => zoneEl?.value || timeZone}
 					errors={fields}
+					template={isTemplate}
+					linked={isTemplate ? linked : null}
 				/>
 			</div>
 		</div>
@@ -379,10 +442,13 @@
 			<ProjectPicker
 				projects={data.projects}
 				bind:value={projectId}
+				bind:customerId
+				customers={isTemplate ? (data.customers ?? []) : undefined}
 				id="entry-project"
-				describedby={describe('projectId')}
+				describedby={describe('projectId') ?? describe('customerId')}
 			/>
 			{@render fieldError('projectId')}
+			{@render fieldError('customerId')}
 		</div>
 
 		<div class="grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-4">
@@ -448,6 +514,34 @@
 				aria-describedby={describe('description')}></textarea>
 			{@render fieldError('description')}
 		</div>
+
+		{#if isTemplate}
+			<div class={row}>
+				<label for="entry-time-zone" class={labelClass}>Time zone</label>
+				<Input
+					id="entry-time-zone"
+					name="timeZone"
+					type="text"
+					list="entry-zones"
+					placeholder="Device's zone"
+					autocomplete="off"
+					autocapitalize="off"
+					spellcheck="false"
+					bind:value={timeZone}
+					aria-invalid={fields.timeZone ? 'true' : undefined}
+					aria-describedby={[fields.timeZone ? 'timeZone-error' : '', 'entry-zone-hint']
+						.filter(Boolean)
+						.join(' ')}
+				/>
+				<p id="entry-zone-hint" class="text-xs text-muted-foreground lg:col-start-2">
+					Blank uses the device's zone
+				</p>
+				<datalist id="entry-zones">
+					{#each zones as zone (zone)}<option value={zone}></option>{/each}
+				</datalist>
+				{@render fieldError('timeZone')}
+			</div>
+		{/if}
 	</form>
 
 	{#if general}
@@ -480,64 +574,66 @@
 						>Delete</Button
 					>
 				</form>
-				<!-- Opened in place over the screen when this form is (it has `onDone`). -->
-				<Button
-					href={copyHref}
-					variant="outline"
-					disabled={dirty}
-					aria-describedby={lockedBy}
-					data-entry-form={onDone ? '' : undefined}>Copy</Button
-				>
-				<form method="POST" action={resolve('/(app)/timers/restart')} use:enhance={() => after}>
-					<input type="hidden" name="id" value={v.id} />
-					<input type="hidden" name="timeZone" value={v.timeZone} data-zone-fixed="" />
-					<input type="hidden" name="back" value={back} />
+				{#if !isTemplate}
+					<!-- Opened in place over the screen when this form is (it has `onDone`). -->
 					<Button
-						type="submit"
+						href={copyHref}
 						variant="outline"
-						disabled={v.running || dirty}
-						aria-describedby={v.running ? undefined : lockedBy}
-						><Play class="size-3.5 fill-current" aria-hidden="true" />Restart{#if v.running}<span
-								class="text-xs font-normal">· Already running</span
-							>{/if}</Button
-					>
-				</form>
-				<details bind:this={templateDetails} open={templateFailure !== null} class="group/tpl">
-					<summary
-						aria-disabled={dirty ? 'true' : undefined}
+						disabled={dirty}
 						aria-describedby={lockedBy}
-						onclick={(e) => {
-							if (dirty) e.preventDefault();
-						}}
-						class="inline-flex h-11 cursor-pointer list-none items-center rounded-md border border-input bg-card px-4 text-sm font-semibold transition-[color,background-color,border-color] duration-150 ease-out outline-none select-none group-open/tpl:bg-accent hover:border-foreground/60 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background aria-disabled:pointer-events-none aria-disabled:opacity-50 lg:h-9 lg:px-3 [&::-webkit-details-marker]:hidden"
-						>Save as template</summary
+						data-entry-form={onDone ? '' : undefined}>Copy</Button
 					>
-					<form
-						method="POST"
-						action="{base}?/saveAsTemplate"
-						use:enhance={() => after}
-						class="flex flex-wrap items-end gap-2 pt-3"
-					>
+					<form method="POST" action={resolve('/(app)/timers/restart')} use:enhance={() => after}>
+						<input type="hidden" name="id" value={v.id} />
+						<input type="hidden" name="timeZone" value={v.timeZone} data-zone-fixed="" />
 						<input type="hidden" name="back" value={back} />
-						<div class="flex min-w-0 flex-col gap-1.5">
-							<label for="entry-template-name" class="text-xs text-muted-foreground">Name</label>
-							<Input
-								bind:ref={templateName}
-								id="entry-template-name"
-								name="name"
-								required
-								autocomplete="off"
-								value={templateFailure?.values?.name ?? ''}
-								aria-invalid={nameError ? 'true' : undefined}
-								aria-describedby={nameError ? 'name-error' : undefined}
-							/>
-						</div>
-						<Button type="submit" variant="outline">Save template</Button>
-						{#if nameError}
-							<p id="name-error" class="w-full text-sm text-irregular">{nameError}</p>
-						{/if}
+						<Button
+							type="submit"
+							variant="outline"
+							disabled={v.running || dirty}
+							aria-describedby={v.running ? undefined : lockedBy}
+							><Play class="size-3.5 fill-current" aria-hidden="true" />Restart{#if v.running}<span
+									class="text-xs font-normal">· Already running</span
+								>{/if}</Button
+						>
 					</form>
-				</details>
+					<details bind:this={templateDetails} open={templateFailure !== null} class="group/tpl">
+						<summary
+							aria-disabled={dirty ? 'true' : undefined}
+							aria-describedby={lockedBy}
+							onclick={(e) => {
+								if (dirty) e.preventDefault();
+							}}
+							class="inline-flex h-11 cursor-pointer list-none items-center rounded-md border border-input bg-card px-4 text-sm font-semibold transition-[color,background-color,border-color] duration-150 ease-out outline-none select-none group-open/tpl:bg-accent hover:border-foreground/60 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background aria-disabled:pointer-events-none aria-disabled:opacity-50 lg:h-9 lg:px-3 [&::-webkit-details-marker]:hidden"
+							>Save as template</summary
+						>
+						<form
+							method="POST"
+							action="{base}?/saveAsTemplate"
+							use:enhance={() => after}
+							class="flex flex-wrap items-end gap-2 pt-3"
+						>
+							<input type="hidden" name="back" value={back} />
+							<div class="flex min-w-0 flex-col gap-1.5">
+								<label for="entry-template-name" class="text-xs text-muted-foreground">Name</label>
+								<Input
+									bind:ref={templateName}
+									id="entry-template-name"
+									name="name"
+									required
+									autocomplete="off"
+									value={templateFailure?.values?.name ?? ''}
+									aria-invalid={nameError ? 'true' : undefined}
+									aria-describedby={nameError ? 'name-error' : undefined}
+								/>
+							</div>
+							<Button type="submit" variant="outline">Save template</Button>
+							{#if nameError}
+								<p id="name-error" class="w-full text-sm text-irregular">{nameError}</p>
+							{/if}
+						</form>
+					</details>
+				{/if}
 				{#if dirty}
 					<p id="entry-locked" class="w-full text-xs text-muted-foreground">
 						Save or cancel your changes first

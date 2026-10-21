@@ -1,24 +1,19 @@
 import { fail, type Cookies } from '@sveltejs/kit';
 import type { ActionFailure } from '#lib/components/today/types.js';
-import { openCore, type EntryItem } from '#lib/server/core/index.js';
+import { openCore } from '#lib/server/core/index.js';
 import { getDb } from '#lib/server/db/index.js';
 import { requireUser } from '#lib/server/guards.js';
 import {
 	done,
 	formFailure,
 	fromTemplateInput,
-	groupProjects,
-	rows,
+	sheetTimeRefusals,
 	text
 } from '#lib/server/screens/actions.js';
+import { safeBack } from '#lib/server/screens/back.js';
+import { formPickers } from '#lib/server/screens/entry-form.js';
 import { takeFlash } from '#lib/server/screens/flash.js';
-import {
-	earlierDate,
-	formatDate,
-	formatHours,
-	formatTime,
-	todayRange
-} from '#lib/server/screens/today.js';
+import { formatDate, formatTime, todayFor } from '#lib/server/screens/today.js';
 import { ZONE_COOKIE, zoneFor } from '#lib/server/screens/zone.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -26,47 +21,14 @@ export const load: PageServerLoad = ({ locals, cookies }) => {
 	const user = requireUser(locals);
 	const now = Date.now();
 	const core = openCore(getDb(), user.id, 'ui', () => now);
-	const { zone, source } = zoneFor(core, { cookie: cookies.get(ZONE_COOKIE) }, now);
-	const range = todayRange(now, zone);
-
-	const entries = rows(core.entries.list({ from: range.from, to: range.to })).map(
-		(e: EntryItem) => ({
-			id: e.id,
-			projectName: e.projectName,
-			customerName: e.customerName,
-			description: e.description,
-			in: formatTime(e.startAt, e.startZone),
-			startDate: earlierDate(e.startAt, e.startZone, now),
-			out: e.endAt === null ? null : formatTime(e.endAt, e.endZone ?? e.startZone),
-			hours: formatHours((e.endAt ?? now) - e.startAt)
-		})
-	);
-
-	const templates = rows(core.templates.list()).map((t) => ({
-		id: t.id,
-		name: t.name,
-		customerId: t.customerId,
-		customerName: t.customerName,
-		projectId: t.projectId,
-		projectName: t.projectName,
-		activityName: t.activityName,
-		locationName: t.locationName,
-		startTime: t.startTime,
-		endTime: t.endTime,
-		durationMinutes: t.durationMinutes,
-		timeZone: t.timeZone,
-		reference: t.reference,
-		description: t.description,
-		runs: t.endTime === null && t.durationMinutes === null
-	}));
-
+	const { zone } = zoneFor(core, { cookie: cookies.get(ZONE_COOKIE) }, now);
+	const { projects, activities, locations } = formPickers(core);
 	return {
-		zone,
-		zoneSource: source,
-		today: range.date,
-		entries,
-		templates,
-		projects: groupProjects(rows(core.projects.list())),
+		now,
+		...todayFor(core, zone, now),
+		projects,
+		activities,
+		locations,
 		flash: takeFlash(cookies)
 	};
 };
@@ -83,54 +45,76 @@ function open(locals: App.Locals, cookies: Cookies, form: FormData, now: number)
 	return { core, zone };
 }
 
+/** The sheet's fields, as posted: a refusal shows them again. */
+const POSTED = [
+	'projectId',
+	'activityId',
+	'locationId',
+	'reference',
+	'description',
+	'date',
+	'start',
+	'end',
+	'duration'
+];
+const TIMES = ['date', 'start', 'end', 'duration'];
+
 const refuse = (failure: ActionFailure) => fail(400, failure);
 
 export const actions: Actions = {
+	/** An entry from a template's sheet; back to the screen it was opened over (`back`). */
 	fromTemplate: async ({ request, locals, cookies }) => {
 		const form = await request.formData();
 		const now = Date.now();
 		const { core, zone } = open(locals, cookies, form, now);
 		const templateId = text(form, 'templateId');
-		const values = Object.fromEntries(
-			['description', 'reference', 'projectId', 'date', 'start', 'end', 'durationMinutes'].map(
-				(k) => [k, text(form, k)]
-			)
-		);
+		const values = Object.fromEntries(POSTED.map((k) => [k, text(form, k)]));
+		const refused = (error: { error: string; fields: Record<string, string> }) =>
+			refuse({ action: 'fromTemplate', subject: templateId, values, ...error });
+
 		const template = core.templates.get({ id: templateId });
-		if (!template.ok) {
-			return refuse({
-				action: 'fromTemplate',
-				subject: templateId,
-				values,
-				...formFailure(template.error, [])
-			});
-		}
+		if (!template.ok) return refused(formFailure(template.error, []));
 		const t = template.value;
 		const readIn = t.timeZone ?? zone;
+		const today = formatDate(now, readIn);
+
+		const unread = sheetTimeRefusals(form, today);
+		if (Object.keys(unread).length > 0) {
+			return refused({ error: 'Some times do not read.', fields: unread });
+		}
+
 		const input = fromTemplateInput(form, {
 			zone,
-			today: formatDate(now, readIn),
+			today,
 			nowTime: formatTime(now, readIn),
 			template: { timeZone: t.timeZone, startTime: t.startTime, endTime: t.endTime }
 		});
 		const r = core.entries.fromTemplate(input);
 		if (!r.ok) {
-			// Times the template supplied are not on screen; only typed ones are.
-			const typed = Object.keys(input).filter((k) => k !== 'templateId' && k !== 'timeZone');
-			// As the sheet renders them: a picker only without a project, a reference only without one.
+			// The core names the duration by its input; the sheet's field is `duration`.
+			const error = r.error.fields?.durationMinutes
+				? {
+						...r.error,
+						fields: Object.fromEntries(
+							Object.entries(r.error.fields).map(([k, v]) => [
+								k === 'durationMinutes' ? 'duration' : k,
+								v
+							])
+						)
+					}
+				: r.error;
+			// As the sheet renders them: a field only where the template leaves it blank, and
+			// only the times typed (the ones the template supplied are not on screen).
 			const shown = [
 				'description',
 				...(t.projectId === null ? ['projectId'] : []),
+				...(t.activityId === null ? ['activityId'] : []),
+				...(t.locationId === null ? ['locationId'] : []),
 				...(t.reference === null ? ['reference'] : []),
-				...typed.filter((k) => !['description', 'projectId', 'reference'].includes(k))
+				...TIMES.filter((k) => text(form, k).trim() !== '')
 			];
-			return refuse({
-				action: 'fromTemplate',
-				subject: templateId,
-				values,
-				...formFailure(r.error, shown)
-			});
+			return refused(formFailure(error, shown));
 		}
-		done(core, cookies, r);
+		done(core, cookies, r, safeBack(text(form, 'back')));
 	}
 };

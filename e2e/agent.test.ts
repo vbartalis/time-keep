@@ -6,6 +6,7 @@ import {
 	type Page
 } from '@playwright/test';
 import { PASSWORD, noonZone, seedEmptyUser } from './seed';
+import { setupRow } from './setup';
 
 const zone = noonZone();
 test.use({ timezoneId: zone });
@@ -85,8 +86,7 @@ const callMcp = (request: APIRequestContext, token?: string) =>
 	});
 
 /** A Setup row's line, found by its name. */
-const setupLine = (page: Page, name: string) =>
-	page.locator('details', { has: page.locator('summary', { hasText: name }) });
+const setupLine = setupRow;
 
 /** A History batch's row, found by its label exactly. */
 const batch = (page: Page, label: string) =>

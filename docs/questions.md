@@ -20,6 +20,96 @@ The operator answers whenever they like, here (under the entry) or in conversati
 An answer is added to [the operator's voice](operator-voice.md) in their words, and if
 it changes built work, it becomes a roadmap item.
 
+## 2026-10-20 — 15a
+
+- Question: In Setup's "Archived" filter, how does an active customer with archived
+  projects show: as a normal heading over its archived projects, or not as a row of
+  its own, with its name over those projects in muted text?
+- Call made: Not as a row of its own. Its archived projects are listed under the
+  customer's name in muted text, with no ⋯ menu on it. The Archived view then holds
+  only archived things, the way Kimai's "Visible" filter lists only matching rows, and
+  it offers no actions on an active customer. Nothing on record covers it.
+- If answered differently: the Archived view shows the active customer as a normal,
+  unmuted heading with its own ⋯ menu (Rename, Add project, Archive) above its
+  archived projects, as the All view does.
+
+## 2026-10-20 — 15a
+
+- Question: How is Setup laid out: one screen with the three lists (customers ›
+  projects, activities, locations), a screen per kind as Kimai has, or one screen with
+  a tab per kind?
+- Call made: One Setup screen with the three lists, as now, each list redrawn in
+  Kimai's list style (colour dot, ⋯ row menu, Create). It is the smaller change, the
+  roadmap names Setup as one screen, and nothing on record says you want the kinds
+  split. The sidebar and More keep one Setup item.
+- If answered differently: Setup becomes separate screens (or tabs) for customers and
+  projects, activities and locations, each with its own URL; the sidebar or More gains
+  an item per kind, and the docs and tests follow.
+
+## 2026-10-20 — 15a
+
+- Question: In what order are templates offered in the timer bar's Start list, on
+  Today and in the form's "Fill from": by name, in an order you set, or most used
+  first?
+- Call made: By name, as now. It is the smaller change; an order you set is a stored
+  field (a migration, the core, history, the MCP schemas), and "most used" is a
+  recents list in another form, which your discovery words replace with templates.
+- If answered differently: templates gain a position you set on the Templates screen
+  (drag or move up and down), or are sorted by how often they were used; every list
+  of templates follows that order.
+
+## 2026-10-20 — 15a
+
+- Question: On the PC, is Today a screen you use, and what should the PC open on:
+  Today, the calendar's week, or Entries?
+- Call made: Today stays on the PC as on the phone, in one column, and the PC still
+  opens on it. It is the smaller change. Your words put quick capture on the phone and
+  dense work on the PC, but nothing says where the PC should land.
+- If answered differently: the PC opens on the calendar's week or on Entries, and
+  Today is laid out for the phone only (or gets a two-column PC layout).
+
+## 2026-10-20 — 15
+
+- Question: "Templates as part of favourites" (item 15): should they stay one thing
+  called Templates, become one thing called Favourites, or stay templates with some
+  marked as favourites and shown first?
+- Call made: One thing, still called Templates. The vision and your discovery words
+  call them templates and have them replace recents; the reference study reads
+  templates and favourites as one thing (Recents, favourites and templates, 1).
+  Renaming them, or adding a favourite mark, is not on record, and keeping the name is
+  the smaller change.
+- If answered differently: the screen, the timer bar's Start list, the entry form's
+  "Fill from" and the docs are renamed to Favourites; or templates gain a favourite
+  flag (a migration, the core, history, the MCP schemas) and the favourites are listed
+  first in the Start list and Fill from.
+
+## 2026-10-20 — 15
+
+- Question: Where should templates be made and changed: on their own screen, inside
+  Setup, only from an entry ("Save as template"), or a mix?
+- Call made: A mix, keeping what exists: "Save as template" from an entry (vision,
+  Templates), and the Templates screen (`/templates`) to make, change and delete them,
+  redone in the new look and reached from More on the phone and the sidebar on the PC.
+  Nothing on record says templates belong inside Setup; keeping their own screen is
+  the smaller change.
+- If answered differently: Templates becomes a section of Setup (the sidebar and More
+  lose their own item), or the screen goes and templates are only made from entries
+  and changed through the entry form.
+
+## 2026-10-20 — 15
+
+- Question: What do you do in Setup (customers › projects, activities, locations), on
+  which device, and how often?
+- Call made: Only the split on record is used: Setup is organising, the PC's tedious
+  work (2026-10-18 discovery), so it is laid out for the PC first and kept fully
+  usable on the phone (item 15's exit). The work is adding a customer or project when
+  new work starts, renaming, and archiving finished ones (vision, Customers and
+  projects). No frequency is assumed; it is not made a daily path, and the phone's
+  bottom bar does not hold it.
+- If answered differently: if you add projects often, or on the phone in the middle of
+  logging, Setup moves up the phone's navigation and the entry form's project picker
+  may gain "new customer › project" in place.
+
 ## 2026-10-20 — 14
 
 - Question: Should the table's bulk edit also move the selected entries' times

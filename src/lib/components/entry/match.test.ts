@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { matchProjects } from './match';
+import { matchChoices, matchProjects } from './match';
 import type { PickerProject } from './types';
 
 const project = (
@@ -43,5 +43,35 @@ describe('matchProjects', () => {
 
 	it('returns no groups when nothing matches', () => {
 		expect(matchProjects('nothing here', projects)).toEqual([]);
+	});
+});
+
+describe('matchChoices (a customer alone may be chosen)', () => {
+	const customers = [
+		{ id: 'c1', name: 'CompX', archived: false },
+		{ id: 'c2', name: 'Myself', archived: false },
+		{ id: 'c3', name: 'Café Lumière', archived: false },
+		{ id: 'c4', name: 'Initech', archived: true }
+	];
+	const shape = (groups: ReturnType<typeof matchChoices>) =>
+		groups.map((g) => [g.customerName, g.customer?.id ?? null, g.projects.map((p) => p.name)]);
+
+	it('offers every customer, one without projects too, in name order', () => {
+		expect(shape(matchChoices('', projects, customers))).toEqual([
+			['Café Lumière', 'c3', ['Website']],
+			['CompX', 'c1', ['ClientY - ProjectZ', 'CompY - Support']],
+			['Initech', 'c4', []],
+			['Myself', 'c2', ['time-keep']]
+		]);
+	});
+
+	it('offers a customer as a choice only when its own name matches', () => {
+		expect(shape(matchChoices('support', projects, customers))).toEqual([
+			['CompX', null, ['CompY - Support']]
+		]);
+		expect(shape(matchChoices('initech', projects, customers))).toEqual([['Initech', 'c4', []]]);
+		expect(shape(matchChoices('cafe', projects, customers))).toEqual([
+			['Café Lumière', 'c3', ['Website']]
+		]);
 	});
 });

@@ -27,6 +27,10 @@ export type EntryFormValues = {
 	description: string;
 	/** An existing entry that has no end. */
 	running: boolean;
+	/** A template's name; `''` for an entry. */
+	name: string;
+	/** A template's customer (alone, or with its project); `''` for an entry. */
+	customerId: string;
 };
 
 export type PickerProject = {
@@ -78,9 +82,13 @@ export type EntryFormFailure = {
 };
 
 export type EntryFormData = {
+	/** What the form edits: an entry, or a template (times of day, no date). */
+	kind: 'entry' | 'template';
 	mode: 'new' | 'edit';
 	values: EntryFormValues;
 	projects: PickerProject[];
+	/** A template form's customers (a customer alone may be picked); absent for an entry. */
+	customers?: PickerOption[];
 	activities: PickerOption[];
 	locations: PickerOption[];
 	templates: FillTemplate[];

@@ -1,72 +1,129 @@
 import { describe, expect, it } from 'vitest';
-import type { Named, ProjectListItem } from '../core/index';
-import { setupTree } from './setup';
+import { openCore, type Result } from '../core/index';
+import { user } from '../db/schema';
+import { newId } from '../id';
+import { createTestDb } from '../testing/db';
+import { readShow, setupTree } from './setup';
 
-const named = (id: string, name: string, archivedAt: number | null = null, version = 1): Named => ({
-	id,
-	userId: 'u',
-	name,
-	nameKey: name.toLowerCase(),
-	archivedAt,
-	version,
-	createdAt: 0,
-	updatedAt: 0
-});
-const project = (
-	id: string,
-	customer: Named,
-	name: string,
-	archivedAt: number | null = null
-): ProjectListItem => ({
-	...named(id, name, archivedAt),
-	customerId: customer.id,
-	customerName: customer.name
-});
+const val = <T>(r: Result<T>): T => {
+	if (!r.ok) throw new Error(r.error.message);
+	return r.value;
+};
 
-const acme = named('c1', 'Acme', null, 3);
-const old = named('c2', 'Old', 9);
-const projects = [
-	project('p1', acme, 'Site'),
-	project('p2', acme, 'Legacy', 9),
-	project('p3', old, 'Gone')
-];
+function seeded() {
+	const db = createTestDb();
+	const id = newId();
+	db.insert(user)
+		.values({ id, username: 'u', passwordHash: 'x', createdAt: 1, updatedAt: 1 })
+		.run();
+	const core = openCore(db, id, 'ui');
+	const compX = val(core.customers.create({ name: 'CompX' }));
+	const compY = val(core.customers.create({ name: 'CompY' }));
+	const site = val(core.projects.create({ customerId: compX.id, name: 'Site' }));
+	const legacy = val(core.projects.create({ customerId: compX.id, name: 'Legacy' }));
+	const gone = val(core.projects.create({ customerId: compY.id, name: 'Gone' }));
+	const build = val(core.activities.create({ name: 'Build' }));
+	const review = val(core.activities.create({ name: 'Review' }));
+	const home = val(core.locations.create({ name: 'Home' }));
+	const cafe = val(core.locations.create({ name: 'Cafe' }));
+	val(core.projects.archive({ id: legacy.id }));
+	val(core.projects.archive({ id: gone.id }));
+	val(core.customers.archive({ id: compY.id }));
+	val(core.activities.archive({ id: review.id }));
+	val(core.locations.archive({ id: cafe.id }));
+	return { core, compX, compY, site, legacy, gone, build, review, home, cafe };
+}
+
+describe('readShow', () => {
+	const read = (q: string) => readShow(new URLSearchParams(q));
+	it('reads show, with active as the default', () => {
+		expect(read('')).toBe('active');
+		expect(read('show=archived')).toBe('archived');
+		expect(read('show=all')).toBe('all');
+		expect(read('show=nonsense')).toBe('active');
+	});
+	it("reads round 1's archived=1 as all", () => {
+		expect(read('archived=1')).toBe('all');
+	});
+});
 
 describe('setupTree', () => {
-	it('hides archived customers and archived projects by default', () => {
-		expect(setupTree([acme, old], projects, false)).toEqual([
-			{
-				id: 'c1',
-				name: 'Acme',
-				version: 3,
-				archived: false,
-				projects: [{ id: 'p1', name: 'Site', version: 1, archived: false, spent: false }]
-			}
+	const s = seeded();
+
+	it('active shows only active rows', () => {
+		const tree = setupTree(s.core, 'active');
+		expect(tree.customers.map((c) => c.name)).toEqual(['CompX']);
+		expect(tree.customers[0].projects.map((p) => p.name)).toEqual(['Site']);
+		expect(tree.customers[0].heading).toBe(false);
+		expect(tree.activities.map((a) => a.name)).toEqual(['Build']);
+		expect(tree.locations.map((l) => l.name)).toEqual(['Home']);
+	});
+
+	it('gives rows their kind, version and a project its colour', () => {
+		const tree = setupTree(s.core, 'active');
+		expect(tree.customers[0]).toMatchObject({ kind: 'customer', archived: false });
+		expect(tree.customers[0].projects[0]).toMatchObject({
+			kind: 'project',
+			colour: 1,
+			underArchived: false
+		});
+		expect(tree.activities[0]).toMatchObject({ kind: 'activity', version: 1 });
+		expect(tree.locations[0].kind).toBe('location');
+	});
+
+	it('archived shows archived activities and locations', () => {
+		const tree = setupTree(s.core, 'archived');
+		expect(tree.activities.map((a) => a.name)).toEqual(['Review']);
+		expect(tree.locations.map((l) => l.name)).toEqual(['Cafe']);
+	});
+
+	it('archived names an active customer as a heading over its archived projects', () => {
+		const compX = setupTree(s.core, 'archived').customers.find((c) => c.name === 'CompX')!;
+		expect(compX.heading).toBe(true);
+		expect(compX.archived).toBe(false);
+		expect(compX.projects.map((p) => [p.name, p.archived, p.underArchived])).toEqual([
+			['Legacy', true, false]
 		]);
 	});
-	it('shows archived rows, and every project of an archived customer, when asked', () => {
-		const tree = setupTree([acme, old], projects, true);
-		expect(tree.map((c) => [c.id, c.archived])).toEqual([
-			['c1', false],
-			['c2', true]
+
+	it('archived lists an archived customer with all its projects under it', () => {
+		const compY = setupTree(s.core, 'archived').customers.find((c) => c.name === 'CompY')!;
+		expect(compY.heading).toBe(false);
+		expect(compY.archived).toBe(true);
+		expect(compY.projects.map((p) => [p.name, p.archived, p.underArchived])).toEqual([
+			['Gone', true, true]
 		]);
-		expect(tree[0].projects.map((p) => [p.id, p.archived])).toEqual([
-			['p1', false],
-			['p2', true]
+	});
+
+	it('marks an active project under an archived customer archived, not archived itself', () => {
+		// The core refuses to unarchive such a project, so archive the customer around a live one.
+		const live = seeded();
+		const other = val(live.core.customers.create({ name: 'Other' }));
+		val(live.core.projects.create({ customerId: other.id, name: 'Live' }));
+		val(live.core.customers.archive({ id: other.id }));
+		const tree = setupTree(live.core, 'all');
+		const project = tree.customers.find((c) => c.name === 'Other')!.projects[0];
+		expect(project).toMatchObject({ archived: true, underArchived: true });
+		expect(setupTree(live.core, 'active').customers.map((c) => c.name)).not.toContain('Other');
+	});
+
+	it('all shows both, the archived marked', () => {
+		const tree = setupTree(s.core, 'all');
+		expect(tree.customers.map((c) => [c.name, c.archived, c.heading])).toEqual([
+			['CompX', false, false],
+			['CompY', true, false]
 		]);
-		expect(tree[1].projects.map((p) => p.id)).toEqual(['p3']);
-	});
-	it('lists an archived customer all its projects even when they are active', () => {
-		const tree = setupTree([old], [project('p4', old, 'Live')], true);
-		expect(tree[0].projects.map((p) => p.id)).toEqual(['p4']);
-	});
-	it('marks an active project under an archived customer spent, keeping its own archived state', () => {
-		const p = setupTree([old], [project('p4', old, 'Live')], true)[0].projects[0];
-		expect(p.archived).toBe(false);
-		expect(p.spent).toBe(true);
-	});
-	it('gives an active customer whose projects are all archived none', () => {
-		const only = [project('p2', acme, 'Legacy', 9)];
-		expect(setupTree([acme], only, false)[0].projects).toEqual([]);
-		expect(setupTree([acme], only, true)[0].projects).toHaveLength(1);
+		expect(tree.customers[0].projects.map((p) => [p.name, p.archived])).toEqual([
+			['Legacy', true],
+			['Site', false]
+		]);
+		expect(tree.activities.map((a) => [a.name, a.archived])).toEqual([
+			['Build', false],
+			['Review', true]
+		]);
+		expect(tree.locations.map((l) => [l.name, l.archived])).toEqual([
+			['Cafe', true],
+			['Home', false]
+		]);
 	});
 });

@@ -381,10 +381,7 @@ test('an overlap warning on Today keeps the phone at its width', async ({ page }
 		await saveButton(page).click();
 		await expect(dialog(page)).toBeHidden();
 
-		const row = page
-			.getByRole('region', { name: 'Today’s entries', exact: true })
-			.getByRole('link')
-			.filter({ hasText: `Overlap ${colorScheme}` });
+		const row = page.locator('[data-row]:visible').filter({ hasText: `Overlap ${colorScheme}` });
 		await expect(row).toContainText('Overlaps another entry');
 		expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
 			390

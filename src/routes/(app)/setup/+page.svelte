@@ -1,95 +1,211 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
-	import AddLine from '#lib/components/setup/AddLine.svelte';
-	import AddProject from '#lib/components/setup/AddProject.svelte';
-	import SetupRow from '#lib/components/setup/SetupRow.svelte';
-	import SectionHead from '#lib/components/today/SectionHead.svelte';
+	import Plus from '@lucide/svelte/icons/plus';
+	import { onMount, tick } from 'svelte';
+	import { MediaQuery } from 'svelte/reactivity';
+	import { goto } from '$app/navigation';
+	import CreateDialog from '#lib/components/setup/CreateDialog.svelte';
+	import SetupList from '#lib/components/setup/SetupList.svelte';
+	import SetupMenu from '#lib/components/setup/SetupMenu.svelte';
+	import ShowFilter from '#lib/components/setup/ShowFilter.svelte';
+	import { menuButtonOf, setupHref } from '#lib/components/setup/act.js';
+	import Sheet from '#lib/components/timesheet/Sheet.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
 	import UndoStrip from '#lib/components/UndoStrip.svelte';
-	import type { SetupFailure } from '#lib/server/screens/setup.js';
+	import type { SetupFailure, SetupKind, SetupRow } from '#lib/server/screens/setup.js';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
 
-	const failure = $derived(form && 'kind' in form ? (form as SetupFailure) : null);
-	const base = $derived(resolve('/(app)/setup'));
-	// Posted as the return path, so a literal: `resolve()` gives a relative path while rendering.
-	const back = $derived(data.showArchived ? '/setup?archived=1' : '/setup');
-	const here = $derived(data.showArchived ? `${base}?archived=1` : base);
-	const query = $derived(data.showArchived ? '&archived=1' : '');
-	const toggle = $derived(data.showArchived ? base : `${base}?archived=1`);
+	let enhanced = $state(false);
+	onMount(() => (enhanced = true));
+	/** Below `lg` with the script, a row's ⋯ opens the row sheet; else its popover. */
+	const wide = new MediaQuery('(min-width: 1024px)', true);
+	const sheetMenus = $derived(enhanced && !wide.current);
 
-	const link =
-		'rounded-sm text-sm font-medium text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:inline-flex max-lg:min-h-11 max-lg:min-w-11 max-lg:items-center';
-	const list = 'flex flex-col';
-	const ruled = 'border-b border-border';
+	/** The action's refusal, until the rename or dialog it belongs to is left. */
+	let failure = $derived(form && 'kind' in form ? (form as SetupFailure) : null);
+	/** The filter: the address's, or (a refusal without the script) the one posted under. */
+	const show = $derived(failure?.show ?? data.show);
+
+	/** The one row in rename: `?rename=<id>`, a refused rename, or one picked from a menu. */
+	let renaming = $derived(
+		failure?.action === 'rename' && failure.id ? failure.id : (data.rename ?? null)
+	);
+	/** The create dialog: `?new=<kind>`, a refused create, or one opened from a button or menu. */
+	let creating = $derived<{ kind: SetupKind; customerId: string | null } | null>(
+		failure?.action === 'create'
+			? { kind: failure.kind, customerId: failure.customerId ?? null }
+			: data.creating
+	);
+
+	/** Leaves `?rename=` or `?new=` in place of the history entry, the screen as it is. */
+	async function clearAddress() {
+		if (!data.rename && !data.creating) return;
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- setupHref resolves it
+		await goto(setupHref(data.show), { replace: true, reset: false });
+	}
+
+	/** After the menu (or the row sheet) has closed onto ⋯, the row turns into its field. */
+	async function startRename(id: string) {
+		await tick();
+		failure = null;
+		renaming = id;
+	}
+
+	async function cancelRename(id: string) {
+		failure = null;
+		renaming = null;
+		await tick();
+		menuButtonOf(id)?.focus();
+		await clearAddress();
+	}
+
+	async function openCreate(kind: SetupKind, customerId: string | null = null) {
+		await tick();
+		failure = null;
+		creating = { kind, customerId };
+	}
+
+	function closeCreate() {
+		failure = null;
+		creating = null;
+		void clearAddress();
+	}
+
+	/** The phone's row sheet: the row whose ⋯ was tapped, kept while it closes. */
+	let menu = $state<{ row: SetupRow; kindLine: string } | null>(null);
+	let menuOpen = $state(false);
+	const MENU_TITLE = 'setup-row-sheet-title';
+
+	// `back` is posted as the return path, so a literal: `resolve()` may be relative while rendering.
+	/** A refused action shows its own message; the strip would be an older success. */
+	const strip = $derived(failure ? null : data.flash);
+
+	const sections = $derived([
+		{
+			kind: 'customer' as const,
+			id: 'customers',
+			title: 'Customers and projects',
+			add: 'New customer',
+			rows: data.customers,
+			empty: show === 'archived' ? 'No archived customers.' : 'No customers yet.'
+		},
+		{
+			kind: 'activity' as const,
+			id: 'activities',
+			title: 'Activities',
+			add: 'New activity',
+			rows: data.activities,
+			empty: show === 'archived' ? 'No archived activities.' : 'No activities yet.'
+		},
+		{
+			kind: 'location' as const,
+			id: 'locations',
+			title: 'Locations',
+			add: 'New location',
+			rows: data.locations,
+			empty: show === 'archived' ? 'No archived locations.' : 'No locations yet.'
+		}
+	]);
 </script>
 
 <svelte:head><title>Setup · Time Keep</title></svelte:head>
 
-<div class="flex flex-wrap items-end justify-end gap-x-4 gap-y-1">
-	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-	<a href={toggle} class={link}>{data.showArchived ? 'Hide archived' : 'Show archived'}</a>
-</div>
+<div class="flex flex-col gap-6">
+	<ShowFilter {show} />
 
-<!-- A refused action replaces the strip: the screen shows the failure, not an older success. -->
-<UndoStrip flash={failure ? null : data.flash} {back} />
+	<UndoStrip flash={strip} back={show === 'active' ? '/setup' : `/setup?show=${show}`} />
 
-<div class="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] xl:items-start xl:gap-x-10">
-	<section aria-labelledby="customers-heading">
-		<SectionHead id="customers-heading" title="Customers and projects" />
-		{#if data.customers.length === 0}
-			<p class="{ruled} px-1 py-3 text-sm text-muted-foreground">No customers yet.</p>
-		{:else}
-			<ul class={list}>
-				{#each data.customers as customer (customer.id)}
-					<li class="border-t border-foreground first:border-t-0">
-						<SetupRow kind="customer" row={customer} {failure} {back} {here} {query}>
-							{#snippet extra()}
-								{#if !customer.archived}
-									<AddProject
-										customerId={customer.id}
-										customerName={customer.name}
-										{failure}
-										{back}
-										{here}
-										{query}
-									/>
-								{/if}
-							{/snippet}
-						</SetupRow>
-						<ul class="{list} ml-4 border-l border-border pl-3 sm:ml-6">
-							{#each customer.projects as project (project.id)}
-								<li class="border-t border-border first:border-t-0">
-									<SetupRow kind="project" row={project} {failure} {back} {here} {query} />
-								</li>
+	<div class="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-x-6">
+		{#each [sections.slice(0, 1), sections.slice(1)] as column, i (i)}
+			<div class="flex flex-col gap-8">
+				{#each column as section (section.kind)}
+					<section aria-labelledby="{section.id}-heading" class="flex flex-col gap-3">
+						<!-- The head's rule under both on the PC; on the phone the button under it, at the left. -->
+						<div
+							class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:border-b lg:border-foreground lg:pb-1.5"
+						>
+							<h2
+								id="{section.id}-heading"
+								class="caps max-lg:border-b max-lg:border-foreground max-lg:pb-1.5"
+							>
+								{section.title}
+							</h2>
+							{#if enhanced}
+								<Button
+									variant="outline"
+									aria-haspopup="dialog"
+									class="self-start"
+									onclick={() => openCreate(section.kind)}
+								>
+									<Plus class="size-4" aria-hidden="true" />{section.add}
+								</Button>
 							{:else}
-								<li class="py-2 text-sm text-muted-foreground">No active projects.</li>
-							{/each}
-						</ul>
-					</li>
+								<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- setupHref resolves it -->
+								<Button
+									href={setupHref(show, { new: section.kind })}
+									variant="outline"
+									class="self-start"
+								>
+									<Plus class="size-4" aria-hidden="true" />{section.add}
+								</Button>
+							{/if}
+						</div>
+						{#if !enhanced && creating && (creating.kind === section.kind || (creating.kind === 'project' && section.kind === 'customer'))}
+							<CreateDialog
+								inline
+								{creating}
+								customers={data.customerOptions}
+								failure={failure?.action === 'create' ? failure : null}
+								{show}
+								onclose={closeCreate}
+								ondone={() => (creating = null)}
+							/>
+						{/if}
+						<SetupList
+							rows={section.rows}
+							empty={section.empty}
+							{show}
+							{failure}
+							{renaming}
+							{sheetMenus}
+							onrename={startRename}
+							oncancelrename={cancelRename}
+							ondonerename={() => (renaming = null)}
+							onaddproject={(id) => openCreate('project', id)}
+							onmenu={(row, kindLine) => {
+								menu = { row, kindLine };
+								menuOpen = true;
+							}}
+						/>
+					</section>
 				{/each}
-			</ul>
-		{/if}
-		<AddLine kind="customer" label="New customer" {failure} {back} {query} />
-	</section>
-
-	<div class="flex flex-col gap-6">
-		{#each [{ kind: 'activity', id: 'activities', title: 'Activities', empty: 'No activities yet.', label: 'New activity', rows: data.activities }, { kind: 'location', id: 'locations', title: 'Locations', empty: 'No locations yet.', label: 'New location', rows: data.locations }] as const as region (region.kind)}
-			<section aria-labelledby="{region.id}-heading">
-				<SectionHead id="{region.id}-heading" title={region.title} />
-				{#if region.rows.length === 0}
-					<p class="{ruled} px-1 py-3 text-sm text-muted-foreground">{region.empty}</p>
-				{:else}
-					<ul class={list}>
-						{#each region.rows as row (row.id)}
-							<li class="border-t border-border first:border-t-0">
-								<SetupRow kind={region.kind} {row} {failure} {back} {here} {query} />
-							</li>
-						{/each}
-					</ul>
-				{/if}
-				<AddLine kind={region.kind} label={region.label} {failure} {back} {query} />
-			</section>
+			</div>
 		{/each}
 	</div>
 </div>
+
+{#if enhanced}
+	<CreateDialog
+		{creating}
+		customers={data.customerOptions}
+		failure={failure?.action === 'create' ? failure : null}
+		{show}
+		onclose={closeCreate}
+		ondone={() => (creating = null)}
+	/>
+{/if}
+
+<Sheet open={menuOpen} labelledby={MENU_TITLE} onclose={() => (menuOpen = false)}>
+	{#if menu}
+		{@const chosen = menu}
+		<SetupMenu
+			row={chosen.row}
+			kindLine={chosen.kindLine}
+			{show}
+			onrename={() => startRename(chosen.row.id)}
+			onaddproject={() => openCreate('project', chosen.row.id)}
+			sheet={{ titleId: MENU_TITLE, onpick: () => (menuOpen = false) }}
+		/>
+	{/if}
+</Sheet>

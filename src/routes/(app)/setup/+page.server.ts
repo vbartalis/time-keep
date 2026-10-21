@@ -5,45 +5,41 @@ import { requireUser } from '#lib/server/guards.js';
 import { done, formFailure, rows, text } from '#lib/server/screens/actions.js';
 import { takeFlash } from '#lib/server/screens/flash.js';
 import {
+	readShow,
 	setupTree,
 	type SetupAction,
 	type SetupFailure,
 	type SetupKind,
-	type SetupRow
+	type Show
 } from '#lib/server/screens/setup.js';
 import type { Actions, PageServerLoad } from './$types';
 
 const KINDS: readonly string[] = ['customer', 'project', 'activity', 'location'];
 
-const row = (r: {
-	id: string;
-	name: string;
-	version: number;
-	archivedAt: number | null;
-}): SetupRow => ({
-	id: r.id,
-	name: r.name,
-	version: r.version,
-	archived: r.archivedAt !== null
-});
-
 export const load: PageServerLoad = ({ locals, url, cookies }) => {
 	const core = openCore(getDb(), requireUser(locals).id, 'ui');
-	const showArchived = url.searchParams.get('archived') === '1';
-	const all = { includeArchived: true };
-	const list = { includeArchived: showArchived };
+	const show = readShow(url.searchParams);
+	const tree = setupTree(core, show);
+	const rename = url.searchParams.get('rename');
+	const kind = url.searchParams.get('new');
+	const customer = url.searchParams.get('customer');
 	return {
-		showArchived,
-		customers: setupTree(
-			rows(core.customers.list(all)),
-			rows(core.projects.list(all)),
-			showArchived
-		),
-		activities: rows(core.activities.list(list)).map(row),
-		locations: rows(core.locations.list(list)).map(row),
+		show,
+		...tree,
+		/** The active customers, for a new project's Customer select. */
+		customerOptions: rows(core.customers.list()).map((c) => ({ id: c.id, name: c.name })),
+		/** The row whose rename form `?rename=<id>` asks for. */
+		rename: rename || null,
+		/** The create dialog `?new=<kind>[&customer=<id>]` asks for. */
+		creating: KINDS.includes(kind ?? '')
+			? { kind: kind as SetupKind, customerId: kind === 'project' ? customer || null : null }
+			: null,
 		flash: takeFlash(cookies)
 	};
 };
+
+/** `/setup` under the filter it was posted from. */
+const backTo = (show: Show) => (show === 'active' ? '/setup' : `/setup?show=${show}`);
 
 const invalid = () => fail(400, { error: 'invalid' });
 
@@ -86,12 +82,15 @@ async function handle(
 	const kind = text(form, 'kind');
 	if (!KINDS.includes(kind)) return invalid();
 	const core = openCore(getDb(), requireUser(locals).id, 'ui');
+	// The filter the form was posted under.
+	const show = readShow(new URLSearchParams({ show: text(form, 'show') }));
 	const posted = /^\d+$/.test(text(form, 'expectedVersion'))
 		? Number(text(form, 'expectedVersion'))
 		: undefined;
 	const { result, id, customerId } = run(core, action, kind as SetupKind, form);
 	if (result.ok) {
-		const back = text(form, 'back') === '/setup?archived=1' ? '/setup?archived=1' : '/setup';
+		// A create made in Archived is active: land on All, where the new row shows.
+		const back = backTo(action === 'create' && show === 'archived' ? 'all' : show);
 		// Nothing changed (a rename to the same name): no batch was stored, so there is
 		// nothing to show or undo.
 		const value = result.value as { version?: number };
@@ -108,6 +107,7 @@ async function handle(
 		...(id ? { id } : {}),
 		...(customerId ? { customerId } : {}),
 		...shown,
+		show,
 		conflict: code === 'conflict' && !shown.fields.name,
 		values: { name: text(form, 'name') }
 	};

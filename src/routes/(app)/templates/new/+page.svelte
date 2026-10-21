@@ -1,26 +1,17 @@
 <script lang="ts">
-	import TemplateForm from '#lib/components/templates/TemplateForm.svelte';
-	import SectionHead from '#lib/components/today/SectionHead.svelte';
-	import type { EditFailure } from '#lib/components/today/types.js';
+	import { resolve } from '$app/paths';
+	import EntryForm from '#lib/components/entry/EntryForm.svelte';
+	import type { EntryFormFailure } from '#lib/components/entry/types.js';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
-
-	const failure = $derived(form && 'error' in form ? (form as EditFailure) : null);
 </script>
 
 <svelte:head><title>New template · Time Keep</title></svelte:head>
 
-{#if failure && Object.keys(failure.fields).length === 0}
-	<div
-		role="alert"
-		class="rounded-md border border-destructive/60 bg-card py-2 pr-2 pl-3.5 text-sm text-destructive"
-	>
-		<p class="text-pretty">{failure.error}</p>
-	</div>
-{/if}
-
-<section aria-labelledby="template-heading">
-	<SectionHead id="template-heading" title="Template" />
-	<TemplateForm choices={data.choices} initial={{}} {failure} />
-</section>
+<div class="w-full max-w-[41rem]">
+	<EntryForm
+		data={{ ...data, failure: (form as EntryFormFailure | null) ?? null }}
+		action={resolve('/(app)/templates/new')}
+	/>
+</div>

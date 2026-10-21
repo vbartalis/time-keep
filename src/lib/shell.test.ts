@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { barItems, currentItem, moreItems, ownsStrip, screenTitle, sidebarItems } from './shell';
+import {
+	barItems,
+	currentItem,
+	inMore,
+	moreItems,
+	ownsStrip,
+	screenTitle,
+	sidebarItems
+} from './shell';
 
 const labels = (items: { label: string }[]) => items.map((i) => i.label);
 
@@ -21,24 +29,23 @@ describe('navigation lists', () => {
 	});
 
 	it('lists the phone bar and More', () => {
-		expect(labels(barItems())).toEqual(['Today', 'Calendar', 'Entries', 'Templates']);
+		expect(labels(barItems())).toEqual(['Today', 'Calendar', 'Entries']);
 		expect(barItems()[1].href).toBe('/calendar?view=day');
-		expect(labels(moreItems(false))).toEqual([
-			'Setup',
-			'Copy-out',
-			'Reports',
-			'History',
-			'Account'
-		]);
-		expect(labels(moreItems(true))).toEqual([
-			'Setup',
-			'Copy-out',
-			'Reports',
-			'History',
-			'Account',
-			'Users',
-			'Backup'
-		]);
+		const base = ['Templates', 'Setup', 'Copy-out', 'Reports', 'History', 'Account'];
+		expect(labels(moreItems(false))).toEqual(base);
+		expect(labels(moreItems(true))).toEqual([...base, 'Users', 'Backup']);
+	});
+
+	it('knows which routes More holds', () => {
+		expect(inMore('/(app)/templates', false)).toBe(true);
+		expect(inMore('/(app)/templates/[id]', false)).toBe(true);
+		expect(inMore('/(app)/templates/new', false)).toBe(true);
+		expect(inMore('/(app)/setup', false)).toBe(true);
+		expect(inMore('/(app)/entries', false)).toBe(false);
+		expect(inMore('/(app)', false)).toBe(false);
+		expect(inMore(null, false)).toBe(false);
+		expect(inMore('/(app)/admin/users', true)).toBe(true);
+		expect(inMore('/(app)/admin/users', false)).toBe(false);
 	});
 
 	it('reaches every sidebar item from the bar or More', () => {

@@ -216,9 +216,11 @@ describe('StartList', () => {
 		expect(t).not.toContain('Create a template');
 	});
 
-	it('offers to create a template when there are none', () => {
+	it('offers to create a template when there are none, in place over the screen', () => {
 		const body = list([]);
 		expect(body).toMatch(/href="\/entries\/new\?timer=1/);
-		expect(body).toMatch(/<a[^>]*href="\/templates\/new"[^>]*>\s*Create a template/);
+		expect(body).toMatch(
+			/<a[^>]*href="\/templates\/new\?back=%2Fsetup"[^>]*data-entry-form[^>]*>\s*Create a template/
+		);
 	});
 });
