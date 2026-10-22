@@ -1984,6 +1984,9 @@ Exit: the usability gate passes every task in the app on phone and PC, and
 
 First run 2026-10-22 failed; its findings became items 18–20.
 
+Second run 2026-10-22 failed; the round stopped as failed. Not run again until the
+operator decides what follows. See [the round 2 report](round-2-report.md).
+
 ## Round 3 — go-live
 
 ### 9. Go-live — the operator's
