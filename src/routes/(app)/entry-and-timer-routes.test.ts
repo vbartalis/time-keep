@@ -276,8 +276,11 @@ describe('/entries/new', () => {
 	});
 
 	describe('save', () => {
-		const NOW = new Date('2026-10-22T10:30:40.000Z').getTime();
-		const today = '2026-10-22';
+		// Tomorrow at 10:30:40 UTC: always after the real-clock batches the setup writes,
+		// which the core keeps strictly increasing.
+		const today = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+		const yesterday = new Date(Date.parse(today) - 86_400_000).toISOString().slice(0, 10);
+		const NOW = Date.parse(`${today}T10:30:40.000Z`);
 		const filled = (over: Record<string, string> = {}) => ({
 			projectId,
 			timeZone: 'UTC',
@@ -312,7 +315,7 @@ describe('/entries/new', () => {
 
 		it('keeps a typed start: a changed date is not now', async () => {
 			running();
-			const r = await run(newEntry.actions.default!, filled({ date: '2026-10-21' }));
+			const r = await run(newEntry.actions.default!, filled({ date: yesterday }));
 			expect(r.result?.status).toBe(400);
 			expect(r.result?.data.fields.start).toContain("This project's timer has been running since");
 		});
@@ -341,7 +344,7 @@ describe('/entries/new', () => {
 
 		it('keeps the posted startNow in a refusal', async () => {
 			running();
-			const r = await run(newEntry.actions.default!, filled({ date: '2026-10-21' }));
+			const r = await run(newEntry.actions.default!, filled({ date: yesterday }));
 			expect(r.result?.data.values?.startNow).toBe(`${today}T10:30`);
 		});
 	});
