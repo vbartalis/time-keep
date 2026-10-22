@@ -152,7 +152,7 @@ describe('TimerBar, the phone strip', () => {
 		expect(stop).toMatch(/\bpx-0\b/);
 		expect(stop).toContain('title="Stop (s)"');
 		expect(stop).toMatch(/<span class="sr-only">Stop<\/span>/);
-		expect(body).toMatch(/<section[^>]*\bgap-2\b[^>]*>/);
+		expect(body).toMatch(/<section[^>]*\bgap-x-2\b[^>]*>/);
 	});
 
 	it('has the ▶ alone when nothing runs', () => {
@@ -222,5 +222,34 @@ describe('StartList', () => {
 		expect(body).toMatch(
 			/<a[^>]*href="\/templates\/new\?back=%2Fsetup"[^>]*data-entry-form[^>]*>\s*Create a template/
 		);
+	});
+});
+
+describe('TimerBar, the phone strip', () => {
+	const three = [
+		timer({ id: 'a', start: '10:00' }),
+		timer({ id: 'b', projectName: 'CompY - Support', start: '09:00' }),
+		timer({ id: 'c', customerName: 'Myself', projectName: 'time-keep', start: '08:00' })
+	];
+	const strip = (timers: BarTimer[]) =>
+		render(TimerBar, { props: { timers, templates: [], now, back: '/', variant: 'strip' } }).body;
+
+	it('shows customer › project in the strip and in every row of +N', () => {
+		const body = strip(three);
+		for (const t of three) expect(text(body)).toContain(`${t.customerName} › ${t.projectName}`);
+		expect(body.match(/data-timer-name/g)).toHaveLength(3);
+	});
+
+	it('never truncates a name', () => {
+		const tags = strip(three).match(/<[^>]*data-timer-name[^>]*>/g) ?? [];
+		expect(tags).toHaveLength(3);
+		for (const tag of tags) expect(tag).not.toMatch(/truncate|text-ellipsis|line-clamp-/);
+	});
+
+	it('keeps the earlier-day since in the strip', () => {
+		const body = strip([
+			timer({ activityName: 'Development', start: '22:10', startDate: '2026-10-19' })
+		]);
+		expect(text(body)).toMatch(/Development · since 2026-10-19 22:10/);
 	});
 });

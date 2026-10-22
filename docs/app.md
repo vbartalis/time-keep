@@ -123,11 +123,20 @@ It is the same on every screen; no screen draws its own title or navigation.
   JavaScript, the server's value without), the project colour dot, customer ›
   project, activity and description, and Stop ("Stop (s)", marked `data-shown-stop`
   for the `s` key). The time and name are a `data-entry-form` link to the timer's form,
-  opened over the screen. The phone strip shows customer › project (no description),
-  activity and start, the elapsed time, ▶ and Stop (a 44 px square: the live square,
-  the word for screen readers only). With several running the
-  newest shows in full with a "+N" `<details>` that lists the others, each with its
-  elapsed time and Stop. With none it says "No timer running" in the same height.
+  opened over the screen. The phone strip is two rows while a timer runs, the same for
+  one, two or three: customer › project (no description; it wraps, never cut) and the
+  elapsed time on its first line, then activity and start ("· since", with the date
+  when it began on an earlier day) with "+N", ▶ and Stop at the right (each 44 px;
+  Stop is the live square, the word for screen readers only). The link spans both
+  rows (its rows a subgrid of the strip's), the controls lie over its right end, and
+  row 2 grows when the since line wraps. With several running the newest shows in
+  full with a "+N" `<details>` that lists the others (on the phone customer › project
+  over activity and start, wrapping; in dark the list ends on a 20 % white rule), each
+  with its elapsed time and Stop. With none the PC pill says "No timer running" in the
+  same height and the phone strip is one 64 px row with it and ▶. The layout measures
+  the phone's sticky band (`--bars-height`, 141 px with a one-line name): the bands
+  pinned under it, focus scrolling (`scroll-margin-top`) and the start sheet's height
+  follow it, with 9 rem as the fallback without JavaScript.
 - **Start list.** The PC's Start sits outside the pill; the phone's ▶ sits in the
   strip. Both are a `<details>` (`data-start-list`) holding `StartList`: "Start a timer",
   the templates by name (`shellTemplates`: colour dot, customer › project), then "Start

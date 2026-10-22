@@ -143,7 +143,7 @@
 				'absolute z-30 flex flex-col',
 				header
 					? 'top-full right-0 mt-1.5 w-[28rem] max-w-[calc(100vw-17rem)] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-[0_8px_24px_rgb(0_0_0/0.12)]'
-					: 'inset-x-0 top-full border-t border-sidebar-border bg-sidebar-strip px-4 pb-2 shadow-[0_8px_24px_rgb(0_0_0/0.25)]'
+					: 'inset-x-0 top-full border-t border-sidebar-border bg-sidebar-strip px-4 pb-2 shadow-[0_8px_24px_rgb(0_0_0/0.25)] dark:border-b dark:border-b-white/20'
 			]}
 		>
 			{#each rest as t (t.id)}
@@ -157,13 +157,19 @@
 				>
 					{@render projectDot(t)}
 					<span class="flex min-w-0 flex-1 flex-col">
-						<span class="truncate font-semibold">
-							{header ? `${t.customerName} › ${t.projectName}` : t.projectName}
+						<span
+							data-timer-name
+							class={header
+								? 'truncate font-semibold'
+								: 'font-semibold [text-wrap:pretty] break-words'}
+						>
+							{t.customerName} › {t.projectName}
 						</span>
 						<span
-							class="truncate text-xs {header
-								? 'text-muted-foreground'
-								: 'text-sidebar-foreground'}">{header ? otherLine(t) : since(t)}</span
+							class={header
+								? 'truncate text-xs text-muted-foreground'
+								: 'text-xs break-words text-sidebar-foreground'}
+							>{header ? otherLine(t) : since(t)}</span
 						>
 					</span>
 					<span class="shrink-0 font-bold"><Elapsed startAt={t.startAt} serverNow={now} /></span>
@@ -187,7 +193,7 @@
 		</summary>
 		<div data-scrim class="fixed inset-0 -z-10 bg-black/40" aria-hidden="true"></div>
 		<div
-			class="fixed inset-x-0 bottom-0 z-10 max-h-[calc(100dvh-8rem)] overflow-y-auto border-t border-border bg-card px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] text-base text-card-foreground shadow-[0_-8px_24px_rgb(0_0_0/0.12)]"
+			class="fixed inset-x-0 bottom-0 z-10 max-h-[calc(100dvh-var(--bars-height,9rem)-0.5rem)] overflow-y-auto border-t border-border bg-card px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] text-base text-card-foreground shadow-[0_-8px_24px_rgb(0_0_0/0.12)]"
 		>
 			<div class="mx-auto max-w-md"><StartList {templates} {back} /></div>
 		</div>
@@ -249,36 +255,55 @@
 {:else}
 	<section
 		aria-label="Timer"
-		class="relative flex h-16 items-center gap-2 border-t border-sidebar-border bg-sidebar-strip px-4 text-sidebar-accent-foreground"
+		class={[
+			'relative border-t border-sidebar-border bg-sidebar-strip px-4 text-sidebar-accent-foreground',
+			first
+				? 'grid grid-cols-[auto_minmax(0,1fr)] grid-rows-[auto_minmax(2.75rem,auto)] gap-x-2 py-2'
+				: 'flex h-16 items-center gap-2'
+		]}
 	>
 		{#if first}
+			<!-- Row 1: the name and the elapsed time. Row 2: the since line and the controls, at
+			     least 44 px and taller when the since line wraps. The link spans both rows (its own
+			     rows a subgrid of the strip's); the controls sit over its right end as separate
+			     targets. -->
 			<span
-				class="size-2.5 shrink-0 rounded-full bg-sidebar-ring ring-[3px] ring-sidebar-ring/30"
+				class="col-start-1 row-start-1 mt-2 size-2.5 rounded-full bg-sidebar-ring ring-[3px] ring-sidebar-ring/30"
 				aria-hidden="true"
 			></span>
 			<!-- eslint-disable svelte/no-navigation-without-resolve -- formHref() resolves it -->
 			<a
 				href={formHref(first)}
 				data-entry-form
-				class="flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+				class="col-start-2 row-span-2 row-start-1 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] grid-rows-subgrid gap-x-3 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
 			>
-				<span class="flex min-w-0 flex-1 flex-col">
-					<span class="flex min-w-0 items-center gap-2 text-base font-semibold">
-						{@render projectDot(first)}
-						<span class="truncate">{first.customerName} › {first.projectName}</span>
-					</span>
-					<span class="truncate text-xs text-sidebar-foreground">{since(first)}</span>
+				<span class="flex min-w-0 items-start gap-2 text-base leading-6 font-semibold">
+					<span class="mt-2 inline-flex">{@render projectDot(first)}</span>
+					<span data-timer-name class="min-w-0 [text-wrap:pretty] break-words"
+						>{first.customerName} › {first.projectName}</span
+					>
 				</span>
-				<span class="shrink-0 text-lg font-bold"
+				<span class="text-lg leading-6 font-bold"
 					><Elapsed startAt={first.startAt} serverNow={now} /></span
+				>
+				<!-- Clear of the controls laid over this row's right end. -->
+				<span
+					data-timer-since
+					class="col-span-2 self-center text-xs break-words text-sidebar-foreground {rest.length > 0
+						? 'pr-37'
+						: 'pr-24'}">{since(first)}</span
 				>
 			</a>
 			<!-- eslint-enable svelte/no-navigation-without-resolve -->
-			{#if rest.length > 0}{@render others()}{/if}
 		{:else}
 			<p class="min-w-0 flex-1 text-sm text-sidebar-foreground">No timer running</p>
 		{/if}
-		{@render startSheet()}
-		{#if first}{@render stop(first, true)}{/if}
+		<!-- One ▶ in both states: a first timer started from the sheet closes this same
+		     <details> (and the screen behind it is no longer inert), not a replaced one. -->
+		<div class={['flex items-center gap-2', first && 'col-start-2 row-start-2 justify-self-end']}>
+			{#if first && rest.length > 0}{@render others()}{/if}
+			{@render startSheet()}
+			{#if first}{@render stop(first, true)}{/if}
+		</div>
 	</section>
 {/if}

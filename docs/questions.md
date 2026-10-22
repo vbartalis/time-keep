@@ -20,6 +20,27 @@ The operator answers whenever they like, here (under the entry) or in conversati
 An answer is added to [the operator's voice](operator-voice.md) in their words, and if
 it changes built work, it becomes a roadmap item.
 
+## 2026-10-22 — 20
+
+- Question: On the phone (390 px), the timer strip cannot fit customer › project, the
+  elapsed time, "+N", ▶ and Stop on one 64 px row. Should it become two rows (name and
+  elapsed time on row 1; "activity · since" and the buttons on row 2, about 100 px),
+  or stay one row of buttons with the name wrapping beside them and the elapsed time
+  under it? And should one timer use the same layout as several?
+- Call made: Two rows (option A), the same layout with one timer as with several
+  ("+N" simply absent), and a name too long for the full width wraps onto further
+  lines rather than being cut. Row 1 keeps the strip's order (live dot, project dot,
+  customer › project, the bold elapsed time at the right), so it reads like today's
+  strip with the name given room; option B breaks the name beside the buttons
+  ("– ProjectZ" on a line of its own) and pushes the elapsed time under it. One layout
+  for any count means the strip does not jump when a second timer starts. Nothing on
+  record says how you want the strip laid out; only that the name must be readable
+  (item 20's exit).
+- If answered differently: the strip takes option B's single row of buttons with the
+  name wrapping beside them, or keeps a 64 px row when one timer runs and its name
+  fits, or cuts the name after two lines; the strip's layout, DESIGN.md's "Phone
+  strip" and the gate's screenshots change with it.
+
 ## 2026-10-22 — 19
 
 - Question: On the phone's day view, a horizontal swipe changes the day, and where

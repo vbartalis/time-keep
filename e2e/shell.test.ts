@@ -1,6 +1,17 @@
 import { expect, test, type BrowserContext, type Locator, type Page } from '@playwright/test';
 import { barItems, moreItems, sidebarItems, type NavItem } from '../src/lib/shell';
-import { PASSWORD, dateIn, noonZone, seedEmptyUser, seedUser, startElsewhere } from './seed';
+import {
+	PASSWORD,
+	dateIn,
+	noonZone,
+	seedCustomer,
+	seedEmptyUser,
+	seedActivity,
+	seedProject,
+	seedTemplate,
+	seedUser,
+	startElsewhere
+} from './seed';
 
 const zone = noonZone();
 test.use({ timezoneId: zone });
@@ -277,6 +288,148 @@ test("the bar uses the project's colour", async ({ page }) => {
 	expect(colours[0]).not.toBe(colours[1]);
 });
 
+/** The element shows its whole text: nothing cut, clamped or hidden. */
+async function expectWhole(name: Locator) {
+	const r = await name.evaluate((el) => {
+		const css = getComputedStyle(el);
+		return {
+			wide: el.scrollWidth - el.clientWidth,
+			tall: el.scrollHeight - el.clientHeight,
+			ellipsis: css.textOverflow === 'ellipsis',
+			clamp: css.getPropertyValue('-webkit-line-clamp')
+		};
+	});
+	expect(r.wide).toBeLessThanOrEqual(0);
+	expect(r.tall).toBeLessThanOrEqual(0);
+	expect(r.ellipsis).toBe(false);
+	expect(r.clamp).toBe('none');
+}
+
+const LONG_FREE = 'ClientY – ProjectZ';
+const LONG = 'ClientY – ProjectZ – Phase 2 data migration and reporting';
+
+/** Three customers' projects, oldest first: CompX › (long), CompX › CompY – Support, Myself › time-keep. */
+async function seedStrip(prefix: string, firstProject: string) {
+	const user = await seedEmptyUser(prefix);
+	const compX = seedCustomer(user.id, 'CompX');
+	const myself = seedCustomer(user.id, 'Myself');
+	const names = [
+		{ text: `CompX › ${firstProject}`, project: seedProject(user.id, compX, firstProject) },
+		{ text: 'CompX › CompY – Support', project: seedProject(user.id, compX, 'CompY – Support') },
+		{ text: 'Myself › time-keep', project: seedProject(user.id, myself, 'time-keep') }
+	];
+	return { user, names };
+}
+
+const near = (a: number, b: number, by = 0.5) => expect(Math.abs(a - b)).toBeLessThanOrEqual(by);
+
+test.describe('the phone strip', () => {
+	test.skip(() => isPc(), 'the phone’s strip');
+	test.use({ viewport: { width: 390, height: 844 } });
+
+	test('one, two and three timers show their whole names', async ({ page }) => {
+		const { user, names } = await seedStrip('phone-strip', LONG_FREE);
+		await signIn(page, user.username);
+		for (const [i, start] of ['08:00', '09:00', '10:00'].entries()) {
+			startElsewhere(user.id, names[i].project, zone, start, 'x');
+			await page.reload();
+			const shown = bar(page).locator('[data-timer-name]').first();
+			await expect(shown).toHaveText(names[i].text);
+			await expectWhole(shown);
+			if (i > 0) {
+				const count = bar(page).locator('summary', { hasText: `+${i}` });
+				await count.click();
+				const rows = bar(page).locator('ul [data-timer-name]');
+				await expect(rows).toHaveCount(i);
+				for (let j = 0; j < i; j++) {
+					await expect(rows.nth(j)).toHaveText(names[i - 1 - j].text);
+					await expectWhole(rows.nth(j));
+				}
+				await count.click();
+			}
+			const controls = [
+				bar(page).locator('[data-start-list] > summary'),
+				bar(page).locator('[data-shown-stop]'),
+				...(i > 0 ? [bar(page).locator('summary', { hasText: `+${i}` })] : [])
+			];
+			for (const control of controls) {
+				const box = (await control.boundingBox())!;
+				near(box.width, 44);
+				near(box.height, 44);
+				expect(box.x + box.width).toBeLessThanOrEqual(390);
+			}
+			const name = (await shown.boundingBox())!;
+			const elapsed = (await bar(page)
+				.getByText(/^\d+:\d\d:\d\d$/)
+				.first()
+				.boundingBox())!;
+			expect(Math.abs(elapsed.y - name.y)).toBeLessThanOrEqual(4);
+		}
+	});
+
+	test('the elapsed time opens the running entry', async ({ page }) => {
+		const { user, names } = await seedStrip('phone-strip-open', LONG_FREE);
+		startElsewhere(user.id, names[0].project, zone, '08:00', 'x');
+		await signIn(page, user.username);
+		await bar(page)
+			.getByText(/^\d+:\d\d:\d\d$/)
+			.first()
+			.click();
+		await expect(page).toHaveURL(/\/entries\/[^/?]+/);
+	});
+
+	test('a long name wraps whole', async ({ page }) => {
+		const { user, names } = await seedStrip('phone-strip-long', LONG);
+		startElsewhere(user.id, names[0].project, zone, '08:00', 'x');
+		await signIn(page, user.username);
+		const shown = bar(page).locator('[data-timer-name]').first();
+		await expect(shown).toHaveText(names[0].text);
+		await expectWhole(shown);
+		const name = (await shown.boundingBox())!;
+		expect(name.height).toBeGreaterThan(24);
+		const elapsed = (await bar(page)
+			.getByText(/^\d+:\d\d:\d\d$/)
+			.first()
+			.boundingBox())!;
+		expect(Math.abs(elapsed.y - name.y)).toBeLessThanOrEqual(4);
+
+		startElsewhere(user.id, names[2].project, zone, '09:00', 'x');
+		await page.reload();
+		await bar(page).locator('summary', { hasText: '+1' }).click();
+		const row = bar(page).locator('ul [data-timer-name]');
+		await expect(row).toHaveText(names[0].text);
+		await expectWhole(row);
+	});
+
+	test('a long since line stays in its row', async ({ page }) => {
+		const { user, names } = await seedStrip('phone-strip-since', LONG_FREE);
+		const long = seedActivity(
+			user.id,
+			'Development of the monthly reporting and export pipeline for the finance team'
+		);
+		startElsewhere(user.id, names[0].project, zone, '08:00', 'x');
+		startElsewhere(user.id, names[1].project, zone, '09:00', 'x', long);
+		await signIn(page, user.username);
+		const since = bar(page).locator('[data-timer-since]');
+		await expect(since).toContainText('since 09:00');
+		// The text's own box, without the padding that keeps it clear of the controls.
+		const line = await since.evaluate((el) => {
+			const range = document.createRange();
+			range.selectNodeContents(el);
+			const r = range.getBoundingClientRect();
+			return { x: r.x, y: r.y, width: r.width, height: r.height };
+		});
+		expect(line.height).toBeGreaterThan(44);
+		const name = (await bar(page).locator('[data-timer-name]').first().boundingBox())!;
+		const link = (await bar(page).locator('[data-entry-form]').first().boundingBox())!;
+		// Under the name, inside the link, and clear of the controls at its right.
+		expect(line.y).toBeGreaterThanOrEqual(name.y + name.height);
+		expect(line.y + line.height).toBeLessThanOrEqual(link.y + link.height + 0.5);
+		const count = (await bar(page).locator('summary', { hasText: '+1' }).boundingBox())!;
+		expect(line.x + line.width).toBeLessThanOrEqual(count.x);
+	});
+});
+
 test.describe('without JavaScript', () => {
 	test.use({ javaScriptEnabled: false });
 
@@ -294,6 +447,18 @@ test.describe('without JavaScript', () => {
 		await flash(page).getByRole('button', { name: 'Undo' }).click();
 		await expect(flash(page)).toContainText('Undone.');
 		await expect(bar(page).locator('summary', { hasText: '+1' })).toBeVisible();
+	});
+
+	test('the phone strip shows three whole names', async ({ page }) => {
+		test.skip(isPc(), 'the phone’s strip');
+		await page.setViewportSize({ width: 390, height: 844 });
+		const { user, names } = await seedStrip('phone-strip-nojs', LONG_FREE);
+		for (const [i, start] of ['08:00', '09:00', '10:00'].entries())
+			startElsewhere(user.id, names[i].project, zone, start, 'x');
+		await signIn(page, user.username);
+		const name = bar(page).locator('[data-timer-name]').first();
+		await expect(name).toHaveText('Myself › time-keep');
+		await expectWhole(name);
 	});
 
 	test('More opens and its items work', async ({ page }) => {
@@ -341,6 +506,109 @@ test('focus lands clear of the sticky bars', async ({ page }) => {
 	await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 	await invalid.evaluate((el) => el.scrollIntoView({ block: 'nearest' }));
 	await expectClear(page, invalid);
+});
+
+test('focus lands clear of the two-row strip', async ({ page }) => {
+	test.skip(isPc(), 'the phone has the top band and the bottom bar');
+	const user = await seedUser(`${test.info().project.name}-focus-long`, zone);
+	const long = seedProject(user.id, seedCustomer(user.id, 'CompX'), LONG);
+	startElsewhere(user.id, long, zone, '08:00', 'x');
+	await signIn(page, user.username);
+	await expect(bar(page).locator('[data-timer-name]').first()).toHaveText(`CompX › ${LONG}`);
+	await page.goto(`/entries/${user.entries.toEdit}`);
+	await page.getByLabel('End', { exact: true }).fill(`${user.today}T05:00`);
+	await page.getByLabel('End', { exact: true }).blur();
+	await page.getByRole('button', { name: 'Save', exact: true }).click();
+	const invalid = page.locator('main form [aria-invalid="true"]').first();
+	await expect(invalid).toBeFocused();
+	await expectClear(page, invalid);
+	await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+	await invalid.evaluate((el) => el.scrollIntoView({ block: 'nearest' }));
+	await expectClear(page, invalid);
+});
+
+test.describe('the start sheet', () => {
+	test.skip(() => isPc(), 'the phone’s sheet');
+	test.use({ viewport: { width: 390, height: 844 } });
+
+	// Without JavaScript the clearance is the one-line-name fallback, so that case runs a short name.
+	async function seedSheet(prefix: string, firstProject = LONG) {
+		const { user, names } = await seedStrip(prefix, firstProject);
+		const customer = seedCustomer(user.id, 'Templated');
+		const project = seedProject(user.id, customer, 'Work');
+		for (let i = 1; i <= 20; i++) {
+			seedTemplate(user.id, { name: `Template ${i}`, customerId: customer, projectId: project });
+		}
+		startElsewhere(user.id, names[0].project, zone, '08:00', 'x');
+		return user;
+	}
+
+	/** The strip's ▶ is in view, nothing lies over it, and a click closes the sheet. */
+	async function expectLeavesPlay(page: Page) {
+		const list = bar(page).locator('[data-start-list]');
+		const play = list.locator('> summary');
+		await play.click();
+		await expect(list).toHaveJSProperty('open', true);
+		const box = (await play.boundingBox())!;
+		expect(box.y).toBeGreaterThanOrEqual(0);
+		expect(box.y + box.height).toBeLessThanOrEqual(844);
+		const top = await play.evaluate((el) => {
+			const r = el.getBoundingClientRect();
+			const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+			return hit === el || el.contains(hit);
+		});
+		expect(top).toBe(true);
+		await play.click();
+		await expect(list).toHaveJSProperty('open', false);
+	}
+
+	test('leaves its ▶ in view', async ({ page }) => {
+		const user = await seedSheet(`${test.info().project.name}-sheet`);
+		await signIn(page, user.username);
+		await expectLeavesPlay(page);
+	});
+
+	// The strip grows a second row when the first timer starts; the sheet must close, not
+	// vanish open, or the screen stays inert and takes no taps.
+	test('a first timer started from it leaves the screen taking taps', async ({ page }) => {
+		const user = await seedEmptyUser(`${test.info().project.name}-sheet-first`);
+		const customer = seedCustomer(user.id, 'Acme');
+		const project = seedProject(user.id, customer, 'Website');
+		seedTemplate(user.id, { name: 'Standup', customerId: customer, projectId: project });
+		await signIn(page, user.username);
+		await page.waitForLoadState('networkidle');
+		await expect(bar(page)).toContainText('No timer running');
+
+		const list = bar(page).locator('[data-start-list]');
+		await list.locator('> summary').click();
+		await list.locator('summary', { hasText: 'Standup' }).click();
+		await expect(list.getByRole('textbox', { name: 'Description for Standup' })).toBeFocused();
+		await page.keyboard.type('First');
+		await page.keyboard.press('Enter');
+		await expect(bar(page).locator('[data-timer-name]')).toHaveText('Acme › Website');
+		await expect(list).toHaveJSProperty('open', false);
+
+		await expect(page.locator('main')).not.toHaveAttribute('inert');
+		const undo = page.getByRole('status').getByRole('button', { name: 'Undo' });
+		const hit = await undo.evaluate((el) => {
+			const r = el.getBoundingClientRect();
+			const at = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+			return at === el || el.contains(at);
+		});
+		expect(hit).toBe(true);
+		await undo.click();
+		await expect(bar(page)).toContainText('No timer running');
+	});
+
+	test.describe('without JavaScript', () => {
+		test.use({ javaScriptEnabled: false });
+
+		test('leaves its ▶ in view', async ({ page }) => {
+			const user = await seedSheet(`${test.info().project.name}-sheet-nojs`, 'Support');
+			await signIn(page, user.username);
+			await expectLeavesPlay(page);
+		});
+	});
 });
 
 test.describe('the sign-in page', () => {

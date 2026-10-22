@@ -270,12 +270,14 @@ html:not(.js) [data-js] {
 		/* Focus and anchors clear the fixed bottom bar (WCAG 2.4.11). Measured: 65px. */
 		scroll-padding-bottom: calc(4.25rem + env(safe-area-inset-bottom));
 	}
-	/* ... and the sticky top band (measured 120px, 7.5rem; the PC header 3.75rem), as a
-	 * margin on the screen's own content rather than a page-wide scroll padding: a control
-	 * in the band itself (always in view) is then never scrolled to, which would drag the
-	 * page behind it. */
+	/* ... and the sticky top band, as a margin on the screen's own content rather than a
+	 * page-wide scroll padding: a control in the band itself (always in view) is then never
+	 * scrolled to, which would drag the page behind it. The band grows with the timer
+	 * strip's names, so the phone takes its measured height (--bars-height, set by the
+	 * layout); the fallback without JavaScript is the one-line-name band, measured 141px at
+	 * 390px, rounded up to 9rem. The PC header is 3.75rem. */
 	main * {
-		scroll-margin-top: 7.5rem;
+		scroll-margin-top: var(--bars-height, 9rem);
 	}
 	@media (min-width: 64rem) {
 		html {

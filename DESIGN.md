@@ -147,6 +147,7 @@ spacing:
   header-pc: "60px"
   topbar-phone: "56px"
   strip-phone: "64px"
+  strip-phone-running: "85px"
   content-max: "72rem"
   project-column: "224px"
   phone-entry-row: "64px"
@@ -566,7 +567,8 @@ project colours as the only strong colour.
 - **Strip** (`sidebar-strip`; dark `sidebar-strip-dark`): the phone timer strip's own
   tone, a step off the top bar above it (darker in light, #1c1c1c under #262626; lighter in dark, #18191a
   under #0f0f10), so what is running reads as its own band rather than as the lower
-  half of the title bar. The strip's "+N" list uses it too.
+  half of the title bar. The strip's "+N" list uses it too, and in dark ends on a 20 %
+  white rule, so its lower edge reads apart from the near-black page under it.
 
 ### Named Rules
 **The One Blue Rule.** Blue means running or the primary action, and focus (and, on the
@@ -665,8 +667,8 @@ right, in order, the timer bar, its Start button (outside the pill) and the prim
 entry button.
 
 On the phone the shell is one column: a sticky 56 px top bar in the rail colour with
-the screen's title (the wordmark is the PC's), the 64 px timer strip under it in its
-own tone, the screen (16 px sides, 24 px top), and a fixed bottom bar of four equal
+the screen's title (the wordmark is the PC's), the timer strip under it in its
+own tone (64 px with nothing running, two rows and about 85 px while a timer runs), the screen (16 px sides, 24 px top), and a fixed bottom bar of four equal
 56 px cells: Today, Calendar (which opens the day view), Entries and More. More's sheet
 rises from the bar's top edge (the bar stays in view under the scrim) and holds
 Templates, Setup, Copy-out, Reports, History, Account (and Users and Backup for an
@@ -810,7 +812,8 @@ start sheet) also dim the page with the 40 % black scrim.
   project list and the PC bulk dialog; the PC template sheet, Setup's create dialog, and
   the Templates and Setup row menus.
 - **Strip list down** (`box-shadow: 0 8px 24px rgb(0 0 0 / 0.25)`): the phone strip's
-  list of other running timers.
+  list of other running timers. On the dark ground the shadow barely shows, so there
+  the list also ends on a 20 % white rule.
 
 ### Named Rules
 An overlapping timesheet row's 2 px red top edge on the PC is drawn with an inset
@@ -962,12 +965,28 @@ The running timer on every screen.
   The pill's body (elapsed time to description) is a link that opens the running
   entry's form, underlined on hover, never blue. Outside the pill, a 36 px outline **Start** with a filled ▶ opens the
   start list as a popover.
-- **Phone strip:** 64 px, `sidebar-strip` with a `sidebar-border` rule above: live
-  dot, then project dot and customer › project (15 px semibold) over "activity · since
-  09:00", the 17 px bold elapsed time, "+N", a 44 px ▶ that opens the start sheet (20 %
-  white edge, no fill), and a 44 px square Stop on `sidebar-primary` with a 20 % white
-  edge that carries only the live square (its name is for screen readers). Nothing
-  running: "No timer running" in `sidebar-foreground` and the ▶ alone.
+- **Phone strip:** `sidebar-strip` with a `sidebar-border` rule above. While a timer
+  runs it is two rows, the same for one, two or three timers, 8 px above and below.
+  Row 1: the live dot, the project dot, customer › project (15 px semibold, 24 px
+  line) and the 17 px bold elapsed time at the right edge. The name takes the full
+  width left beside them and wraps between words onto further lines rather than being
+  cut; the elapsed time stays on its first line. Row 2, at least 44 px: "activity ·
+  since 09:00" (12 px `sidebar-foreground`, with the date when the timer began on an
+  earlier day) under the name, wrapping and growing the row when long, and at the
+  right "+N", a 44 px ▶ that opens the start sheet (20 % white edge, no fill) and a
+  44 px square Stop on `sidebar-primary` with a 20 % white edge that carries only the
+  live square (its name is for screen readers). The name, elapsed time and since line
+  are one link to the running entry's form; the controls sit over its right end as
+  their own targets. Nothing running: one 64 px row, "No timer running" in
+  `sidebar-foreground` and the ▶ alone. The band (top bar and strip) is 141 px with a
+  one-line name; the phone measures it (`--bars-height`) for the bands pinned under it,
+  focus scrolling and the start sheet's height.
+- **Strip list:** "+N" drops the other running timers under the strip, edge to edge
+  over the page, in the strip's tone with a `sidebar-border` rule above, the strip
+  list down shadow, and in dark a 20 % white rule below. Each row (at least 64 px,
+  `sidebar-border` rules between): the project dot, customer › project in semibold
+  over "activity · since", both wrapping rather than cut, the elapsed time and a 44 px
+  Stop.
 
 ### Start list
 How a timer starts from the bar. A `caps` head, "Start a timer", in muted text, then

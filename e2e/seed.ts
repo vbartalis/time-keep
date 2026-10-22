@@ -461,14 +461,16 @@ export function startElsewhere(
 	projectId: string,
 	zone: string,
 	start: string,
-	description: string
+	description: string,
+	activityId?: string
 ) {
 	return value(
 		asUi(userId).timers.start({
 			projectId,
 			start: `${dateIn(zone)}T${start}`,
 			timeZone: zone,
-			description
+			description,
+			...(activityId ? { activityId } : {})
 		})
 	).id;
 }

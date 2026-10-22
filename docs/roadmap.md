@@ -1905,7 +1905,7 @@ and `.impeccable/design.json` updated. No decision record.
   free room; whether the day view should scroll sideways or hide past the floor;
   whether the phone day's swipe should scroll first or change the day.
 
-### 20. The phone's timer strip with several timers running
+### 20. The phone's timer strip with several timers running — done 2026-10-22
 
 With two timers running, the phone's timer strip cuts the running timer's customer ›
 project to "CompX › …" or "Myself › ti…", so it no longer says which project runs: the
@@ -1917,6 +1917,56 @@ gives customer › project as the strip's main line. Screenshots
 Exit: the usability gate passes the phone's timer strip at 390 px, in light and dark,
 with one, two and three timers running on the seeded projects: the strip says which
 project each shown timer is on (the project's name readable, not cut to "…").
+
+Done 2026-10-22: while a timer runs, the phone's strip has two rows. Row 1 holds the
+live dot, the project dot, customer › project in full and the bold elapsed time at the
+right of the name's first line. Row 2 holds "activity · since" at the left and "+N", ▶
+and Stop at the right, 44 px each. The layout is the same for one, two or three timers.
+A long name or since line wraps and the strip grows; nothing is cut to "…". With no
+timer, the strip is still one 64 px row. The form link (name, elapsed time and since
+line) spans both rows, and the controls sit over its right end as separate targets.
+The "+N" list's rows show customer › project, wrapping, and in dark the list ends on a
+20 % white rule so it reads apart from the page. The phone's focus `scroll-margin-top`
+and the start sheet's maximum height now follow the measured `--bars-height`. The
+fallback without JavaScript is 9rem: the band measures 141 px with a one-line name and
+164 px with two. Spec `docs/superpowers/specs/2026-10-22-phone-timer-strip-design.md`,
+plan `docs/superpowers/plans/2026-10-22-phone-timer-strip.md`; DESIGN.md (Phone strip,
+`strip-phone-running` 85 px), `.impeccable/design.json` and `docs/app.md` updated. No
+decision record.
+
+- **The strip must say which project each timer is on and how long it has run.** The
+  stand-in's call. Source: roadmap item 20; operator's voice; DESIGN.md, Phone strip.
+  Confidence: inferred.
+- **Two rows (option A).** The stand-in's call. Source: item 20's exit; operator's
+  voice; the mockups. Confidence: ungrounded; queued in `docs/questions.md`.
+- **The "+N" list shows customer › project.** The stand-in's call. Source: operator's
+  voice; DESIGN.md, Phone strip; item 20's exit. Confidence: inferred.
+- **One layout for one timer and for several,** with "+N" absent when only one runs.
+  The stand-in's call. Source: item 20's exit. Confidence: ungrounded; queued with the
+  call above.
+- **A name too long for the full width wraps; the strip grows.** The stand-in's call.
+  Source: item 20's exit. Confidence: inferred; queued with the call above.
+- **No timer: one 64 px row; the start sheet and focus scrolling follow
+  `--bars-height` with a constant fallback; "not cut" is tested in both width and
+  height.** The builder's calls 6–9, in the spec.
+- **The start-sheet e2e seeds 20 templates, not the plan's 12,** because with 12 the
+  sheet never reached the strip and the test could not fail. The builder's ruling.
+- **Critique and audit ran in one implementer's context,** with no separate assessor;
+  the task review checked the result. The builder's ruling.
+- **The final review's minors are deferred:** the 8 px gaps between the controls fall
+  on the link, so a tap just off Stop opens the form; a duplicate `describe` name in
+  `TimerBar.test.ts`; the `pr-37`/`pr-24` arithmetic is not commented; one DESIGN.md
+  line runs past the wrap width. The builder's ruling. Also deferred: the controls hide
+  the bottom-right corner of the link's focus ring; a "+N" of ten or more would overlap
+  the since text; the "+N" list's dot column does not line up with the strip's;
+  without JavaScript a two-line name or a wrapped since line leaves the 9rem fallback a
+  little short of the band.
+- **The strip draws the start sheet once,** in one controls wrapper shared by both
+  states. The checks found that starting a first timer from the open sheet left
+  `<main>` inert, because a second copy of the sheet replaced the open one. The
+  builder's fix, pinned by an e2e.
+- Questions queued in `docs/questions.md`: the strip's layout (two rows, one layout
+  for any count, wrapping names).
 
 ### 16. Usability check
 
