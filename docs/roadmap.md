@@ -1984,8 +1984,11 @@ Exit: the usability gate passes every task in the app on phone and PC, and
 
 First run 2026-10-22 failed; its findings became items 18–20.
 
-Second run 2026-10-22 failed; the round stopped as failed. Not run again until the
-operator decides what follows. See [the round 2 report](round-2-report.md).
+Second run 2026-10-22 failed; the round stopped as failed. Its first attempt failed a
+builder check (a test's fixed clock, #9); rerun with the operator's approval after the
+fix, the gate failed one finding: Calendar's day view at 390 px scrolls sideways
+when a run of short entries overlaps. Not run again until the operator decides what
+follows. See [the round 2 report](round-2-report.md).
 
 ## Round 3 — go-live
 

@@ -3,34 +3,44 @@
 Round 2 (items 17, 10–16 and 18–20) rebuilt the app to make it usable: a new look,
 one entry form and timer bar, calendar views, the timesheet table, and every other
 screen redone. **The round stopped as failed**: the usability check's second run
-(item 16, 2026-10-22) failed before the usability gate was dispatched, on a builder
-check (below). This report was written by that run. It points at the done
-notes in the [roadmap](roadmap.md) rather than repeating them.
+(item 16, 2026-10-22) failed, first on a builder check before the gate, then, rerun
+with the operator's approval once that was fixed, on one gate finding (below). This
+report was written by that run. It points at the done notes in the
+[roadmap](roadmap.md) rather than repeating them.
 
 ## Why the round stopped
 
-Item 16's second run runs the builder checks before the gate, and a failing check is
-a finding that fails the run without the gate (the `run-item` runbook, item 16). One
-check failed:
+The second run's first attempt failed before the usability gate was dispatched:
+`npm run test:unit` had one failing test, `/entries/new > save > starts an untouched
+Start at the moment of saving, stopping the old timer there`, whose fixed fake clock
+had fallen behind real time. A defect in the test, not the app
+([issue #9](https://github.com/vbartalis/time-keep/issues/9)); the operator fixed it
+(75a1165) and approved one more run
+([issue #10](https://github.com/vbartalis/time-keep/issues/10)).
 
-- **`npm run test:unit`: 1 of 1158 tests fails.** `/entries/new > save > starts an
-  untouched Start at the moment of saving, stopping the old timer there`
-  (`src/routes/(app)/entry-and-timer-routes.test.ts`, added by item 18) fixes its fake
-  clock at 2026-10-22 10:30:40 UTC, while its setup writes batches on the real clock
-  first. The core keeps batch times strictly increasing, so since that instant passed
-  the test reads the new timer's start as the real "now" and fails on every run. It
-  is a defect in the test, not in the app: it passed when item 18 merged that
-  morning. [Issue #9](https://github.com/vbartalis/time-keep/issues/9).
+On the rerun every builder check passed (`npm run check`, `npm run lint`,
+`npm run test:unit` 1158 of 1158, `npm run test:e2e` 400 passed, 200 skipped as the
+other surface's), and the gate ran the twelve tasks at 390 px and 1440 px in light
+and dark, each on a freshly seeded month. Tasks 1–11 passed at all four settings, and
+task 12 at 1440 px. It failed one finding:
 
-The other checks passed: `npm run check` (0 errors, 0 warnings), `npm run lint`, and
-`npm run test:e2e` (400 passed, 200 skipped as the other surface's). The gate did not
-run, so the app was not judged on the twelve tasks this time; the first run's
-verdict, which failed only on what items 18–20 fixed, is the latest judgement of the
-whole app.
+- **Calendar's day view on the phone scrolls sideways with a crowded run.** After
+  tasks 2, 3, 7 and 8, today holds seven short overlapping timer entries around 18:00
+  (from task 3's same-minute starts). At 390 px the day view gives each a 68 px lane
+  (item 19's floor), so the whole day's grid is 529 px wide: blocks far from the run
+  are cut at the right edge ("Myself › time-k"), a block overlapping nothing is drawn
+  474 px wide, and the day's total in the grid header is off screen. The PC's day
+  view of the same day fits, and the week view folds such a run into "+6". Kimai,
+  Google and Samsung keep a day to one screen width; Samsung folds crowded events
+  into "+3". Item 19 chose sideways scrolling for the day views; the gate judged it
+  against the bar at phone width.
 
-What follows is the operator's. Restarting the autopilot as it stands would run the
-gate a third time ([issue #10](https://github.com/vbartalis/time-keep/issues/10)),
-which the roadmap rules out.
+The gate's other observations, not failing: PC tables cut a long project name
+("CompZ – Audit 20…", the title on hover); the New user dialog clears its password
+after a refused username; an edited Start keeps End, as the first run saw.
+
+What follows is the operator's. The roadmap runs item 16 twice; a further run, or an
+item for the finding, is their call.
 
 ## What round 2 built
 
@@ -61,9 +71,10 @@ which the roadmap rules out.
   project's name in full, wrapping rather than cut.
 - [16][16], usability check: every task in the app run on phone and PC, in light and
   dark. The first run (2026-10-22) failed on three findings, which became items 18–20;
-  the second run (2026-10-22) failed on a builder check, before the gate, as above.
-  The first run's screenshots and verdict stay where items 18–20 cite them, under
-  `.autopilot/screenshots/16/` and in `.autopilot/verdicts/16.json`.
+  the second run (2026-10-22) failed, on a builder check and then on the gate, as above.
+  The first run's screenshots and verdict, which items 18–20 cite under
+  `.autopilot/screenshots/16/`, are kept in `.autopilot/screenshots/16-run-1/` and
+  `.autopilot/verdicts/16-run-1.json`; the rerun's are under `16`.
 
 ## Calls made in the operator's place
 
