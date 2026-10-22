@@ -1968,6 +1968,19 @@ decision record.
 - Questions queued in `docs/questions.md`: the strip's layout (two rows, one layout
   for any count, wrapping names).
 
+### 21. Crowded runs in the phone's day view
+
+The usability check's second run (item 16, 2026-10-22) failed one finding: at 390 px
+the Calendar's day view scrolls sideways when a run of short entries overlaps (seven
+timers around 18:00 gave a 529 px grid, blocks cut at the right edge, the day's total
+off screen). On the phone, the day view keeps to the screen's width, as Kimai, Google
+and Samsung do: a run too crowded for item 19's lane floor folds into a "+n" chip, as
+the week view does, and nothing is hidden for good (the chip reaches the folded
+entries). The PC's day view is unchanged.
+
+Exit: the usability gate passes the Calendar's day view at 390 px, light and dark,
+with the second run's crowded day, and no other screen changes.
+
 ### 16. Usability check
 
 The usability gate run over every task in the app, on a seeded month, on phone and
@@ -1989,6 +2002,8 @@ builder check (a test's fixed clock, #9); rerun with the operator's approval aft
 fix, the gate failed one finding: Calendar's day view at 390 px scrolls sideways
 when a run of short entries overlaps. Not run again until the operator decides what
 follows. See [the round 2 report](round-2-report.md).
+
+Operator approved run 3 (2026-10-22), after item 21.
 
 ## Round 3 — go-live
 

@@ -74,8 +74,13 @@ that ends to wait for them kills them and leaves no outcome. So:
    id read from `main`. Only while `main` still shows the item unsplit, also look for
    `feat/<n>[a-z]-*` and `docs/<n>[a-z]-*` (`<n>` the item number: a brainstorm split it
    on a branch not yet merged). Skip any branch whose part is done on `main`. Item 16's
-   branches are `docs/16-usability-check` (first run) and `docs/16-usability-check-2`
-   (once `main` shows the first-run note; then only that one counts). If found,
+   branches are `docs/16-usability-check` (first run), `docs/16-usability-check-2`
+   (once `main` shows the first-run note; then only that one counts) and
+   `docs/16-usability-check-<k>` for a run the operator approved (see Item 16; then
+   only that one counts). If `main` shows the second-run failure note and no later
+   `Operator approved run <k>` line, write outcome `failed` with the summary
+   `round 2 stopped after a failed usability check; waiting for the operator` and end
+   without touching anything. If found,
    `git checkout` it and read the roadmap there: the unit is the part that branch names.
 4. Find the first unfinished stage from what the branch adds over `main` and from the
    ledger. A spec or plan counts only if the branch added it:
@@ -319,6 +324,11 @@ in this checkout:
 - **Second run fails**: rewrite the report with the failure, commit, squash-merge into
   `main` (`docs: add the round 2 report`), write outcome `failed` with the findings in
   `summary`, end.
+- **After a failed second run**, item 16 runs again only when the operator has added
+  the line `Operator approved run <k> (<date>).` to item 16 in the roadmap, after the
+  last failure note. That run works on `docs/16-usability-check-<k>`, from `main`, and
+  is handled exactly as the second run: pass → stage 8; fail → the second run's rule.
+  A run never approves another; without such a line, see Orient step 3.
 
 ## Ending `failed`
 
