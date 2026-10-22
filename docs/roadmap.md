@@ -10,7 +10,7 @@ The work runs in three rounds:
 
 1. **Round 1, the build (phases 1–8), done 2026-10-19.** The core, the screens, the
    MCP server, backup and restore. The back end holds; the screens do not.
-2. **Round 2, usable (items 17 and 10–16).** The app redesigned and rebuilt, screen
+2. **Round 2, usable (items 17, 10–16 and 18–20).** The app redesigned and rebuilt, screen
    by screen, until it is usable: the look, the theme and the way of working, measured
    against Kimai and good calendar apps. It runs on the autopilot
    ([autopilot.md](autopilot.md)).
@@ -1751,6 +1751,51 @@ screens.
     only); setPassword's unknown user and Account's short new password at route level;
     a weak password-echo guard.
 
+### 18. Starting a timer on a project that has one running
+
+Starting a timer on a project whose timer is running stops the running one, whatever
+the minute: the usability check (item 16, first run, 2026-10-22) found that a second
+start in the same minute as the first was refused in the form with "The running timer
+on this project started later; stop it first.", because the form fills Start with the
+current minute, before the running timer's start within it. On the PC the form, opened
+again a minute later, still showed the old Start and was refused again. The references
+stop the running timer when a new one starts (study, Timers). Gate task 3 of
+`docs/superpowers/specs/2026-10-22-usability-check-design.md`; screenshots
+`.autopilot/screenshots/16/t3-third-refused-*.png` and `t3-third-next-minute-*.png`.
+
+Exit: the usability gate passes gate task 3 of the usability check's spec (start a
+timer on a project, a second on another, then another on the first project at once
+and a minute later: that project's first timer stops each time, never refused), on
+phone and PC, in light and dark.
+
+### 19. Overlaps in the Calendar's week view
+
+The PC week view splits a whole day into lanes as narrow as its busiest overlap: the
+usability check (item 16, first run, 2026-10-22) found today's column cut into 23 px
+lanes, block titles broken letter by letter ("Co/mp/Y –/Su/pp/ort") and an entry
+overlapping nothing drawn as "C…", where the day view draws the same day at readable
+widths. The study asks for overlaps side by side at a readable width (Views 10).
+Screenshots `.autopilot/screenshots/16/t12-screen-calendar-1440-*.png` and
+`defect-calendar-day-today-1440-light.png`.
+
+Exit: the usability gate passes the Calendar's week view at 1440 px, in light and
+dark, on a seeded month with a day of several overlapping entries (the usability
+check's tasks 2, 3, 7 and 8 done first): only entries that overlap share a column,
+each at a readable width, and an entry overlapping nothing takes its day's full width.
+
+### 20. The phone's timer strip with several timers running
+
+With two timers running, the phone's timer strip cuts the running timer's customer ›
+project to "CompX › …" or "Myself › ti…", so it no longer says which project runs: the
+usability check (item 16, first run, 2026-10-22), gate task 3 at 390 px. DESIGN.md
+gives customer › project as the strip's main line. Screenshots
+`.autopilot/screenshots/16/t3-third-next-minute-390-*.png` and
+`t3-two-timers-390-light.png`.
+
+Exit: the usability gate passes the phone's timer strip at 390 px, in light and dark,
+with one, two and three timers running on the seeded projects: the strip says which
+project each shown timer is on (the project's name readable, not cut to "…").
+
 ### 16. Usability check
 
 The usability gate run over every task in the app, on a seeded month, on phone and
@@ -1764,6 +1809,8 @@ made in the operator's place, and the open questions in `docs/questions.md`.
 
 Exit: the usability gate passes every task in the app on phone and PC, and
 `docs/round-2-report.md` is written.
+
+First run 2026-10-22 failed; its findings became items 18–20.
 
 ## Round 3 — go-live
 
