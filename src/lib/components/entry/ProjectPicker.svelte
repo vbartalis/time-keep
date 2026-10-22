@@ -247,35 +247,38 @@
 		{/if}
 	</div>
 {:else}
-	{#if customers}
-		<!-- A customer alone, without the script: its own select (left blank, a project's
+	<!-- One cell, so the form's label column keeps both selects in the field column. -->
+	<div class="flex min-w-0 flex-col gap-2">
+		{#if customers}
+			<!-- A customer alone, without the script: its own select (left blank, a project's
 		     customer is the project's). -->
-		<select name="customerId" aria-label="Customer" class="{selectClass} mb-2">
-			<option value="" selected={customerId === ''}>No customer</option>
-			{#each customers as c (c.id)}
-				<option value={c.id} selected={!value && customerId === c.id}>{customerLabel(c)}</option>
+			<select name="customerId" aria-label="Customer" class={selectClass}>
+				<option value="" selected={customerId === ''}>No customer</option>
+				{#each customers as c (c.id)}
+					<option value={c.id} selected={!value && customerId === c.id}>{customerLabel(c)}</option>
+				{/each}
+			</select>
+		{/if}
+		<select
+			{id}
+			name="projectId"
+			required={placeholder === undefined && !customers}
+			class={selectClass}
+			aria-invalid={describedby ? 'true' : undefined}
+			aria-describedby={describedby}
+		>
+			<option value="" selected={value === ''}
+				>{placeholder ?? (customers ? 'No project' : 'Choose a project')}</option
+			>
+			{#each matchChoices('', projects, []) as g (g.customerId)}
+				<optgroup label={g.customerName}>
+					{#each g.projects as p (p.id)}
+						<option value={p.id} selected={value === p.id}
+							>{p.name}{p.archived ? ' (archived)' : ''}</option
+						>
+					{/each}
+				</optgroup>
 			{/each}
 		</select>
-	{/if}
-	<select
-		{id}
-		name="projectId"
-		required={placeholder === undefined && !customers}
-		class={selectClass}
-		aria-invalid={describedby ? 'true' : undefined}
-		aria-describedby={describedby}
-	>
-		<option value="" selected={value === ''}
-			>{placeholder ?? (customers ? 'No project' : 'Choose a project')}</option
-		>
-		{#each matchChoices('', projects, []) as g (g.customerId)}
-			<optgroup label={g.customerName}>
-				{#each g.projects as p (p.id)}
-					<option value={p.id} selected={value === p.id}
-						>{p.name}{p.archived ? ' (archived)' : ''}</option
-					>
-				{/each}
-			</optgroup>
-		{/each}
-	</select>
+	</div>
 {/if}

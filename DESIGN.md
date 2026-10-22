@@ -112,6 +112,11 @@ typography:
     fontSize: "0.875rem"
     fontWeight: 400
     lineHeight: 1.45
+  hint:
+    fontFamily: "Public Sans Variable, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.8125rem"
+    fontWeight: 400
+    lineHeight: 1.375
   label:
     fontFamily: "Public Sans Variable, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.75rem"
@@ -429,7 +434,10 @@ batches and their change lines, its band and bulk bar, and the phone's rows and 
 and with what item 15c (`feat/15c-copy-out-and-reports`) added: Copy-out's output band
 (column chips, options, the segmented Duration, Copy and Download CSV) over its copy
 sheet, Reports as four ruled lists of totals with the phone's Options sheet, both on
-Entries' Filter and chips, and the `data-js` / `data-nojs` pair.
+Entries' Filter and chips, and the `data-js` / `data-nojs` pair; and with what item 15d
+(`feat/15d-account-users-backup`) added: Account, Users and Backup as titled sections in
+surface panels with ⋯ menus and small dialogs, the sign-in page, and the error pages, so
+no screen keeps a round 1 layout.
 Where the build differs from the
 direction contract (`.impeccable/surfaces/src-routes-app-layout-svelte.md`), the
 build wins and the difference is noted. Light values are the frontmatter's plain keys;
@@ -604,6 +612,11 @@ ramp below, not from a second face.
   the toolbar, a day head and the month's week column; History's rows and change lines;
   Copy-out's band (chips, options, the semibold "Columns" label on the PC) and its sheet,
   and Reports' lists (the Total row semibold), at every width.
+- **Hint** (400, 13 px / `text-[0.8125rem]`, 1.375, muted): the line under a dialog
+  field ("3 to 32 characters: a–z, 0–9, dot, underscore, hyphen."), the note under
+  Agent access and in the restore confirm, and on the phone the second line of an
+  Account token row ("Made … · Last used …") and a Users row ("Created … · you"). From
+  1024 px those two rows' parts are 14 px cells; the hints stay 13 px.
 - **Label** (400, 12 px / `text-xs`, 1.35): meta lines (a timer's "since 09:00"),
   bottom-bar labels, field labels over fields (the phone form, the time row's Start,
   End and Duration) and hints under them, in muted text. On the PC the entry form's
@@ -626,8 +639,9 @@ ramp below, not from a second face.
 **The Figures Rule.** Every time, date and duration is set in `figures`. Columns never
 move.
 
-**The Five Steps Rule.** The ramp is 12, 14, 15, 17 and 21 px. No other size on working
-screens.
+**The Six Steps Rule.** The ramp is 12, 13, 14, 15, 17 and 21 px. No other size on
+working screens. 13 px is only the hint step, small helper text under or after a field
+or a row's title.
 
 **The Caps Are Heads Rule.** `caps` sets a column head, a section head (which is the
 heading itself, an h2 on a rule), a group head in a list, a badge, a state label or a
@@ -663,10 +677,9 @@ Cancel and Save stay above the keyboard. While the phone's start sheet is open t
 page behind it is inert.
 
 Regions stack 24 px apart. Controls are 44 px on the phone and 36 px on the PC; table
-cells pad 12 px. Only Account, Users and Backup keep round 1's layouts in the new
-tokens; every other screen is item 11's direction: Entries (item 14), the Calendar
-(item 13), Today, Templates and Setup (item 15a), History (item 15b), and Copy-out and
-Reports (item 15c). Round 1's filter bar (`components/entries/`) is gone; every filtered
+cells pad 12 px. Every screen is item 11's direction: Entries (item 14), the Calendar
+(item 13), Today, Templates and Setup (item 15a), History (item 15b), Copy-out and
+Reports (item 15c), and Account, Users, Backup, sign-in and the error pages (item 15d). Round 1's filter bar (`components/entries/`) is gone; every filtered
 screen uses Entries' Filter and chips.
 
 Today is one column: the TEMPLATES section, then TODAY · WED 2026-10-21, 32 px apart.
@@ -1364,12 +1377,82 @@ is offered.
 Surface fill, 1 px `input` stroke, 4 px corners, 14 px. Errors take red at 60 % and
 red text.
 
-### Screen components carried from round 1
-These keep their structure, now in the tokens above, on Account, Users and Backup: the
-change form and the in-page delete confirm (only the confirming button is red; it takes
-the focus), Account's token list and shown-once token, and Backup's file input and
-confirm checkbox. In-page links are the text colour with an `input` underline that
-darkens on hover; never blue.
+### Panel and PanelSection
+`Panel` (`src/lib/components/admin/Panel.svelte`) is the surface panel: from 1024 px a
+4 px-cornered `card` fill with a `border` stroke; on the phone no box, the content edge
+to edge on the ground with a `border` rule above and under (`-mx-4`). Its inside brings
+its own padding through `class`. `PanelSection` (same folder) is Setup's section made
+reusable: an h2 in `caps` on a 1 px text-colour rule, the section's `action` (the outline
+"+ New …") at the rule's right on the PC and under it at the left on the phone, then an
+optional `notice` (Messages alerts and, without the script, a dialog's form as a panel)
+and the `Panel`. The panel does not clip, so a row's ⋯ popover overflows it and a filled
+head band rounds its own top corners. The error page in the shell uses `Panel` directly.
+
+### Panel rows and forms
+- **Rows:** `border` rules between lines, 16 px side padding (14 px on the PC). A form
+  line is a 12 rem label column and the field on the PC (the label 14 px semibold in the
+  text colour), label over field on the phone. A panel's foot holds its one button on a
+  rule: full width on the phone, at the right on the PC.
+- **Tables:** Account's tokens (Name, Made, Last used) and Users' users (Username, Role,
+  Created) are ruled tables from 1024 px: a 36 px muted head band in `caps`, 40 px rows,
+  the name semibold, dates in `figures`, ⋯ last in a 36 px column. On the phone each is a
+  row of at least 48 px with the 44 px ⋯ leading, the name in 15 px semibold and the
+  13 px muted hint line under it, 56 px kept clear at the right of the "+"'s column. A
+  disabled user's name is struck through and muted, with a Disabled badge.
+- **Refusals:** a field's message is red `irregular` text, 14 px, under the field and
+  named by `aria-describedby`; the focus goes to that field. A refusal not about a field
+  is a red Messages alert at the section's head.
+
+### ActionMenu
+A row's ⋯ on Account and Users (`src/lib/components/admin/ActionMenu.svelte`), as
+Setup's. With the script from 1024 px, a 208 px popover under ⋯ on the menu-button
+pattern. Below that, the row sheet: the row's name (15 px semibold) over a muted 12 px
+line, the items as 48 px rows. Without the script, a `<details>` of links and post
+buttons. An item is a `pick` (opens a dialog; the menu closes onto ⋯ first, and the
+dialog's closing returns the focus there) or a `post` (submits at once, the focus left on
+⋯). Items have 14 px Lucide icons; a rule may stand before one; only a destructive item
+is red.
+
+### FormDialog
+A small form's dialog (`src/lib/components/admin/FormDialog.svelte`), Setup's create
+dialog generalised: 440 px on the PC, a bottom sheet on the phone, over the shared
+`Sheet`, so it traps focus, closes on Escape, the scrim and Back, and returns the focus
+to its opener. Head: the 17 px bold title (it wraps) and a ghost × (44 px phone, 36 px
+PC). Body: the fields, 12 px apart. Foot on a rule: outline Cancel and the action, equal
+halves on the phone, right-aligned on the PC. The `[autofocus]` element takes the focus
+on open, else the first field. The form sits in the body and the foot's submit names it
+with `form=`. `inline` is the no-script page: the same head, body and foot as a panel in
+the screen, without ×. New user, Set password…, New token, Revoke "…"? and Restore this
+backup? are all FormDialogs.
+
+### Account, Users and Backup
+Three screens of `PanelSection`s in a column at most 48 rem wide, 32 px apart.
+- **Account:** Change password (three form lines, the foot's primary button) and Agent
+  access (outline "+ New token", the token table, a 13 px muted note under it). The made
+  token is a read-only monospace field at 15 px at every width, selected on focus, with
+  the note "Copy it now: it is not shown again."; its foot is a primary Copy and an
+  outline Done. Revoke "…"? is a destructive confirm that takes the focus.
+- **Users:** one section, outline "+ New user", the users by username. New user (Username
+  and Password with 13 px hints, an Admin checkbox) and Set password for <name> are
+  FormDialogs; ⋯ holds Set password… and, after a rule, Disable or Enable (none on one's
+  own row).
+- **Backup:** Backup (a sentence and a primary Download backup), Restore (a sentence, the
+  file field with a bordered file button, and a destructive Restore… that opens a
+  FormDialog confirm; without the script the foot posts with a "Replace all data with
+  this backup" box, `data-nojs`) and, when a restore has happened, Before the last
+  restore (an outline Download).
+
+### CardPage (sign-in and the error pages)
+A page outside the shell (`src/lib/components/shell/CardPage.svelte`): the wordmark with
+its ring mark centred on the ground, 24 px under it a 25 rem-wide surface card (4 px
+corners, `border` stroke, 20 px padding, 32 px from `sm`) with the page's h1 centred in
+21 px semibold. The card is vertically centred from 640 px, 56 px from the top below.
+Sign-in is its form: Username, Password (a ghost eye button, `data-js`, shows it), a
+full-width primary "Sign in", and an alert above the fields (red for a refusal; the
+neutral "Restored." note after a restore). The root error page puts the one sentence in
+muted 14 px and an outline "Back to Today" in the card. The error page inside the shell
+(`(app)/+error.svelte`) keeps the header and puts the sentence and the button in a
+`Panel`.
 
 ## Do's and Don'ts
 
@@ -1401,7 +1484,7 @@ darkens on hover; never blue.
   bottom-bar cell's blue icon; red is never the running state.
 - **Don't** store a project's colour or let anything but a project use the project palette.
 - **Don't** give a surface at rest a shadow; only floating sheets, popovers and dialogs, and a calendar block while lifted in a drag, cast one.
-- **Don't** add text sizes beyond 12, 14, 15, 17 and 21 px on working screens.
+- **Don't** add text sizes beyond 12, 13, 14, 15, 17 and 21 px on working screens.
 - **Don't** set `caps` as a kicker or eyebrow above a heading.
 - **Don't** build stat-tile dashboards or put a themed concept over the tool.
 - **Don't** add entrance animations.

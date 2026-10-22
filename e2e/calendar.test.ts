@@ -43,7 +43,7 @@ async function signIn(page: Page, username: string) {
 	await rememberZone(page.context());
 	await page.goto('/login');
 	await page.getByLabel('Username').fill(username);
-	await page.getByLabel('Password').fill(PASSWORD);
+	await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
 	await page.getByRole('button', { name: 'Sign in' }).click();
 	await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
 }
@@ -242,6 +242,10 @@ test('the toolbar’s focus order is its on-screen order', async ({ page }) => {
 	const u = await user('order');
 	await signIn(page, u.username);
 	await page.goto('/calendar');
+	// Server-rendered, the phone's Filter is a <summary> between Month and Today; once the
+	// page hydrates it becomes the sheet's <button>, which this read leaves out. Read only
+	// the hydrated order (the PC's Filter is the same <summary> either way).
+	if (!isPc()) await expect(toolbar(page).getByRole('button', { name: 'Filter' })).toBeVisible();
 	const controls = await toolbar(page)
 		.locator('a[href], summary')
 		.evaluateAll((els) =>

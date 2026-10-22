@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-21T21:00:00+00:00",
+  "generatedAt": "2026-10-22T01:01:29+00:00",
   "title": "Design System: time-keep",
   "extensions": {
     "colorMeta": {
@@ -465,6 +465,10 @@
         "displayName": "Body PC",
         "purpose": "PC body, buttons, tables (14 px, text-sm)."
       },
+      "hint": {
+        "displayName": "Hint",
+        "purpose": "Helper text under a field and a row's second line on the phone (13 px, text-[0.8125rem])."
+      },
       "label": {
         "displayName": "Label",
         "purpose": "Meta lines and bottom-bar labels (12 px, text-xs)."
@@ -786,6 +790,22 @@
       "description": "The phone's outline Options button summarising the choice; it opens a bottom sheet with the options at 44 px and a pinned outline Done.",
       "html": "<button class=\"ds-obtn\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M2 14h4M10 8h4M18 16h4\"/></svg><span>Options · h:mm, rounded</span><svg class=\"ds-chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg></button>",
       "css": ".ds-obtn{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 12px;border:1px solid var(--input,#c8cbd0);border-radius:4px;background:var(--card,#fff);color:var(--foreground,#1d2025);font:600 0.875rem/1 \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background-color .15s ease-out,border-color .15s ease-out}.ds-obtn:hover{background:var(--accent,#eef0f3);border-color:color-mix(in oklch,var(--foreground,#1d2025) 60%,transparent)}.ds-obtn:focus-visible{outline:none;box-shadow:0 0 0 2px var(--background,#fff),0 0 0 4px var(--ring,#0b63c9)}.ds-obtn .ds-chev{color:var(--muted-foreground,#5d636c)}"
+    },
+    {
+      "name": "Panel Section",
+      "kind": "card",
+      "refersTo": "",
+      "description": "Account, Users and Backup's section: a caps head on a 1 px text-colour rule, its outline action at the right, then a surface panel of ruled form lines with the foot's button at the right.",
+      "html": "<div class=\"ds-ps\"><div class=\"ds-psh\"><span>Change password</span></div><div class=\"ds-pp\"><div class=\"ds-pl\"><b>Current password</b><i></i></div><div class=\"ds-pl\"><b>New password</b><i></i></div><div class=\"ds-pf\"><button class=\"ds-pb\">Change password</button></div></div></div>",
+      "css": ".ds-ps{width:420px;display:flex;flex-direction:column;gap:12px;font:14px/1.45 'Public Sans Variable',sans-serif;color:#1d2025}.ds-psh{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #1d2025;padding-bottom:6px;display:flex;justify-content:space-between;align-items:flex-end}.ds-pp{background:#fff;border:1px solid #e4e5e8;border-radius:4px}.ds-pl{display:grid;grid-template-columns:12rem 1fr;gap:16px;align-items:center;padding:12px 14px;border-top:1px solid #e4e5e8}.ds-pl:first-child{border-top:0}.ds-pl b{font-weight:600}.ds-pl i{height:36px;border:1px solid #c8cbd0;border-radius:4px;background:#fff}.ds-pf{display:flex;justify-content:flex-end;padding:12px 14px;border-top:1px solid #e4e5e8}.ds-pb{height:36px;padding:0 16px;border:0;border-radius:4px;background:#0b63c9;color:#fff;font:inherit;transition:background .15s ease-out}.ds-pb:hover{background:#0a58b3}.ds-pb:focus-visible{outline:2px solid #3d8bfd;outline-offset:2px}"
+    },
+    {
+      "name": "Form Dialog (PC)",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "The small form dialog (New user, Set password, New token, confirms): 440 px, 17 px bold title, fields with 13 px hints, outline Cancel and the action right-aligned on a rule.",
+      "html": "<div class=\"ds-fd\"><div class=\"ds-fh\">New user</div><div class=\"ds-fb\"><b>Username</b><i></i><small>3 to 32 characters: a–z, 0–9, dot, underscore, hyphen.</small></div><div class=\"ds-ff\"><button class=\"ds-fo\">Cancel</button><button class=\"ds-fp\">Create user</button></div></div>",
+      "css": ".ds-fd{width:440px;background:#fff;border:1px solid #e4e5e8;border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.18);font:14px/1.45 'Public Sans Variable',sans-serif;color:#1d2025}.ds-fh{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid #e4e5e8;font-size:17px;font-weight:700}.ds-fb{padding:16px 20px;display:flex;flex-direction:column;gap:6px}.ds-fb b{font-weight:600}.ds-fb i{height:36px;border:1px solid #c8cbd0;border-radius:4px}.ds-fb small{font-size:13px;line-height:1.375;color:#5d636c}.ds-ff{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid #e4e5e8}.ds-fo,.ds-fp{height:36px;padding:0 16px;border-radius:4px;font:inherit;transition:background .15s ease-out}.ds-fo{background:#fff;border:1px solid #c8cbd0;color:#1d2025}.ds-fo:hover{background:#eef0f3}.ds-fp{background:#0b63c9;border:0;color:#fff}.ds-fp:hover{background:#0a58b3}.ds-fo:focus-visible,.ds-fp:focus-visible{outline:2px solid #3d8bfd;outline-offset:2px}"
     }
   ],
   "narrative": {
@@ -826,8 +846,8 @@
         "section": "typography"
       },
       {
-        "name": "The Five Steps Rule",
-        "body": "The ramp is 12, 14, 15, 17 and 21 px. No other size on working screens.",
+        "name": "The Six Steps Rule",
+        "body": "The ramp is 12, 13, 14, 15, 17 and 21 px. No other size on working screens. 13 px is only the hint step, small helper text under or after a field or a row's title.",
         "section": "typography"
       },
       {
@@ -868,7 +888,7 @@
       "**Don't** use blue or red for decoration, headings or icons, beyond the current bottom-bar cell's blue icon; red is never the running state.",
       "**Don't** store a project's colour or let anything but a project use the project palette.",
       "**Don't** give a surface at rest a shadow; only floating sheets, popovers and dialogs, and a calendar block while lifted in a drag, cast one.",
-      "**Don't** add text sizes beyond 12, 14, 15, 17 and 21 px on working screens.",
+      "**Don't** add text sizes beyond 12, 13, 14, 15, 17 and 21 px on working screens.",
       "**Don't** set `caps` as a kicker or eyebrow above a heading.",
       "**Don't** build stat-tile dashboards or put a themed concept over the tool.",
       "**Don't** add entrance animations.",

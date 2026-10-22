@@ -13,12 +13,14 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { openForm, openInPlace } from '#lib/entry-link.js';
 	import { screenKey } from '#lib/keys.js';
-	import { currentItem, screenTitle } from '#lib/shell.js';
+	import { currentItem, errorTitle, screenTitle } from '#lib/shell.js';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
 
-	const title = $derived(screenTitle(page.route.id));
+	const title = $derived(
+		page.error ? errorTitle(page.status, page.error.message) : screenTitle(page.route.id)
+	);
 	const current = $derived(currentItem(page.route.id, page.url.searchParams.get('back')));
 	// Where a stop or an undo returns to: this screen, its query included; while the entry
 	// form is open over it (the address is the form's), the screen under the form.

@@ -366,7 +366,7 @@ test.describe('without JavaScript', () => {
 		// No zone cookie either: the server falls back to the zone of the latest entry.
 		await page.goto('/login');
 		await page.getByLabel('Username').fill(user.username);
-		await page.getByLabel('Password').fill(PASSWORD);
+		await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
 		await page.getByRole('button', { name: 'Sign in' }).click();
 
 		const panel = templatePanel(page, 'Standup');

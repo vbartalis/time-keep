@@ -120,3 +120,15 @@ export function ownsStrip(routeId: string | null): boolean {
 		routeId === '/(app)/history'
 	);
 }
+
+/** The title of an error page: "Not found" for a 404, else the error's own message ("Admins only"). */
+export function errorTitle(status: number, message: string): string {
+	return status === 404 ? 'Not found' : message;
+}
+
+/** The one sentence an error page gives under its title. */
+export function errorSentence(status: number): string {
+	if (status === 404) return 'There is nothing at this address.';
+	if (status === 403) return 'Only an admin can open this page.';
+	return 'Something went wrong on this page.';
+}

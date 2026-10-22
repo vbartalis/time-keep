@@ -20,6 +20,54 @@ The operator answers whenever they like, here (under the entry) or in conversati
 An answer is added to [the operator's voice](operator-voice.md) in their words, and if
 it changes built work, it becomes a roadmap item.
 
+## 2026-10-21 — 15d
+
+- Question: On the PC, how wide should Account, Users and Backup be: about half the
+  content measure (48 rem, left-aligned), or the full 72 rem measure that Entries,
+  History and Setup use?
+- Call made: About 48 rem. It is the smaller change (round 1's three screens are
+  42 rem wide), a password field or a three-column list stretched to 72 rem reads
+  worse, and the left edge still lines up with every other screen. Nothing on record
+  says how you want it.
+- If answered differently: the three screens' sections take the full 72 rem measure,
+  the fields keeping a narrower cap inside their panel, and the mockups and tests
+  change with it.
+
+## 2026-10-21 — 15d
+
+- Question: Account has two parts, Change password and Agent access. Should they stay
+  one page with a section each, or become two tabs (Password | Agent access), as
+  Kimai's profile pages have?
+- Call made: One page with two sections, as now. It is the smaller change, both parts
+  are short, and Setup was kept as one screen with its lists in 15a for the same
+  reason. Nothing on record says how you want it.
+- If answered differently: Account gets Password | Agent access tabs (kept in the
+  address), one part shown at a time; the navigation still has one Account item.
+
+## 2026-10-21 — 15d
+
+- Question: When do you open Users and Backup, how often, and on which device?
+- Call made: Rarely, and on the PC: Users when a user is made or a password reset
+  (one person uses the app; vision, Users), Backup before a risky change or a move.
+  Laid out for the PC first and kept fully usable on the phone (item 15's exit); not
+  a daily path, so they stay in More on the phone and at the sidebar's foot on the PC.
+  No frequency is on record.
+- If answered differently: if you take backups often, or from the phone, Download
+  backup moves up (for example into More directly), or a scheduled backup becomes a
+  new item (round 1 left scheduled backups out).
+
+## 2026-10-21 — 15d
+
+- Question: When do you open Account (change your password, make or revoke an agent's
+  token), how often, and on which device?
+- Call made: Rarely, and mostly on the PC: a token is made when an agent is set up
+  (the Kimai import, month-end tidying; vision, Agents), and the PC is where the
+  organising and month-end work happens (2026-10-18 discovery). Laid out for the PC
+  first and kept fully usable on the phone. No frequency is on record.
+- If answered differently: if you make tokens or change the password from the phone,
+  the phone layout of Account is weighted first (the token shown once, with a Copy
+  button that fits the phone's width).
+
 ## 2026-10-21 — 15c
 
 - Question: On Copy-out, when the filter matches no rows ("No entries match."), what

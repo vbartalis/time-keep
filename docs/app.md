@@ -26,7 +26,9 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/server/core/` | The only way to read and write the time data: batches, recorded changes, undo, history, reference data. Import only `core/index.ts`. See [core.md](core.md) and decision 4. |
 | `src/lib/server/id.ts` | Random base32 ids. |
 | `src/lib/server/mcp/` | The MCP server, a client of the core as actor `agent`: `http.ts` (the Origin check, the bearer token, one stateless exchange), `server.ts` (the 13 tools), `change.ts` (the `change` tool's operations and refs as one batch), `rows.ts` (rows as the agent reads them). See [mcp.md](mcp.md). |
-| `src/routes/login`, `logout` | Sign in and out. `/login?restored=1` shows "Restored. Sign in with the backup's passwords." above the form, after a restore. |
+| `src/routes/login`, `logout` | Sign in and out (see The sign-in page). `/login?restored=1` shows "Restored. Sign in with the backup's passwords." above the fields, after a restore. |
+| `src/routes/+error.svelte`, `src/routes/(app)/+error.svelte` | The error pages (see The error pages): outside the shell on the sign-in page's card, inside it as one panel. Their words come from `errorTitle` and `errorSentence` in `src/lib/shell.ts`. |
+| `src/routes/(app)/admin/users` | The Users screen (`+page.svelte`, `+page.server.ts`), admin only. |
 | `src/routes/(app)/admin/backup` | The Backup screen (`+page.svelte`, `+page.server.ts`) and its download route (`download/+server.ts`), admin only. |
 | `src/routes/mcp` | `POST /mcp`, the MCP endpoint, outside the signed-in screens (see [mcp.md](mcp.md)). |
 | `src/routes/(app)/` | Signed-in screens: Today (`/`), `calendar`, `entries` and the entry form (`entries/new`, `entries/[id]`), `copy-out` and its CSV route (`copy-out/csv`), `reports`, `account`, `admin/users`, `admin/backup`, `setup`, `templates`, `templates/new`, `templates/[id]`, and `history` (see Screens). The layout requires a user and draws the shell (see Shell). |
@@ -40,8 +42,10 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/calendar/` | The Calendar's pure logic, shared by server and browser and unit-tested: `dates.ts` (`readView`, `periodDays`, `shift`, `isoWeek`, `periodTitle`, `dayName`, `calendarHref`, `hm`), `grid.ts` (`localDate`, `localMinutes`, `instantAt`, `piecesOf`, `lanes`, `overlapping`, `dayTotals` in exact ms, `wholeMinutes` and `spanText` truncating a span to whole minutes as every screen does, `snap`, `halfHourSlot`, `dragRange`), `drag.ts` (`dropTimes`, `clampDay`, `keepIn`) and `gestures.svelte.ts` (the `swipe` attachment, `clockOf`). `drawnExtent` and `growInto` are in `src/lib/components/calendar/block.ts`. |
 | `src/lib/components/calendar/` | The Calendar's parts: `CalendarToolbar`, `DatePicker`, `TimeGrid` (day and week), `EntryBlock`, `NewBlock`, `MonthGrid`, `PhoneMonth`; `block.ts` (a block's text and lines), `drag.svelte.ts` (the PC's `BlockDrag`), `now.svelte.ts` (`nowTicker`) and `types.ts`. |
 | `src/lib/keys.ts` | `screenKey`: whether an unmodified key press is the screen's (outside fields, no dialog or open `data-holds-keys` details), shared by the layout and the Calendar. |
-| `src/lib/components/account/` | The Account screen's Agent access parts: the token list with its revoke confirm (`TokenList`), the shown-once token with its Copy button (`NewToken`). |
-| `src/lib/components/setup/` | The Setup screen's parts: `ShowFilter` (Active, Archived, All), `SetupList` (one list's ruled rows), `SetupMenu` (a row's ⋯), `RenameRow` (rename in place), `CreateDialog` (the create dialog or sheet); `act.ts` (`setupHref`, `actionOf`, `menuButtonOf`, `act`, the `use:enhance` for its posts). |
+| `src/lib/components/account/` | The Account screen's Agent access parts: the token table and rows with their ⋯ (`TokenList`), the New token dialog that shows the made token once with Copy and Done (`NewToken`), and Revoke…'s confirm (`RevokeToken`). |
+| `src/lib/components/admin/` | What Account, Users and Backup share: `PanelSection` (a section head over its surface panel, Setup's section), `Panel` (that surface panel alone, also the shell's error page's), `ActionMenu` (a row's ⋯: the popover from `lg`, the row sheet below, a disclosure without the script), `FormDialog` (Setup's create dialog generalised: head, body, pinned foot; `inline` the no-JavaScript panel); `items.ts` (`MenuItem`, `userItems`, `tokenItems`). |
+| `src/lib/components/menu-button.svelte.ts` | `MenuButton`: a `<details>` ⋯ with the menu-button pattern, and its classes, shared by `SetupMenu` and `ActionMenu`. |
+| `src/lib/components/setup/` | The Setup screen's parts: `ShowFilter` (Active, Archived, All), `SetupList` (one list's ruled rows), `SetupMenu` (a row's ⋯), `RenameRow` (rename in place), `CreateDialog` (the create dialog or sheet, on `admin/FormDialog`); `act.ts` (`setupHref`, `actionOf`, `menuButtonOf`, `act`, the `use:enhance` for its posts). |
 | `src/lib/components/templates/` | The Templates screen's parts: `TemplateTable` (the PC), `TemplateList` (the phone's rows and row sheet), `TemplateMenu` (a template's ⋯); `rows.ts` (`editHref`, `whereOf`, `useLabel`, `dotOf`). |
 | `src/lib/components/today/` | The Today screen's parts: the template rows and their sheet (`TemplateSheet`, usable over any screen, its fields `TemplateSheetForm`), the section head, the ticking elapsed time (the timer bar's). |
 | `src/lib/components/entry/` | The entry form: `EntryForm` (the form, for a new entry and an existing one, and in its template kind the template form), `TimeRow` (Start, End and Duration), `ProjectPicker` (with `match.ts`, `matchProjects`, and `matchChoices` for a customer chosen alone), `fill.ts` (`fillValues`, a template's values into the form), `EntryOverlay` (the form over the current screen), and the types its pages load. |
@@ -52,7 +56,7 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/routes/(app)/undo/` | The shared `/undo` route: `core.undo`, then back to the screen it came from. |
 | `src/lib/format.ts` | Formatting shared by server and browser: elapsed time, template times, warning text. |
 | `src/lib/output.ts` | The copy-out's columns and writers, shared by server and browser (no server imports): `COLUMNS` and their heads, `formatDuration` (`h:mm` or decimal hours), `safeText` (the formula guard), `toTsv` and `toCsv`. |
-| `src/lib/components/shell/` | The shell: `Sidebar`, `BottomBar` (with More), `TimerBar`, `StartList`, `NavIcon`, and the bar timer type. |
+| `src/lib/components/shell/` | The shell: `Sidebar`, `BottomBar` (with More), `TimerBar`, `StartList`, `NavIcon`, and the bar timer type; `CardPage`, a page outside the shell (the wordmark over a surface card holding the page's h1), for the sign-in page and the root error page. |
 | `src/lib/shell.ts`, `src/lib/project-colour.ts` | The navigation items, screen titles and current item; the project colour by creation order. |
 | `src/lib/server/screens/shell.ts` | `shellTimers`: the running timers for the bar. |
 | `src/routes/(app)/entries/new`, `entries/[id]` | The entry form's pages and actions: a plain page without JavaScript, and the data the in-place form loads. |
@@ -938,51 +942,127 @@ refusal, to the last toggled tick box after Clear and to Select after Done. Targ
 
 ### Account (`/account`)
 
-In the sidebar, and under More on the phone. Two sections, each a caps head over ruled lines: **Change password** (current, new, confirm; see Accounts and
-sessions) and **Agent access**, the user's tokens for agents (decision 6,
-[mcp.md](mcp.md)).
+In the sidebar, and under More on the phone. A 48 rem column of two `PanelSection`s 32 px
+apart: **Change password** (see Accounts and sessions) and **Agent access**, the user's
+tokens for agents (decision 6, [mcp.md](mcp.md)).
 
-**Agent access** lists the tokens newest first, each a line with its name, the date it
-was made and when it was last used (date and `HH:mm` in the request's zone, or "Never
-used"), and an outline Revoke button; none says "No tokens yet.". Under the list an
-add line (Name, **Create token**) posts `?/createToken`; the name is trimmed, 1–100
-characters ("Name must be 1–100 characters."), unique per user case-insensitively
-("You already have a token with that name."). The new token is shown once, above the
-list, in a read-only mono field labelled with its name that selects itself on focus,
-with a Copy button once the script runs ("Copied" after) and the line "Copy it now: it
-is not shown again."; the next load no longer has it. Revoke is two steps on the page:
-the first press posts `?/revokeToken` and re-renders the line with "Revoke
-"<name>"?", a red Yes, revoke (which takes the focus with JavaScript) and an outline
-Cancel back to `/account`; the confirm deletes the token and says "Token revoked.". An
-unknown id says "Token not found.". No undo: accounts are outside the history
-(decision 4). The posts work without JavaScript; a refusal shows as a red alert at the
-section's head.
+**Change password** is a panel of three ruled rows (Current password, New password,
+Confirm new password; a 12 rem label column from `lg`, the label over the field below)
+and a foot with the primary **Change password**, at the right on the PC and full width
+on the phone. It posts `?/password`. A refusal shows under its field ("Passwords do not
+match." under Confirm new password, the length rule under New password, a wrong current
+password under Current password), described by it, and with the script the field takes
+the focus; "Password changed." is a Messages alert at the section's head.
+
+**Agent access** has the outline **+ New token** at its head and lists the tokens newest
+first: from `lg` a ruled table in the panel (Name semibold and wrapping, Made, Last used
+as date and `HH:mm` in the request's zone or "Never used" muted, ⋯), below it one row
+each with the leading ⋯, the name and "Made <date> · Last used <date> <time>" (a date and
+time never break); none says "No tokens yet.". Under the panel a muted line says what a
+token is for. **+ New token** opens the dialog "New token" (`FormDialog`, a sheet on the
+phone; `components/account/NewToken.svelte`): Name with its hint, Cancel and **Create
+token**, posting `?/createToken`; the name is trimmed, 1–100 characters ("Name must be
+1–100 characters."), unique per user case-insensitively ("You already have a token with
+that name."). A refusal stays in the dialog under Name, the name kept, and Name takes the
+focus. Made, the dialog becomes "Token made: <name>": the token once, in a read-only mono
+field on the muted fill that selects itself on focus, "Copy it now: it is not shown
+again.", a primary **Copy** (it takes the focus; "Copied" once the clipboard has it) and
+an outline **Done**. However it closes (Done, ×, Escape, the scrim, Back) the page
+forgets the post's answer (`applyAction` of nothing), so no reload, Back or reopen shows
+the token again; the focus returns to **+ New token**. Leaving the document with it open
+(`pagehide`), or coming back from the back/forward cache with it (`pageshow`), forgets it
+too. A line's ⋯ (`ActionMenu`) holds
+**Revoke…** (red), which opens the confirm "Revoke "<name>"?" with "Agents using it lose
+access at once. This cannot be undone.", Cancel and a destructive **Revoke** posting
+`?/revokeToken` with `id` and `confirm=yes` (`RevokeToken.svelte`; Revoke takes the
+focus, Escape returns it to ⋯). Done, the line leaves, "Token revoked." shows at the
+section's head and the focus goes to **+ New token**. An unknown id says "Token not
+found." there. No undo: accounts are outside the history (decision 4).
+
+Without JavaScript **+ New token** is the link `?new=token` and the dialog's form shows
+as a panel at the section's head (Cancel a link back to `/account`); a refusal comes
+back in it, the name kept. The made token shows in that panel with Done, a link back to
+`/account`, and no Copy. Revoke… is the ⋯ disclosure's link `?revoke=<id>`, and the
+confirm (also round 1's `confirmRevoke`, a post without `confirm`) shows as a panel there.
+
+### Users (`/admin/users`)
+
+Admin only (`requireAdmin`: signed out 303 to `/login`, a non-admin 403), in the sidebar
+after Account and under More on the phone. A 48 rem column with one `PanelSection`,
+**Users**, with the outline **+ New user** at its head.
+
+The users are listed by username: from `lg` a ruled table in the panel (Username
+semibold with "(you)" muted after your own, Role "Admin" or "User", Created as the date
+in figures, ⋯), below it one row each with the leading ⋯, the username (15 px semibold)
+with the Admin chip, and "Created <date>" muted under it ("· you" on your own). A disabled
+user's name is muted and struck through, with the spent chip "Disabled" after it. A
+32-character username wraps inside its cell; nothing sits in the phone "+"'s column.
+
+A row's ⋯ (`ActionMenu`, the popover from `lg`, the row sheet below headed by the username
+over "<Role> · created <date>") holds **Set password…** and, after a rule, **Disable** or
+**Enable**; your own row has no Disable (the server refuses it anyway). Neither is red.
+
+- **+ New user** opens "New user" (`FormDialog`, a sheet on the phone): Username (hint "3
+  to 32 characters: a–z, 0–9, dot, underscore, hyphen."), Password (hint "10 to 256
+  characters."), the Admin checkbox, Cancel and **Create user**, posting `?/create`. A
+  refusal stays in the dialog under the field it names (`fieldOf` in
+  `screens/accounts.ts`), the username and Admin kept, the password empty, and that field
+  takes the focus. Done, the dialog closes onto **+ New user** and "Created <username>."
+  shows at the section's head.
+- **Set password…** opens "Set password for <username>": New password with the hint "10
+  to 256 characters. Signs <username> out everywhere; their agent tokens keep working."
+  (on your own row "10 to 256 characters. Signs you out everywhere else; your agent
+  tokens keep working."), Cancel and **Set password**, posting `?/setPassword` with
+  `userId`. It ends that user's sessions (on your own row the others, keeping yours) and
+  leaves their tokens. A refusal stays under New password; done, the focus returns to the
+  row's ⋯ and "Password set." shows. A Set password for a user no longer in the list
+  says "User not found." at the section's head.
+- **Disable** and **Enable** post `?/disable` and `?/enable` at once and say "User
+  disabled." or "User enabled."; the focus stays on the row's ⋯. Disabling ends the
+  user's sessions and deletes their tokens; enabling brings back sign-in, not tokens.
+
+No undo: accounts are outside the history (decision 4). Without JavaScript **+ New
+user** is the link `?new=user` and Set password… the ⋯ disclosure's link
+`?password=<id>`: the dialog's form shows as a panel at the section's head (Cancel a
+link back to `/admin/users`), and a refusal comes back in it. Disable and Enable are the
+disclosure's plain posts.
 
 ### Backup (`/admin/backup`)
 
 Admin only (`requireAdmin`: signed out 303 to `/login`, a non-admin 403), in the sidebar
-after Users and under More on the phone (decision 7).
-Three sections, each a caps head over ruled lines.
+after Users and under More on the phone (decision 7). A 48 rem column of `PanelSection`s
+32 px apart, each a panel of ruled lines whose foot holds its button, at the right from
+`lg` and full width below.
 
 **Backup**: "A backup is the whole database: every user, their time data and history.
-Keep it somewhere safe; it holds password hashes." and **Download backup**, the
-primary button, a link to `GET /admin/backup/download`. The route answers
+Keep it somewhere safe; it holds password hashes." and the primary **Download backup**,
+a link to `GET /admin/backup/download`. The route answers
 `application/vnd.sqlite3` as an attachment named `time-keep-YYYY-MM-DD-HHmm.db` (the
 admin's zone, from the `tz` cookie); the file is a vacuumed copy of the database with
 no `session` or `access_token` row, taken in a temporary file next to the database and
 removed when the request ends.
 
 **Restore**: "Restoring replaces every user's data with the backup's and signs
-everyone out.", a file input **Backup file** (`accept=".db"`), a checkbox **Replace all
-data with this backup** and a red **Restore**, in one `multipart/form-data` form posted
-to `?/restore` (it works without JavaScript). The action refuses, changing nothing,
-with "Choose a backup file." (none or empty), "Tick the box to confirm the restore.",
+everyone out.", a row **Backup file** (a file input, `accept=".db"`, its button dressed
+as an outline button and the chosen name muted beside it) and the foot's destructive
+**Restore…** (DESIGN.md's red outline), in one `multipart/form-data` form posted to
+`?/restore`. With the script, Restore… with no file chosen says "Choose a backup file."
+in the panel and opens nothing; with one it opens the confirm "Restore this backup?"
+(`FormDialog`): "Restoring <file name, mono> replaces every user's data with the
+backup's and signs everyone out, you included." and the muted "The data as it is now is
+kept, and can be downloaded under Before the last restore.", Cancel and a destructive
+**Restore** (it takes the focus), which posts the form with `confirm=on`. Without
+JavaScript there is no confirm: the form keeps round 1's checkbox **Replace all data with
+this backup** above the foot, and Restore… posts at once.
+
+The action refuses, changing nothing,
+with "Choose a backup file." (none or empty), "Tick the box to confirm the restore." (without JavaScript),
 "This file is not a time-keep backup." (not SQLite, a failed integrity check, no
 `__drizzle_migrations`, a table or column that differs from the running schema, or a
 foreign key violation; `__drizzle_migrations` must exist but is neither compared nor
 copied), "This backup is from a newer version of time-keep.", "This
 backup has no admin who can sign in." and "The restore failed; nothing was changed."
-(the copy rolled back, or the upload could not be written); the message shows as a red alert under the form. An older
+(the copy rolled back, or the upload could not be written); the message shows as a red alert in the Restore panel, above its foot, and describes the file input. An older
 backup is migrated first. Then the running data is written, as a backup, to
 `time-keep.before-restore.db` beside the database (one file, replaced at each
 restore), and every row is copied into the running database in one transaction on the
@@ -991,9 +1071,36 @@ the restoring admin included, and agents need new tokens). The action redirects 
 `/login?restored=1`. A restore is not recorded in the history: it replaces it.
 
 **Before the last restore**: only when that file exists: "The data as it was just
-before the last restore, <YYYY-MM-DD HH:mm>." (the file's time, in the admin's zone)
-and an outline **Download**, `GET /admin/backup/download?before-restore=1`, named
+before the last restore, <YYYY-MM-DD HH:mm>." (the file's time, in the admin's zone,
+never wrapping) and the foot's outline **Download**, `GET /admin/backup/download?before-restore=1`, named
 `time-keep-before-restore-YYYY-MM-DD-HHmm.db`. Restoring it is an ordinary restore.
+
+### The sign-in page (`/login`)
+
+Outside the shell, on `CardPage`: no dark bar. On the ground, centred from `sm` (56 px
+from the top below), the wordmark (the sidebar's blue ring and "time-keep", 24 px bold)
+and 24 px under it a surface card (`border` stroke, 4 px corners, at most 400 px wide,
+32 px padding; 20 px on the phone): the h1 "Sign in" centred, Username, Password and a
+full-width primary **Sign in**. The page's title is "Sign in". Signed in already, it
+redirects to Today.
+
+The password field has the eye at its right end (a ghost icon button, script-only,
+`data-js`): "Show password" or "Hide password" with `aria-pressed`, switching the field
+between hidden and shown and keeping the focus where it was. "Wrong username or
+password." and "Restored. Sign in with the backup's passwords." are Messages alerts in
+the card above the fields; a refused sign-in keeps the username and focuses the
+password. There is no "forgot password": the admin sets passwords on Users.
+
+### The error pages
+
+The status codes stay (404, 403, 500). The title is "Not found" for a 404, else the
+error's own message ("Admins only"); one sentence goes under it ("There is nothing at
+this address.", "Only an admin can open this page.", "Something went wrong on this
+page."), and an outline **Back to Today**. Inside the signed-in shell (a non-admin on
+`/admin/…`, a missing entry) the header's title is the error's and the page is one
+surface panel (`Panel`) with the sentence and the link. Outside it (an unknown address,
+signed in or not) the sign-in page's wordmark and card hold the title as the h1, the
+sentence and a full-width Back to Today. The document title is the error's title.
 
 ### Time zones
 
@@ -1140,13 +1247,19 @@ no-JavaScript posts; `history.test.ts` covers History with a user of its own per
   a refused save keeping what was typed, the keys `n`, `s` and Ctrl+Enter (not typed
   into a field), and the start list and Restart as plain posts without JavaScript;
   `shell.test.ts` covers the shell with a user of its own per test: every screen reached from the navigation and shown current (More on the phone, Users and Backup for an admin), the title as the one `h1`, More closing on a choice and on Escape, "No timer running", a stop from the bar undone where it was stopped, several timers as the newest plus a count, a refused stop, Stop and Save never hidden by the bars, the project colour in the bar, and the bar and More as plain posts and links without JavaScript; `agent.test.ts` covers Agent access and `/mcp`
-  with a user of its own per test (`seedEmptyUser`): a token made and shown once
-  (gone on the next load, listed as "Never used") and a duplicate name refused, a
-  `change` call with that token through Playwright's request client (headers
-  `authorization`, `content-type` and `accept`) showing its customer on Setup and its
-  batch on History with the Agent chip, undone there in one step, and the token's
-  last-used time on Account; the signed-in session cookie alone answered 401; a
-  revoked token answered 401; and the no-JavaScript create and two-step revoke.
+  with a user of its own per test (`seedEmptyUser`), at both widths: "+ New token" in
+  its dialog, the token shown once with Copy (focused; "Copied", the clipboard holding
+  it) and Done, the list's "Never used", no `tk_` in the page's text or fields after
+  Done, a reload, Back and Forward, Escape or Back while it shows, and an empty Name on
+  reopening; a duplicate name refused under Name, kept and focused; a 100-character
+  name with no sideways scroll and its ⋯ in view; ⋯ → Revoke… → the confirm (Revoke
+  focused; Escape back to ⋯), Revoke gone with "Token revoked." and the focus on "+ New
+  token", the token then answering 401 on `/mcp` after 200 before; a `change` call with a
+  token through Playwright's request client (headers `authorization`, `content-type` and
+  `accept`) showing its customer on Setup and its batch on History with the Agent chip,
+  undone there in one step, and the token's last-used time on Account; the signed-in
+  session cookie alone answered 401; and without JavaScript the `?new=token` panel, its
+  refusal, the made token with Done and no Copy, and the two-step revoke.
 - The MCP server's unit tests: `auth/tokens.test.ts` (made, hashed, found, revoked, a
   disabled user's refused and deleted, `last_used_at`), `mcp/http.test.ts` (the
   Origin check, 401 alike for every bad token, no session cookie, a body that is not
@@ -1179,12 +1292,27 @@ no-JavaScript posts; `history.test.ts` covers History with a user of its own per
   controls.
 - `e2e/backup.test.ts` covers Backup with the seeded admin: a non-admin refused on the
   screen and the download with no Backup in the sidebar; a download (its name, the SQLite
-  header), a customer made after it, the restore of that file landing on
-  `/login?restored=1`, the customer gone after signing in again and the before-restore
-  download; the two refusals (box unticked, no file) leaving the admin signed in; and
-  the no-JavaScript download and restore. A restore signs out every session, so each
+  header), a customer made after it, the restore of that file through the confirm landing
+  on `/login?restored=1`, the customer gone after signing in again and the before-restore
+  download; Restore… with no file saying so and opening nothing; the confirm naming the
+  file, cancelling and returning the focus; a file that is not a backup refused in the
+  Restore panel; Restore… a red outline, not a red fill; and without JavaScript the
+  download and a full restore, and the refusals without the box or without a file. A restore signs out every session, so each
   test signs in again after it and restores only the backup it just downloaded, which
   leaves the other tests' seeded users in place.
+- `e2e/accounts.test.ts` covers sign-in, Users and Change password: a messy username
+  signing in; "+ New user" in its dialog, Escape back onto it, a short username refused
+  under Username (kept, the password empty) and a duplicate refused in the dialog; the
+  new user refused on `/admin/…` ("Admins only"); a mismatched confirm refused under
+  Confirm new password and the password changed; Set password… from the row's ⋯ (Escape
+  back onto ⋯, a short password refused under New password, the user signed out
+  everywhere); Disable and Enable from the ⋯, also by keys; the admin's own row with no
+  Disable and a password set keeping them signed in; a 32-character username wrapping at
+  390 px with nothing on the "+"; a Set password for a user not in the list shown at the
+  section's head; and without JavaScript the dialogs as forms in the page with their
+  refusals. `shell.test.ts` also covers the sign-in card (no dark bar), a refused sign-in
+  keeping the username and focusing the password, the eye, the refused page in the shell
+  and the unknown address on the card, each with Back to Today.
 - `npm test` runs both.
 
 Chromium needs system libraries and fonts. The devcontainer image installs them, so

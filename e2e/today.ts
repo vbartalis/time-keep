@@ -17,7 +17,7 @@ export async function signIn(page: Page, username: string, zone?: string) {
 	if (zone) await rememberZone(page.context(), zone);
 	await page.goto('/login');
 	await page.getByLabel('Username').fill(username);
-	await page.getByLabel('Password').fill(PASSWORD);
+	await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
 	await page.getByRole('button', { name: 'Sign in' }).click();
 	await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
 }

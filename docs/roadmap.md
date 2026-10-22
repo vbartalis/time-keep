@@ -1302,7 +1302,7 @@ Deferred minors:
   flaky run of the phone Calendar's focus-order test was seen.
 - Phone day heads are about 13 px taller in Select, so rows shift slightly at Done.
 
-### 15. The rest of the screens
+### 15. The rest of the screens — done 2026-10-22
 
 Every remaining screen redone in the new direction and the patterns of 12–14: Setup
 (customers › projects, activities, locations), templates as part of favourites,
@@ -1638,8 +1638,118 @@ screens.
     unnamed choice is covered by e2e only; the phone Clear-filters loop asserts no
     count; the band's 1280 px boundary; "Copy failed" untested; hydration waits on
     `networkidle`; the Gate 5 sheet-total locator is positional.
-- **15d. Account and agent access, Users, Backup and the sign-in page.** The last
-  part also checks that no screen still uses round 1's look or patterns.
+- **15d. Account and agent access, Users, Backup and the sign-in page — done
+  2026-10-22.** The last part also checks that no screen still uses round 1's look or
+  patterns.
+
+  Done 2026-10-22: Account, Users, Backup, the sign-in page and the error pages redone
+  in item 11's direction and the patterns of 12–14; a sweep of every screen found no
+  round 1 layout left. The users, tokens, auth and backup modules, the core, the
+  database and the MCP are unchanged; the routes only add the field, dialog and values
+  a refusal needs. What was built:
+
+  - Shared parts in `components/admin/`: `Panel` and `PanelSection` (a caps head on a
+    rule over a surface panel, edge to edge on the phone), `ActionMenu` (a ⋯ row menu:
+    a 208 px popover on the PC, a row sheet on the phone; `menu-button.svelte.ts`
+    lifted from Setup's menu), `FormDialog` (440 px dialog on the PC, bottom sheet on
+    the phone; Setup's create dialog now runs on it) and the dialogs' closing and focus
+    helpers.
+  - Account: Change password and Agent access as two sections; "+ New token" opens a
+    dialog that shows the token once with Copy (announced) and Done, every way of
+    leaving it (Done, Escape, ×, scrim, Back, the bfcache) forgetting it; a token's ⋯
+    has Revoke… with a confirm.
+  - Users: a list with Admin and Disabled chips, "+ New user" in a dialog, a row ⋯ with
+    Set password…, Disable or Enable (none on the actor's own row; its Set password
+    says it signs them out everywhere else).
+  - Backup: Download backup; Restore… opens a confirm naming the file (with no file,
+    "Choose a backup file." and nothing posted); Before the last restore with its
+    Download when that copy exists. Destructive buttons are the red outline.
+  - The sign-in page as Kimai's card (`shell/CardPage.svelte`): the wordmark, the card,
+    the alerts above the fields, the username kept after a refusal and the focus on
+    Password, an eye to show the password. The root error page in the same card
+    ("Not found", or the error's words, and "Back to Today"); the shell's error page a
+    panel inside the shell, its header titled the same. Status codes unchanged.
+  - Without JavaScript every dialog is an in-page panel at its section's head
+    (`?new=token`, `?revoke=<id>`, `?new=user`, `?password=<id>`), refusals come back
+    there, Revoke keeps its two-step confirm and Restore its checkbox.
+  - Refusals are placed beside the field they name (`fieldOf`, `dialogOf` in
+    `screens/accounts.ts`); one naming no field shows at the dialog's top. Passwords are
+    never echoed.
+  - The sweep's look-only fixes: the no-script template form's project selects kept in
+    the field column; the no-script restore box aligned with the file field; Account,
+    Users and Backup titled "<Screen> · Time Keep"; the shell's error page titled as
+    the root one; one `Panel` shared by `PanelSection` and the error page. No behaviour
+    leftover found, so no issue filed.
+
+  Records: spec `docs/superpowers/specs/2026-10-21-account-users-backup-design.md`, plan
+  `docs/superpowers/plans/2026-10-21-account-users-backup.md`. `docs/app.md` (Account,
+  a new Users section, Backup, the sign-in and error pages) and `PRODUCT.md` updated;
+  `DESIGN.md` and `.impeccable/design.json` recorded by impeccable's documenter (round
+  1's carry-overs dropped, the shared parts named, a 13 px `hint` step added). No new
+  decision record.
+
+  Checks: 1119 unit tests and the browser suite (367 passed, the rest skipped by
+  project); check and lint clean. impeccable's critique scored 35/40 and the audit
+  19/20, both run in one context (the implementer may not dispatch agents); the one
+  material finding (the made token's underscore hidden at 14 px) fixed by showing it at
+  15 px. Task reviews: no Critical or Important; Tasks 2–4 each had a fix round (a
+  popover post dropped focus, a lone foot button at half width, the made token back on
+  a cross-document Back, the mismatch's field, the dialog closing copied between pages,
+  an unknown user's Set password refusal shown nowhere). The final whole-branch review
+  found one Important ("Copied" no longer announced), fixed with two of its minors.
+  Before the gate the phone Calendar's focus-order test (#3) failed twice under the
+  full suite: it read the toolbar before hydration, while Filter was still a
+  `<summary>`; it now waits for the hydrated Filter button. A phone Templates
+  stale-save flake seen once is filed as #6.
+
+  Calls made in the operator's place, the stand-in's: spec calls 1–12, as recorded in
+  the spec (sources and confidence there). The builder's: spec calls 13–21, and from
+  the build (ledger rulings):
+
+  - impeccable's critique and audit ran inside the implementer, not as their own
+    agents, and DESIGN.md was recorded by the documenter as its own reviewed step.
+  - Vitest paths with `(app)` are quoted.
+  - `FormDialog`'s body keeps Setup's 20 px padding from `lg`, not the brief's 16 px,
+    so Setup's look is unchanged.
+  - `PanelSection` copies Setup's head and panel classes rather than Setup using it
+    (Setup's page was not to change); parked.
+  - "Passwords do not match." sits under Confirm new password (a `confirm` field), not
+    under New password as Task 1's plan text had it.
+  - A disabled admin shows both the Admin and the Disabled chip on the phone.
+  - The shell's error page uses `Panel`, not `PanelSection`, which always draws a head
+    the spec gives no words for.
+  - Without JavaScript Restore… keeps its ellipsis (the checkbox is the further step).
+  - The phone's full-width panel feet (Change password, Download backup, Restore…) pass
+    under the "+" at rest, as the spec and mockup set them; the page scrolls them clear.
+  - The success result handed to `applyAction` keeps its `location` (SvelteKit's type
+    requires it).
+  - From the sweep: error pages titled bare ("Not found", "Admins only"), as "Sign in";
+    the made token at 15 px rather than another font.
+
+  Questions queued in `docs/questions.md`: how wide Account, Users and Backup are on the
+  PC; Account as one page or two tabs; when and on which device Users and Backup are
+  opened; when and on which device Account is opened.
+
+  Deferred minors:
+
+  - Look: a server refusal on Restore stays shown after another file is chosen, until
+    the next post; long unbroken token names wrap with a one-letter tail; the phone's
+    admin row reads "Admin" twice to assistive technology; a dialog briefly shows after
+    success from a reloaded `?new=` or `?password=` address; the no-script password
+    field keeps the eye's padding; a failed revoke focuses "+ New token", not the
+    alert; DESIGN.md's ramp leaves out the sign-in wordmark's 24 px.
+  - Code: Users' table markup copies TokenList's; Users' dialogs are page snippets,
+    Account's components; every row mounts its closed dialog; Account's page has an
+    `eslint-disable` with no matching enable; `fieldOf` matches on a message prefix;
+    `iconOf` casts; pages send no `Cache-Control`, so a cross-document Forward shows a
+    stale token list (as before).
+  - Test gaps: no unit test of `ActionMenu` or `FormDialog` (the e2e covers focus);
+    closing the made dialog by scrim or ×; the bfcache test passes without its fix in
+    headless Chromium; the 404 only signed out; focus back to the admin's own ⋯; a
+    32-character username on the PC; the no-script eye; a 0-byte backup file; the
+    no-file refusal's precedence; the phone red-outline check (fill against text
+    only); setPassword's unknown user and Account's short new password at route level;
+    a weak password-echo guard.
 
 ### 16. Usability check
 

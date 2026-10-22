@@ -11,7 +11,7 @@ async function signIn(page: Page, username: string, password = PASSWORD) {
 	await rememberZone(page.context());
 	await page.goto('/login');
 	await page.getByLabel('Username').fill(username);
-	await page.getByLabel('Password').fill(password);
+	await page.getByLabel('Password', { exact: true }).fill(password);
 	await page.getByRole('button', { name: 'Sign in' }).click();
 	await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
 }
@@ -341,4 +341,70 @@ test('focus lands clear of the sticky bars', async ({ page }) => {
 	await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 	await invalid.evaluate((el) => el.scrollIntoView({ block: 'nearest' }));
 	await expectClear(page, invalid);
+});
+
+test.describe('the sign-in page', () => {
+	test('is a card on the ground, with no dark bar', async ({ page }) => {
+		await page.goto('/login');
+		await expect(page.getByRole('heading', { name: 'Sign in', level: 1 })).toBeVisible();
+		const rail = await page.evaluate(() => {
+			const probe = document.createElement('div');
+			probe.style.background = 'var(--sidebar)';
+			document.body.append(probe);
+			const colour = getComputedStyle(probe).backgroundColor;
+			probe.remove();
+			return colour;
+		});
+		const colours = await page
+			.locator('body, body *')
+			.evaluateAll((els) => els.map((el) => getComputedStyle(el).backgroundColor));
+		expect(colours).not.toContain(rail);
+	});
+
+	test('a refused sign-in keeps the username and focuses the password', async ({ page }) => {
+		const user = await seedEmptyUser(`${test.info().project.name}-refused`);
+		await page.goto('/login');
+		await page.getByLabel('Username').fill(user.username);
+		await page.getByLabel('Password', { exact: true }).fill('not-the-password');
+		await page.getByRole('button', { name: 'Sign in' }).click();
+		await expect(page.getByText('Wrong username or password.')).toBeVisible();
+		await expect(page.getByLabel('Username')).toHaveValue(user.username);
+		await expect(page.getByLabel('Password', { exact: true })).toBeFocused();
+	});
+
+	test('the eye shows and hides the password and keeps the focus', async ({ page }) => {
+		await page.goto('/login');
+		const field = page.getByLabel('Password', { exact: true });
+		await field.focus();
+		await page.getByRole('button', { name: 'Show password' }).click();
+		await expect(field).toBeFocused();
+		await expect(field).toHaveAttribute('type', 'text');
+		await expect(page.getByRole('button', { name: 'Hide password' })).toHaveAttribute(
+			'aria-pressed',
+			'true'
+		);
+		await page.getByRole('button', { name: 'Hide password' }).click();
+		await expect(field).toHaveAttribute('type', 'password');
+	});
+});
+
+test.describe('the error pages', () => {
+	test('a refused page shows in the shell and leads back to Today', async ({ page }) => {
+		const user = await seedEmptyUser(`${test.info().project.name}-denied`);
+		await signIn(page, user.username);
+		const response = await page.goto('/admin/users');
+		expect(response?.status()).toBe(403);
+		await expect(page.getByRole('heading', { name: 'Admins only', level: 1 })).toBeVisible();
+		await expect(main(page)).toBeVisible();
+		await page.getByRole('link', { name: 'Back to Today' }).click();
+		await expect(page).toHaveURL(/\/$/);
+		await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
+	});
+
+	test('an unknown address is a card with a way back', async ({ page }) => {
+		const response = await page.goto('/no-such-page');
+		expect(response?.status()).toBe(404);
+		await expect(page.getByRole('heading', { name: 'Not found', level: 1 })).toBeVisible();
+		await expect(page.getByRole('link', { name: 'Back to Today' })).toHaveAttribute('href', '/');
+	});
 });

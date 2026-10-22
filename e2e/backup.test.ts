@@ -12,7 +12,7 @@ const SQLITE_HEADER = 'SQLite format 3\0';
 async function signIn(page: Page, username: string, password: string) {
 	await page.goto('/login');
 	await page.getByLabel('Username').fill(username);
-	await page.getByLabel('Password').fill(password);
+	await page.getByLabel('Password', { exact: true }).fill(password);
 	await page.getByRole('button', { name: 'Sign in' }).click();
 }
 
@@ -38,11 +38,31 @@ async function downloadBackup(page: Page) {
 	return download;
 }
 
+/** Backup, once the script runs (Restore… opens the confirm only then). */
+async function openBackup(page: Page) {
+	await page.goto('/admin/backup');
+	await page.waitForLoadState('networkidle');
+}
+
+const restorePanel = (page: Page) => page.getByRole('region', { name: 'Restore', exact: true });
+const confirmDialog = (page: Page) => page.getByRole('dialog', { name: 'Restore this backup?' });
+
+/** Restores with the script: Restore… opens the confirm, whose Restore posts the form. */
 async function restoreFrom(page: Page, download: Download) {
+	await openBackup(page);
+	await page.getByLabel('Backup file').setInputFiles(await download.path());
+	await page.getByRole('button', { name: 'Restore…' }).click();
+	await confirmDialog(page).getByRole('button', { name: 'Restore', exact: true }).click();
+	await expect(page).toHaveURL(/\/login\?restored=1$/);
+	await expect(page.getByText("Restored. Sign in with the backup's passwords.")).toBeVisible();
+}
+
+/** Restores without the script: the box, then Restore… posts the form. */
+async function restoreFromNoJs(page: Page, download: Download) {
 	await page.goto('/admin/backup');
 	await page.getByLabel('Backup file').setInputFiles(await download.path());
 	await page.getByLabel('Replace all data with this backup').check();
-	await page.getByRole('button', { name: 'Restore' }).click();
+	await page.getByRole('button', { name: 'Restore…' }).click();
 	await expect(page).toHaveURL(/\/login\?restored=1$/);
 	await expect(page.getByText("Restored. Sign in with the backup's passwords.")).toBeVisible();
 }
@@ -95,23 +115,91 @@ test('backup: download, restore, and the copy from before the restore', async ({
 	}
 });
 
-test('backup: a restore without the box or without a file is refused', async ({ page }) => {
+test('backup: Restore… with no file says so and opens nothing', async ({ page }) => {
+	await signInAdmin(page);
+	await openBackup(page);
+	const posts: string[] = [];
+	page.on('request', (r) => {
+		if (r.method() === 'POST') posts.push(r.url());
+	});
+	await page.getByRole('button', { name: 'Restore…' }).click();
+	await expect(restorePanel(page).getByText('Choose a backup file.')).toBeVisible();
+	await expect(confirmDialog(page)).toHaveCount(0);
+	expect(posts).toEqual([]);
+	// The box is the no-script page's.
+	await expect(page.getByLabel('Replace all data with this backup')).toBeHidden();
+});
+
+test('backup: the confirm names the file, cancels and returns the focus', async ({ page }) => {
 	await signInAdmin(page);
 	const backup = await downloadBackup(page);
+	const name = backup.suggestedFilename();
 
-	await page.goto('/admin/backup');
-	await page.getByLabel('Backup file').setInputFiles(await backup.path());
-	await page.getByRole('button', { name: 'Restore' }).click();
-	await expect(page.getByText('Tick the box to confirm the restore.')).toBeVisible();
+	await openBackup(page);
+	await page.getByLabel('Backup file').setInputFiles({
+		name,
+		mimeType: 'application/vnd.sqlite3',
+		buffer: readFileSync(await backup.path())
+	});
+	const restore = page.getByRole('button', { name: 'Restore…' });
+	await restore.click();
+	const dialog = confirmDialog(page);
+	await expect(dialog).toBeVisible();
+	await expect(dialog.locator('code, .font-mono').getByText(name)).toBeVisible();
+	await expect(dialog).toContainText(
+		`Restoring ${name} replaces every user's data with the backup's and signs everyone out, you included.`
+	);
+	await expect(dialog).toContainText(
+		'The data as it is now is kept, and can be downloaded under Before the last restore.'
+	);
+	// No field: Restore takes the focus, not the ×.
+	await expect(dialog.getByRole('button', { name: 'Restore', exact: true })).toBeFocused();
 
-	await page.goto('/admin/backup');
-	await page.getByLabel('Replace all data with this backup').check();
-	await page.getByRole('button', { name: 'Restore' }).click();
-	await expect(page.getByText('Choose a backup file.')).toBeVisible();
-
-	await page.goto('/admin/backup');
-	await expect(page.getByRole('heading', { name: 'Backup', level: 1 })).toBeVisible();
+	await dialog.getByRole('button', { name: 'Cancel' }).click();
+	await expect(dialog).toHaveCount(0);
 	await expect(page).toHaveURL(/\/admin\/backup$/);
+	await expect(restore).toBeFocused();
+
+	await restore.click();
+	await expect(dialog).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(dialog).toHaveCount(0);
+	await expect(restore).toBeFocused();
+	await expect(page).toHaveURL(/\/admin\/backup$/);
+});
+
+test('backup: a file that is not a backup is refused in the Restore panel', async ({ page }) => {
+	await signInAdmin(page);
+	await openBackup(page);
+	await page.getByLabel('Backup file').setInputFiles({
+		name: 'notes.db',
+		mimeType: 'application/octet-stream',
+		buffer: Buffer.from('not a database at all')
+	});
+	await page.getByRole('button', { name: 'Restore…' }).click();
+	await confirmDialog(page).getByRole('button', { name: 'Restore', exact: true }).click();
+	await expect(restorePanel(page).getByText('This file is not a time-keep backup.')).toBeVisible();
+	await expect(confirmDialog(page)).toHaveCount(0);
+	await expect(page).toHaveURL(/\/admin\/backup$/);
+});
+
+test('backup: Restore… is a red outline, not a red fill', async ({ page }, testInfo) => {
+	await signInAdmin(page);
+	// Once the script runs: Restore… is swapped for the script's button when it does.
+	await openBackup(page);
+	const restore = page.getByRole('button', { name: 'Restore…' });
+	const { fill, text } = await restore.evaluate((el) => {
+		const style = getComputedStyle(el);
+		return { fill: style.backgroundColor, text: style.color };
+	});
+	expect(fill).not.toBe(text);
+	if (testInfo.project.name === 'pc') {
+		// The panel's surface.
+		const panel = await restorePanel(page)
+			.locator('.lg\\:bg-card')
+			.evaluate((el) => getComputedStyle(el).backgroundColor);
+		expect(fill).toBe(panel);
+	}
 });
 
 test.describe('without JavaScript', () => {
@@ -121,12 +209,30 @@ test.describe('without JavaScript', () => {
 		await signInAdmin(page);
 		const backup = await downloadBackup(page);
 		await createCustomer(page, 'After backup nojs');
-		await restoreFrom(page, backup);
+		await restoreFromNoJs(page, backup);
 		await signInAdmin(page);
 		await page.goto('/setup');
 		await expect(page.getByRole('heading', { name: 'Customers' }).first()).toBeVisible();
 		await expect(page.getByText('After backup nojs')).toHaveCount(0);
 		await page.goto('/admin/backup');
 		await expect(page.getByRole('heading', { name: 'Before the last restore' })).toBeVisible();
+	});
+
+	test('backup: a restore without the box or without a file is refused', async ({ page }) => {
+		await signInAdmin(page);
+		const backup = await downloadBackup(page);
+
+		await page.goto('/admin/backup');
+		await expect(page.getByLabel('Replace all data with this backup')).toBeVisible();
+		await page.getByLabel('Backup file').setInputFiles(await backup.path());
+		await page.getByRole('button', { name: 'Restore…' }).click();
+		await expect(
+			restorePanel(page).getByText('Tick the box to confirm the restore.')
+		).toBeVisible();
+
+		await page.goto('/admin/backup');
+		await page.getByLabel('Replace all data with this backup').check();
+		await page.getByRole('button', { name: 'Restore…' }).click();
+		await expect(restorePanel(page).getByText('Choose a backup file.')).toBeVisible();
 	});
 });

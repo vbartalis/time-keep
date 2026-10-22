@@ -57,7 +57,7 @@ async function signIn(page: Page, username: string, password: string) {
 	await rememberZone(page.context());
 	await page.goto('/login');
 	await page.getByLabel('Username').fill(username);
-	await page.getByLabel('Password').fill(password);
+	await page.getByLabel('Password', { exact: true }).fill(password);
 	await page.getByRole('button', { name: 'Sign in' }).click();
 	await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
 }
@@ -180,5 +180,23 @@ test('the admin screens have 44 px targets', async ({ page }) => {
 		const list = await offenders(page);
 		if (list.length) found[path] = list;
 	}
+
+	// Users' dialog and row sheet.
+	await page.goto('/admin/users');
+	await page.waitForLoadState('networkidle');
+	await page.getByRole('button', { name: 'New user', exact: true }).click();
+	await expect(page.getByRole('dialog', { name: 'New user' })).toBeVisible();
+	let list = await offenders(page);
+	if (list.length) found['new user sheet'] = list;
+	await page.keyboard.press('Escape');
+	await page.getByRole('button', { name: 'Actions for admin' }).click();
+	await expect(page.getByRole('dialog', { name: 'admin', exact: true })).toBeVisible();
+	list = await offenders(page);
+	if (list.length) found['user row sheet'] = list;
+	await page.getByRole('button', { name: 'Set password…' }).click();
+	await expect(page.getByRole('dialog', { name: 'Set password for admin' })).toBeVisible();
+	list = await offenders(page);
+	if (list.length) found['set password sheet'] = list;
+
 	expect(found).toEqual({});
 });

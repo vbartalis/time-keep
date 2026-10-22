@@ -17,7 +17,7 @@ export const actions: Actions = {
 		const password = String(data.get('password') ?? '');
 		const db = getDb();
 		const result = await authenticate(db, username, password, getClientAddress());
-		if (!result.ok) return fail(400, { error: result.error });
+		if (!result.ok) return fail(400, { error: result.error, username });
 		const { token, session } = createSession(db, result.value.id);
 		setSessionCookie(cookies, token, session.expiresAt, url.protocol === 'https:');
 		redirect(303, '/');

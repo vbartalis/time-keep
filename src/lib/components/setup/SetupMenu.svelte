@@ -6,6 +6,13 @@
 	import Plus from '@lucide/svelte/icons/plus';
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
+	import {
+		MenuButton,
+		menuItemClass,
+		menuListClass,
+		menuSummaryClass,
+		sheetItemClass
+	} from '#lib/components/menu-button.svelte.js';
 	import type { SetupProject, SetupRow, Show } from '#lib/server/screens/setup.js';
 	import { act, actionOf, menuButtonOf, setupHref } from './act';
 
@@ -44,54 +51,10 @@
 	let hydrated = $state(false);
 	onMount(() => (hydrated = true));
 
-	let details = $state<HTMLDetailsElement | null>(null);
-	let summary = $state<HTMLElement | null>(null);
-	let list = $state<HTMLElement | null>(null);
-	let open = $state(false);
+	const menu = new MenuButton();
 
 	const label = $derived(`Actions for ${row.name}`);
 	const underArchived = $derived('underArchived' in row && row.underArchived);
-	const items = () => [...(list?.querySelectorAll<HTMLElement>('[data-menu-item]') ?? [])];
-
-	function close(focus: boolean) {
-		if (details) details.open = false;
-		if (focus) summary?.focus();
-	}
-
-	function outside(e: MouseEvent) {
-		const target = e.target instanceof Node ? e.target : null;
-		if (target && details && !details.contains(target)) close(false);
-	}
-
-	function ontoggle() {
-		open = details?.open ?? false;
-		if (open) {
-			document.addEventListener('click', outside, true);
-			items()[0]?.focus();
-		} else {
-			document.removeEventListener('click', outside, true);
-		}
-	}
-
-	$effect(() => () => document.removeEventListener('click', outside, true));
-
-	function onkeydown(e: KeyboardEvent) {
-		const all = items();
-		const at = all.indexOf(document.activeElement as HTMLElement);
-		const to = (i: number) => {
-			e.preventDefault();
-			all[(i + all.length) % all.length]?.focus();
-		};
-		if (e.key === 'ArrowDown') to(at + 1);
-		else if (e.key === 'ArrowUp') to(at === -1 ? -1 : at - 1);
-		else if (e.key === 'Home') to(0);
-		else if (e.key === 'End') to(-1);
-		else if (e.key === 'Escape') {
-			e.preventDefault();
-			e.stopPropagation();
-			close(true);
-		} else if (e.key === 'Tab') close(false);
-	}
 
 	/** Rename and Add project: the menu closes onto ⋯ first, then the field or dialog opens. */
 	function pick(onpick: () => void, then: () => void) {
@@ -99,10 +62,8 @@
 		then();
 	}
 
-	const item =
-		'flex h-11 w-full cursor-pointer items-center gap-2.5 rounded-sm px-3 text-left text-sm text-foreground outline-none transition-colors duration-150 ease-out hover:bg-accent focus-visible:bg-accent lg:h-9';
-	const sheetItem =
-		'flex h-12 w-full cursor-pointer items-center gap-3 border-t border-border px-4 text-left text-base text-foreground outline-none transition-colors duration-150 ease-out hover:bg-accent focus-visible:bg-accent';
+	const item = menuItemClass;
+	const sheetItem = sheetItemClass;
 	const role = $derived(hydrated ? 'menuitem' : undefined);
 </script>
 
@@ -117,26 +78,26 @@
 		{@render entries(sheetItem, undefined, sheet.onpick)}
 	</div>
 {:else}
-	<details bind:this={details} {ontoggle} data-holds-keys class="relative">
+	<details bind:this={menu.details} ontoggle={menu.ontoggle} data-holds-keys class="relative">
 		<summary
-			bind:this={summary}
+			bind:this={menu.summary}
 			data-menu-for={row.id}
 			aria-label={label}
 			aria-haspopup={hydrated ? 'menu' : undefined}
-			aria-expanded={hydrated ? open : undefined}
-			class="inline-flex size-11 cursor-pointer list-none items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 ease-out outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring lg:size-9 [&::-webkit-details-marker]:hidden"
+			aria-expanded={hydrated ? menu.open : undefined}
+			class={menuSummaryClass}
 		>
 			<Ellipsis class="size-4" aria-hidden="true" />
 		</summary>
 		<div
-			bind:this={list}
+			bind:this={menu.list}
 			role={hydrated ? 'menu' : undefined}
 			aria-label={hydrated ? label : undefined}
 			tabindex="-1"
-			{onkeydown}
-			class="absolute top-full left-0 z-20 mt-1 flex w-52 flex-col rounded-md border border-border bg-card p-1 shadow-[0_8px_24px_rgb(0_0_0/0.12)] lg:right-0 lg:left-auto"
+			onkeydown={menu.onkeydown}
+			class={menuListClass}
 		>
-			{@render entries(item, role, () => close(true))}
+			{@render entries(item, role, () => menu.close(true))}
 		</div>
 	</details>
 {/if}
@@ -188,7 +149,7 @@
 			method="POST"
 			action={actionOf(row.archived ? 'unarchive' : 'archive', show)}
 			use:enhance={act({ fallback: () => menuButtonOf(row.id) })}
-			onsubmit={sheet ? onpick : () => close(false)}
+			onsubmit={sheet ? onpick : () => menu.close(false)}
 			class="contents"
 		>
 			<input type="hidden" name="kind" value={row.kind} />
