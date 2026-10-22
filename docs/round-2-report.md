@@ -1,46 +1,11 @@
 # Round 2 report
 
-Round 2 (items 17, 10–16 and 18–20) rebuilt the app to make it usable: a new look,
+Round 2 (items 17, 10–16 and 18–21) rebuilt the app to make it usable: a new look,
 one entry form and timer bar, calendar views, the timesheet table, and every other
-screen redone. **The round stopped as failed**: the usability check's second run
-(item 16, 2026-10-22) failed, first on a builder check before the gate, then, rerun
-with the operator's approval once that was fixed, on one gate finding (below). This
-report was written by that run. It points at the done notes in the
-[roadmap](roadmap.md) rather than repeating them.
-
-## Why the round stopped
-
-The second run's first attempt failed before the usability gate was dispatched:
-`npm run test:unit` had one failing test, `/entries/new > save > starts an untouched
-Start at the moment of saving, stopping the old timer there`, whose fixed fake clock
-had fallen behind real time. A defect in the test, not the app
-([issue #9](https://github.com/vbartalis/time-keep/issues/9)); the operator fixed it
-(75a1165) and approved one more run
-([issue #10](https://github.com/vbartalis/time-keep/issues/10)).
-
-On the rerun every builder check passed (`npm run check`, `npm run lint`,
-`npm run test:unit` 1158 of 1158, `npm run test:e2e` 400 passed, 200 skipped as the
-other surface's), and the gate ran the twelve tasks at 390 px and 1440 px in light
-and dark, each on a freshly seeded month. Tasks 1–11 passed at all four settings, and
-task 12 at 1440 px. It failed one finding:
-
-- **Calendar's day view on the phone scrolls sideways with a crowded run.** After
-  tasks 2, 3, 7 and 8, today holds seven short overlapping timer entries around 18:00
-  (from task 3's same-minute starts). At 390 px the day view gives each a 68 px lane
-  (item 19's floor), so the whole day's grid is 529 px wide: blocks far from the run
-  are cut at the right edge ("Myself › time-k"), a block overlapping nothing is drawn
-  474 px wide, and the day's total in the grid header is off screen. The PC's day
-  view of the same day fits, and the week view folds such a run into "+6". Kimai,
-  Google and Samsung keep a day to one screen width; Samsung folds crowded events
-  into "+3". Item 19 chose sideways scrolling for the day views; the gate judged it
-  against the bar at phone width.
-
-The gate's other observations, not failing: PC tables cut a long project name
-("CompZ – Audit 20…", the title on hover); the New user dialog clears its password
-after a refused username; an edited Start keeps End, as the first run saw.
-
-What follows is the operator's. The roadmap runs item 16 twice; a further run, or an
-item for the finding, is their call.
+screen redone. **The round passed**: the usability check's third run (item 16,
+2026-10-22, on the operator's approval after item 21) passed every task in the app at
+390 px and 1440 px, in light and dark. This report was written by that run. It
+points at the done notes in the [roadmap](roadmap.md) rather than repeating them.
 
 ## What round 2 built
 
@@ -69,12 +34,20 @@ item for the finding, is their call.
   share a column, at a readable width, with a "+n" chip where more than fit.
 - [20][20], the phone's timer strip with several timers running: two rows, the
   project's name in full, wrapping rather than cut.
+- [21][21], crowded runs in the phone's day view: the day keeps to the screen's width;
+  a run too crowded for its lanes folds into a "+n" chip that opens a sheet of the
+  folded entries.
 - [16][16], usability check: every task in the app run on phone and PC, in light and
-  dark. The first run (2026-10-22) failed on three findings, which became items 18–20;
-  the second run (2026-10-22) failed, on a builder check and then on the gate, as above.
-  The first run's screenshots and verdict, which items 18–20 cite under
-  `.autopilot/screenshots/16/`, are kept in `.autopilot/screenshots/16-run-1/` and
-  `.autopilot/verdicts/16-run-1.json`; the rerun's are under `16`.
+  dark, three times. The first run (2026-10-22) failed on three findings, which
+  became items 18–20. The second (2026-10-22) failed first on a builder check (a
+  test's fixed clock, [#9](https://github.com/vbartalis/time-keep/issues/9)), then,
+  rerun with the operator's approval, on one gate finding (the phone's day view
+  scrolling sideways with a crowded run), which became item 21 on the operator's
+  approval of a third run. The third passed. Earlier runs' screenshots and verdicts
+  are kept under `.autopilot/screenshots/16-run-1/` and `16-run-2/`, with
+  `.autopilot/verdicts/16-run-1.json` and `16-run-2.json`: items 18–20's paths under
+  `.autopilot/screenshots/16/` read under `16-run-1`, and item 21's and the second
+  run's under `16-run-2`; the third run's are under `16`.
 
 ## Calls made in the operator's place
 
@@ -128,7 +101,8 @@ Each is an entry in [questions](questions.md), with what would change.
 - 18: an untouched Start means the moment Save is pressed.
 - 18: a typed Start earlier than the running timer's is refused, not taken as a stop.
 - 19: lanes in a group stay equal, not widened into free room.
-- 19: the day view hides nothing and scrolls sideways past the readable floor.
+- 19: the day view hides nothing and scrolls sideways past the readable floor; since
+  item 21 this holds on the PC only (the phone's day folds a crowded run into a chip).
 - 19: on the phone's day, the swipe scrolls the grid first, then changes the day.
 - 20: the phone strip has two rows, one layout for any number of timers, and long
   names wrap.
@@ -162,6 +136,12 @@ Each is an entry in [questions](questions.md), with what would change.
   in "…" below two floors' width. Inferred.
 - 19: running blocks are drawn first, then the longest; the shortest go into the
   "+n" chip. Inferred.
+- 21: a tap on the phone day's "+n" chip opens a sheet of exactly the folded entries,
+  each row opening its form. Inferred.
+- 21: the chip grows toward 44 px into free time. Inferred.
+- 21: focus after a delete from the Calendar stays on the page body. Inferred.
+- 21: a sheet row's name may still break inside "time-keep" at 200 % text, as the
+  phone month's does. Inferred.
 
 ### The builder's calls
 
@@ -178,24 +158,38 @@ listed:
 - [18][18]: about 10.
 - [19][19]: about 20.
 - [20][20]: about 6.
+- [21][21]: about 15.
 - [16][16]: 4 in the first run; 4 more in the second (calls 19, 21 and 22 of its
-  spec, and writing the report before the gate, rewritten on the fail).
+  spec, and writing the report before the gate, rewritten on the fail); 2 in the
+  third (writing the report and done note before the gate; two wording fixes to its
+  spec after approval).
 
-### Item 16's second run
+### Item 16's later runs
 
-Its spec, `docs/superpowers/specs/2026-10-22-usability-check-2-design.md`, carries the
-first run's calls 1–13 over and adds calls 14–22. The stand-in's, with sources in the
-spec:
+The second run's spec, `docs/superpowers/specs/2026-10-22-usability-check-2-design.md`,
+carries the first run's calls 1–13 over and adds calls 14–22; the third run's,
+`docs/superpowers/specs/2026-10-22-usability-check-3-design.md`, carries 1–21 over,
+drops 22 and adds 23–31. The stand-in's, with sources in the specs:
 
-- Tasks 3 and 12 also do what items 18–20's exits name; nothing else added. Inferred.
-- The first run's two observations (End appended to after a click; an edited Start
-  keeping End) are named as already seen, findings only if they hit a rule. Inferred.
-- Items 18–20's deferred minors fail only when they hit a rule. Grounded.
-- This report gives items 18–20 one line each and item 16 one line on both runs.
+- Second run: tasks 3 and 12 also do what items 18–20's exits name; nothing else
+  added. Inferred.
+- Second run: the first run's two observations (End appended to after a click; an
+  edited Start keeping End) are named as already seen, findings only if they hit a
+  rule. Inferred.
+- Second run: items 18–20's deferred minors fail only when they hit a rule. Grounded.
+- Second run: a failing run spawns no items and leaves item 16 not done, the round
+  stopped. Grounded and inferred.
+- Third run: task 12 also does item 21's exit, on a day crowded like the second run's
+  (the gate adds same-minute timers if needed). Inferred.
+- Third run: the second run's three observations (a long project name cut in PC
+  tables, the New user dialog's password cleared after a refused username, an edited
+  Start keeping End) are named as already seen; item 21's deferred minors fail only
+  when they hit a rule. Grounded and inferred.
+- Third run: this report gives item 21 one line and item 16 one line on its three
+  runs, item 21's calls included on either verdict. Inferred.
+- Third run: the heading is marked done before the gate with the earlier lines kept
+  as history; a fail would add a third-run failure line after the run 3 approval.
   Inferred.
-- Otherwise the first run's spec stands; a failing second run spawns no items.
-  Grounded.
-- A failing second run leaves item 16 not done and the round stopped. Inferred.
 
 ## Open questions
 
@@ -226,8 +220,9 @@ Titles only; the entries, with the call made and what would change, are in
 - 19: lanes widening into free room; the day view's sideways scroll; the phone day's
   swipe.
 - 20: the phone strip's layout.
+- 21: none queued.
 
-Go-live (item 9) is the operator's, and waits for them and for round 2 to pass.
+Go-live (item 9) is the operator's, and waits for them.
 
 [17]: roadmap.md#17-autopilot-dry-run--todays-placeholder-panel--done-2026-10-19
 [10]: roadmap.md#10-reference-study--done-2026-10-20
@@ -239,4 +234,5 @@ Go-live (item 9) is the operator's, and waits for them and for round 2 to pass.
 [18]: roadmap.md#18-starting-a-timer-on-a-project-that-has-one-running--done-2026-10-22
 [19]: roadmap.md#19-overlaps-in-the-calendars-week-view--done-2026-10-22
 [20]: roadmap.md#20-the-phones-timer-strip-with-several-timers-running--done-2026-10-22
-[16]: roadmap.md#16-usability-check
+[21]: roadmap.md#21-crowded-runs-in-the-phones-day-view--done-2026-10-22
+[16]: roadmap.md#16-usability-check--done-2026-10-22

@@ -2059,7 +2059,7 @@ crowding, the chip on the phone's day, the More sheet, `calendar-more-chip`) and
   midnight; the sheet's key is the drawn `from`, not the run's start.
 - Questions queued in `docs/questions.md`: none.
 
-### 16. Usability check
+### 16. Usability check — done 2026-10-22
 
 The usability gate run over every task in the app, on a seeded month, on phone and
 PC: logging the day as it happens, correcting yesterday, reorganising the month and
@@ -2082,6 +2082,51 @@ when a run of short entries overlaps. Not run again until the operator decides w
 follows. See [the round 2 report](round-2-report.md).
 
 Operator approved run 3 (2026-10-22), after item 21.
+
+Done 2026-10-22, third run: the usability gate ran the second run's twelve tasks again
+over the whole app (signing in, logging the day as it happens, timers, correcting
+yesterday, reorganising the month, copying it out for Excel, Setup, Templates,
+Account, Users, Backup and restore, getting around and the look) on a seeded month,
+each at 390 px and 1440 px in light and dark, with task 12 also doing item 21's exit
+(the phone's day view on a crowded day), and passed them; nothing was fixed in this
+item. [The round 2 report](round-2-report.md) is written. Spec
+`docs/superpowers/specs/2026-10-22-usability-check-3-design.md` (the second run's
+`2026-10-22-usability-check-2-design.md` carried over); no plan (nothing to build); no
+decision record. The second run's screenshots moved, and its verdict was copied, to
+`.autopilot/screenshots/16-run-2/` and `.autopilot/verdicts/16-run-2.json`.
+
+- The first and second runs' calls 1–21 stand; they are in that spec. Call 22 (an
+  issue to keep a later launch from another run) is dropped: the runbook now holds
+  that rule. The stand-in's call. Source: run-item, Item 16. Confidence: grounded.
+- **Task 12 also does item 21's exit, on a day crowded like the second run's** (the
+  gate adds short same-minute timers if the earlier tasks leave it less crowded);
+  nothing else is added. The stand-in's call. Source: roadmap item 21's exit; the
+  spec's calls 10 and 14. Confidence: inferred.
+- **The second run's screenshots moved, and its verdict copied, to `16-run-2` before
+  the gate.** The stand-in's call. Source: the spec's call 19. Confidence: inferred.
+- **The second run's three observations (a long project name cut in PC tables, the
+  New user dialog's password cleared after a refused username, an edited Start
+  keeping End) are named as already seen; item 21's deferred minors fail only when
+  they hit a rule.** The stand-in's call. Source: the second run's verdict; the
+  spec's calls 15 and 16; `.claude/rules/merges-on-good-enough-defers-defects.md`.
+  Confidence: grounded for the minors, inferred for the observations.
+- **The report gives item 21 one line and item 16 one line on its three runs, and
+  carries item 21's calls and item 19's call reworded (sideways scroll on the PC
+  only) on either verdict.** The stand-in's call. Source: roadmap item 16; the
+  spec's call 17; operator's voice, 2026-10-19. Confidence: inferred.
+- **Before the gate this heading gains "— done" and the three lines above stay as
+  history; on a fail the marker comes off and this note becomes a third-run failure
+  line after the run 3 approval.** The stand-in's call. Source: run-item, stage 8
+  and Item 16; the spec's call 20. Confidence: inferred.
+- **Otherwise the second run's spec stands; a failing third run spawns no items.**
+  The stand-in's call. Source: roadmap, item 16; run-item, Item 16. Confidence:
+  inferred.
+- **The branch is `docs/16-usability-check-3`, from `main`.** The stand-in's call.
+  Source: run-item, Item 16. Confidence: grounded.
+- Builder's calls: the report and this note written as passing before the gate,
+  rewritten on a fail; two wording fixes to the spec after its approval (the call
+  range, the marker on a fail), as the stand-in's approval noted.
+- No questions queued.
 
 ## Round 3 — go-live
 
