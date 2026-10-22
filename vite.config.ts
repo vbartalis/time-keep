@@ -15,6 +15,8 @@ export default defineConfig({
 			adapter: adapter()
 		})
 	],
+	// Listen on every interface so the devcontainer's port and a phone on the LAN reach it.
+	server: { host: true },
 	test: {
 		expect: { requireAssertions: true },
 		passWithNoTests: true,

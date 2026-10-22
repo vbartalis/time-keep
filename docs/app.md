@@ -1200,6 +1200,10 @@ cp .env.example .env
 npm run dev
 ```
 
+The dev server listens on every interface (`server.host` in `vite.config.ts`), so the
+devcontainer's forwarded port and a phone on the same network reach it at the Network
+address it prints.
+
 Migrations run and the admin is created from `ADMIN_USERNAME` and `ADMIN_PASSWORD` at
 server start in production; the dev server does this lazily on the first request. Other scripts: `npm run build`, `check`, `lint`, `format`.
 
