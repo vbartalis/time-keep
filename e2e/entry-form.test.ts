@@ -829,6 +829,121 @@ test('gate 8: a timer on a project started earlier, opened from the bar', async 
 	await expect(done(page)).toContainText('Stop timer');
 });
 
+/** Opens "Start on a project…" from the bar and starts a timer on `expected`, Start untouched. */
+async function startOnProject(page: Page, typed: string, expected: string, description: string) {
+	await startButton(page).click();
+	await startList(page)
+		.getByRole('link', { name: /Start on a project…/ })
+		.click();
+	await expect(dialog(page)).toBeVisible();
+	await pickProject(page, typed, expected);
+	await field(page, 'description').fill(description);
+	await saveButton(page).click();
+}
+
+test('item 18: a second timer on the same project at once stops the first', async ({ page }) => {
+	const user = await newUser('item18-stop');
+	await signIn(page, user.username);
+	await open(page, '/entries', 'Entries');
+
+	await startOnProject(page, 'operations', 'Acme › Operations', 'First run');
+	await expect(dialog(page)).toBeHidden();
+	await startOnProject(page, 'mobile', 'Northwind › Mobile app', 'Other project');
+	await expect(dialog(page)).toBeHidden();
+	await startOnProject(page, 'operations', 'Acme › Operations', 'Second run');
+	await expect(dialog(page)).toBeHidden();
+	await expect(dialog(page).getByText(/timer has been running since/)).toHaveCount(0);
+
+	// Two timers run: the second Operations one and the Mobile app one.
+	await expect(bar(page)).toContainText('Acme › Operations');
+	await expect(bar(page)).toContainText(/\+1\s*more running/);
+	await open(page, '/entries', 'Entries');
+	const first = entryRows(page).filter({ hasText: 'First run' });
+	await expect(first).toHaveCount(1);
+	await expect(first).toContainText(/\d\d:\d\d\s+\d\d:\d\d/);
+});
+
+test('item 18: one Undo takes back the start and the stop', async ({ page }) => {
+	const user = await newUser('item18-undo');
+	await signIn(page, user.username);
+	await open(page, '/entries', 'Entries');
+
+	await startOnProject(page, 'operations', 'Acme › Operations', 'First run');
+	await expect(dialog(page)).toBeHidden();
+	await startOnProject(page, 'operations', 'Acme › Operations', 'Second run');
+	await expect(dialog(page)).toBeHidden();
+	await expect(undoStrip(page)).toBeVisible();
+
+	await undoStrip(page).getByRole('button', { name: 'Undo' }).click();
+	await expect(undoStrip(page)).toContainText('Undone.');
+	await open(page, '/entries', 'Entries');
+	await expect(entryRows(page).filter({ hasText: 'Second run' })).toHaveCount(0);
+	// The first timer runs again: no end on its row.
+	const first = entryRows(page).filter({ hasText: 'First run' });
+	await expect(first).toHaveCount(1);
+	await expect(first).not.toContainText(/\d\d:\d\d\s+\d\d:\d\d/);
+});
+
+test('item 18: the form opened again in the next minute shows that minute', async ({ page }) => {
+	test.setTimeout(120_000);
+	const user = await newUser('item18-minute');
+	await signIn(page, user.username);
+	await open(page, '/entries', 'Entries');
+
+	const openStart = async () => {
+		await startButton(page).click();
+		const link = startList(page).getByRole('link', { name: /Start on a project…/ });
+		if (isPc()) await link.hover();
+		await link.click();
+		await expect(dialog(page)).toBeVisible();
+		const value = await field(page, 'start').inputValue();
+		await dialog(page).getByRole('button', { name: 'Cancel' }).click();
+		await expect(dialog(page)).toBeHidden();
+		return value;
+	};
+	const before = await openStart();
+	await expect.poll(() => clockIn(0), { timeout: 65_000, intervals: [1000] }).not.toBe(before);
+	expect(await openStart()).toBe(clockIn(0));
+});
+
+test('item 18: a start typed ten minutes before the running one is refused with its start', async ({
+	page
+}) => {
+	const user = await newUser('item18-refused');
+	await signIn(page, user.username);
+	await open(page, '/entries', 'Entries');
+
+	await startButton(page).click();
+	await startList(page)
+		.getByRole('link', { name: /Start on a project…/ })
+		.click();
+	await pickProject(page, 'operations', 'Acme › Operations');
+	const running = clockIn(-5);
+	await typeTime(page, 'start', running);
+	await saveButton(page).click();
+	await expect(dialog(page)).toBeHidden();
+
+	await startButton(page).click();
+	await startList(page)
+		.getByRole('link', { name: /Start on a project…/ })
+		.click();
+	await expect(dialog(page)).toBeVisible();
+	await pickProject(page, 'operations', 'Acme › Operations');
+	const earlier = clockIn(-10);
+	await typeTime(page, 'start', earlier);
+	await saveButton(page).click();
+
+	await expect(dialog(page)).toBeVisible();
+	await expect(
+		dialog(page)
+			.locator('#start-error')
+			.filter({
+				hasText: `This project's timer has been running since ${running}. Start at ${running} or later, or stop that timer first.`
+			})
+	).toBeVisible();
+	await expect(field(page, 'start')).toHaveValue(earlier);
+});
+
 test('gate 9: a past entry restarted, and a running one that cannot be', async ({ page }) => {
 	const user = await newUser('gate9');
 	const research = seedActivity(user.id, 'Research');

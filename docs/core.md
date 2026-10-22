@@ -250,9 +250,20 @@ primitive: grouping by local day (`start_zone`) is the reports' job.
   stopped entry is `conflict`. Label `Stop timer on "<project>"`.
 - Several timers may run, at most one per project. Anything that makes an entry running
   on a project (a start, a create or edit without an end, moving a running entry to
-  the project) first stops that project's timer at the new start, in its start zone,
-  in the same batch. If that timer started at or after the new start the command is
-  refused with `conflict`. The end-of-batch check is the backstop (`conflict`).
+  the project) checks that project's running timer, in the new entry's zone:
+  1. The new start is after the timer's start: the timer stops
+     at the new start, in its start zone, in the same batch (one Undo).
+  2. The new start is at or before the timer's start, within its minute (same local date
+     and `HH:MM`): a new entry or timer starts at the
+     timer's start + 1 ms and the timer stops there. Edits keep their saved start, so
+     rule 2 does not apply to them.
+  3. Otherwise the command is refused with `conflict`: `This project's timer has been
+     running since HH:MM. Start at HH:MM or later, or stop that timer first.` (`HH:MM` is the
+     timer's start in the new entry's zone; `YYYY-MM-DD HH:MM` when that local day is
+     not the new start's). A new entry or timer carries `fields.start`; an edit carries
+     it only when its input gave `start`.
+
+  The end-of-batch check is the backstop (`conflict`).
 - A running entry cannot start more than a minute after now, and a timer cannot stop
   more than a minute after now (`invalid`, `fields.end`), nor at or before its start
   (`invalid`, `fields.end`, `A timer cannot stop before it started.`). The limit applies to every running entry,

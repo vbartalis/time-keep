@@ -1,5 +1,5 @@
 import { isRedirect, type Cookies } from '@sveltejs/kit';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EntryFormFailure } from '#lib/components/entry/types.js';
 import { openCore, type Core, type Result } from '#lib/server/core/index.js';
 import type { DB } from '#lib/server/db/index.js';
@@ -17,6 +17,7 @@ const { actions } = await import('./entries/[id]/+page.server');
 const restart = (await import('./timers/restart/+page.server')).actions;
 const stop = (await import('./timers/stop/+page.server')).actions;
 const start = (await import('./timers/start/+page.server')).actions;
+const newEntry = await import('./entries/new/+page.server');
 
 const zone = 'Europe/Budapest';
 
@@ -248,5 +249,100 @@ describe('/timers/start', () => {
 		const r = await run(start.default!, { templateId: t.id, timeZone: zone, back: '/entries' });
 		expect(r.redirect).toBe(`/entries/new?template=${t.id}&timer=1&back=%2Fentries`);
 		expect(val(core.entries.list({ running: true }))).toHaveLength(0);
+	});
+});
+
+describe('/entries/new', () => {
+	const loadValues = async (query: string) => {
+		const { cookies } = cookieJar();
+		const url = new URL(`http://x/entries/new?${query}`);
+		const data = (await (newEntry.load as (e: never) => unknown)({
+			locals,
+			cookies,
+			url
+		} as never)) as { values: Record<string, string> };
+		return data.values;
+	};
+
+	it('marks a timer form as starting now, and no other form', async () => {
+		const timer = await loadValues('timer=1');
+		expect(timer.startNow).toBe(`${timer.date}T${timer.start}`);
+		const t = val(core.templates.create({ name: 'T', projectId, startTime: '09:00' }));
+		const withTemplate = await loadValues(`template=${t.id}&timer=1`);
+		expect(withTemplate.startNow).toBe(`${withTemplate.date}T${withTemplate.start}`);
+		for (const query of ['', 'start=09:00', `copy=${entry().id}`, `template=${t.id}`]) {
+			expect((await loadValues(query)).startNow).toBe('');
+		}
+	});
+
+	describe('save', () => {
+		const NOW = new Date('2026-10-22T10:30:40.000Z').getTime();
+		const today = '2026-10-22';
+		const filled = (over: Record<string, string> = {}) => ({
+			projectId,
+			timeZone: 'UTC',
+			date: today,
+			start: '10:30',
+			startNow: `${today}T10:30`,
+			back: '/entries',
+			...over
+		});
+		const running = () => {
+			vi.setSystemTime(NOW - 20_000);
+			const old = val(core.timers.start({ projectId, timeZone: 'UTC' }));
+			vi.setSystemTime(NOW);
+			return old;
+		};
+
+		beforeEach(() => {
+			vi.useFakeTimers();
+		});
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		it('starts an untouched Start at the moment of saving, stopping the old timer there', async () => {
+			const old = running();
+			const r = await run(newEntry.actions.default!, filled());
+			expect(r.redirect).toBe('/entries');
+			const [now] = val(core.entries.list({ running: true }));
+			expect(now.startAt).toBe(NOW);
+			expect(val(core.entries.get({ id: old.id })).endAt).toBe(NOW);
+		});
+
+		it('keeps a typed start: a changed date is not now', async () => {
+			running();
+			const r = await run(newEntry.actions.default!, filled({ date: '2026-10-21' }));
+			expect(r.result?.status).toBe(400);
+			expect(r.result?.data.fields.start).toContain("This project's timer has been running since");
+		});
+
+		it('takes the typed start when an end comes with startNow', async () => {
+			const r = await run(
+				newEntry.actions.default!,
+				filled({ start: '09:00', startNow: `${today}T09:00`, end: '09:30' })
+			);
+			expect(r.redirect).toBe('/entries');
+			const [e] = val(core.entries.list({}));
+			expect(e.startAt).toBe(Date.parse(`${today}T09:00:00Z`));
+			expect(e.endAt).toBe(Date.parse(`${today}T09:30:00Z`));
+		});
+
+		it('takes the typed start when a duration comes with startNow', async () => {
+			const r = await run(
+				newEntry.actions.default!,
+				filled({ start: '09:00', startNow: `${today}T09:00`, duration: '0:30' })
+			);
+			expect(r.redirect).toBe('/entries');
+			const [e] = val(core.entries.list({}));
+			expect(e.startAt).toBe(Date.parse(`${today}T09:00:00Z`));
+			expect(e.endAt).toBe(Date.parse(`${today}T09:30:00Z`));
+		});
+
+		it('keeps the posted startNow in a refusal', async () => {
+			running();
+			const r = await run(newEntry.actions.default!, filled({ date: '2026-10-21' }));
+			expect(r.result?.data.values?.startNow).toBe(`${today}T10:30`);
+		});
 	});
 });

@@ -7,6 +7,7 @@ import { runBatch } from './batch';
 import { createEntry, startTimer, stopTimer, updateEntry } from './entries';
 import { createCustomer, createProject } from './reference';
 import { ok, type Result } from './result';
+import { localParts } from './time';
 import { undo } from './undo';
 
 const H = 3_600_000;
@@ -108,21 +109,181 @@ describe('startTimer', () => {
 		]);
 	});
 
-	it('refuses when the running timer started at or after the new start, writing nothing', () => {
+	it("a start in the running timer's minute, before it, starts just after it and stops it", () => {
+		const { run, val, p, get } = setup();
+		const a = val(run((w) => startTimer(w, { projectId: p.id, timeZone: 'UTC' }), T9 + 27_000));
+		const n = val(
+			run(
+				(w) => createEntry(w, { projectId: p.id, timeZone: 'UTC', start: '2026-10-18T09:00' }),
+				T9 + 40_000
+			)
+		);
+		expect(n.startAt).toBe(T9 + 27_001);
+		expect(get(a.id)).toMatchObject({ endAt: T9 + 27_001, endZone: 'UTC' });
+	});
+
+	it('the same late in the minute still reads that minute', () => {
+		const { run, val, p } = setup();
+		val(run((w) => startTimer(w, { projectId: p.id, timeZone: 'UTC' }), T9 + 59_998));
+		const n = val(
+			run(
+				(w) => createEntry(w, { projectId: p.id, timeZone: 'UTC', start: '2026-10-18T09:00' }),
+				T9 + 59_999
+			)
+		);
+		expect(n.startAt).toBe(T9 + 59_999);
+		expect(localParts(n.startAt, 'UTC').time).toBe('09:00');
+	});
+
+	it('a start typed in an earlier minute is refused, naming the running start, writing nothing', () => {
 		const { db, run, val, p, entries } = setup();
 		val(run((w) => startTimer(w, { projectId: p.id, timeZone: 'UTC' }), T9 + 2 * H));
 		const batches = db.select().from(batch).all().length;
+		const M =
+			"This project's timer has been running since 11:00. Start at 11:00 or later, or stop that timer first.";
 		const r = run(
-			(w) => createEntry(w, { projectId: p.id, timeZone: 'UTC', start: '2026-10-18T11:00Z' }),
+			(w) => createEntry(w, { projectId: p.id, timeZone: 'UTC', start: '2026-10-18T10:50' }),
 			T9 + 3 * H
 		);
-		expect(err(r)).toEqual({
-			code: 'conflict',
-			message: 'The running timer on this project started later; stop it first.'
-		});
+		expect(err(r)).toEqual({ code: 'conflict', message: M, fields: { start: M } });
 		expect(entries()).toHaveLength(1);
 		expect(entries()[0].endAt).toBeNull();
 		expect(db.select().from(batch).all()).toHaveLength(batches);
+	});
+
+	it('names the running start with its date when the new start is on another day', () => {
+		const { run, val, p } = setup();
+		val(run((w) => startTimer(w, { projectId: p.id, timeZone: 'UTC' }), T9));
+		const r = run(
+			(w) => createEntry(w, { projectId: p.id, timeZone: 'UTC', start: '2026-10-17T20:00' }),
+			T9 + H
+		);
+		expect(err(r)?.message).toBe(
+			"This project's timer has been running since 2026-10-18 09:00. Start at 2026-10-18 09:00 or later, or stop that timer first."
+		);
+	});
+
+	it("reads the minute in the new entry's zone", () => {
+		const { run, val, p } = setup();
+		// 14:30:27 in Kolkata, 11:00:27 in Budapest: the zones differ by a half hour.
+		val(run((w) => startTimer(w, { projectId: p.id, timeZone: 'Asia/Kolkata' }), T9 + 27_000));
+		const n = val(
+			run(
+				(w) =>
+					createEntry(w, {
+						projectId: p.id,
+						timeZone: 'Europe/Budapest',
+						start: '2026-10-18T11:00'
+					}),
+				T9 + 40_000
+			)
+		);
+		expect(n.startAt).toBe(T9 + 27_001);
+	});
+
+	it("names the running timer's start in the new entry's zone", () => {
+		const { run, val, p } = setup();
+		// 18:00:27 in Tokyo, 11:00:27 in Budapest; the refusal leaves the timer running.
+		val(run((w) => startTimer(w, { projectId: p.id, timeZone: 'Asia/Tokyo' }), T9 + 27_000));
+		const r = run(
+			(w) =>
+				createEntry(w, { projectId: p.id, timeZone: 'Europe/Budapest', start: '2026-10-18T10:50' }),
+			T9 + 50_000
+		);
+		expect(err(r)?.message).toContain('since 11:00');
+		expect(err(r)?.message).not.toContain('18:00');
+	});
+
+	it('an edit clearing an end, the running one later, is refused without a field', () => {
+		const { run, val, p, get } = setup();
+		const fin = val(
+			run((w) =>
+				createEntry(w, {
+					projectId: p.id,
+					timeZone: 'UTC',
+					start: '2026-10-18T08:00',
+					end: '2026-10-18T08:30'
+				})
+			)
+		);
+		const a = val(run((w) => startTimer(w, { projectId: p.id, timeZone: 'UTC' }), T9));
+		const r = run((w) => updateEntry(w, { id: fin.id, end: null }), T9 + H);
+		const e = err(r);
+		expect(e).toEqual({
+			code: 'conflict',
+			message:
+				"This project's timer has been running since 09:00. Start at 09:00 or later, or stop that timer first."
+		});
+		expect(get(fin.id)?.endAt).not.toBeNull();
+		expect(get(a.id)?.endAt).toBeNull();
+	});
+
+	it('an edit giving an earlier start and clearing the end is refused on the start field', () => {
+		const { run, val, p, get } = setup();
+		const fin = val(
+			run((w) =>
+				createEntry(w, {
+					projectId: p.id,
+					timeZone: 'UTC',
+					start: '2026-10-18T08:00',
+					end: '2026-10-18T08:30'
+				})
+			)
+		);
+		const a = val(run((w) => startTimer(w, { projectId: p.id, timeZone: 'UTC' }), T9));
+		const before = [get(fin.id), get(a.id)];
+		const M =
+			"This project's timer has been running since 09:00. Start at 09:00 or later, or stop that timer first.";
+		const r = run(
+			(w) => updateEntry(w, { id: fin.id, start: '2026-10-18T08:10', end: null }),
+			T9 + H
+		);
+		expect(err(r)).toEqual({ code: 'conflict', message: M, fields: { start: M } });
+		expect([get(fin.id), get(a.id)]).toEqual(before);
+	});
+
+	it('an edit clearing an end, starting in the running minute but before it, is refused', () => {
+		const { db, run, val, p, get } = setup();
+		const a = val(run((w) => startTimer(w, { projectId: p.id, timeZone: 'UTC' }), T9 + 30_000));
+		const fin = val(
+			run((w) =>
+				createEntry(w, {
+					projectId: p.id,
+					timeZone: 'UTC',
+					start: '2026-10-18T08:00',
+					end: '2026-10-18T08:30'
+				})
+			)
+		);
+		// move the saved start into the running timer's minute, before its second
+		db.update(entryTable)
+			.set({ startAt: T9 + 10_000, endAt: T9 + 20_000 })
+			.where(eq(entryTable.id, fin.id))
+			.run();
+		const before = [get(fin.id), get(a.id)];
+		const r = run((w) => updateEntry(w, { id: fin.id, end: null }), T9 + H);
+		expect(err(r)).toMatchObject({ code: 'conflict' });
+		expect(err(r)).not.toHaveProperty('fields');
+		expect([get(fin.id), get(a.id)]).toEqual(before);
+	});
+
+	it('an edit clearing an end, after the running one, stops it at its start', () => {
+		const { run, val, p, get } = setup();
+		const a = val(run((w) => startTimer(w, { projectId: p.id, timeZone: 'UTC' }), T9));
+		const fin = val(
+			run((w) =>
+				createEntry(w, {
+					projectId: p.id,
+					timeZone: 'UTC',
+					start: '2026-10-18T09:30',
+					end: '2026-10-18T10:00'
+				})
+			)
+		);
+		// the finished entry starts after the running one, so it stands beside it until the end is cleared
+		val(run((w) => updateEntry(w, { id: fin.id, end: null }), T9 + H));
+		expect(get(a.id)?.endAt).toBe(T9 + 30 * 60_000);
+		expect(get(fin.id)?.startAt).toBe(T9 + 30 * 60_000);
 	});
 });
 

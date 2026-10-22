@@ -1751,7 +1751,7 @@ screens.
     only); setPassword's unknown user and Account's short new password at route level;
     a weak password-echo guard.
 
-### 18. Starting a timer on a project that has one running
+### 18. Starting a timer on a project that has one running — done 2026-10-22
 
 Starting a timer on a project whose timer is running stops the running one, whatever
 the minute: the usability check (item 16, first run, 2026-10-22) found that a second
@@ -1767,6 +1767,59 @@ Exit: the usability gate passes gate task 3 of the usability check's spec (start
 timer on a project, a second on another, then another on the first project at once
 and a minute later: that project's first timer stops each time, never refused), on
 phone and PC, in light and dark.
+
+Done 2026-10-22: a new running entry on a project whose timer runs now stops that timer
+whatever the minute. A start after the running timer's start stops it there. A start in
+the same local minute (read in the new entry's zone), at or before it, starts one
+millisecond after it and stops it there. Only a start typed in an earlier minute is
+refused, on Start, keeping what was typed: "This project's timer has been running since
+HH:MM. Start at HH:MM or later, or stop that timer first." (the date goes before the time
+when the local days differ). An edit that makes an entry running keeps its saved start
+and gets rules 1 and 3 only. The start and the stop are one batch. The rule lives in the
+core (`beforeRunning`), so the MCP server gets it too. The form marks a Start it filled
+with now (timer mode, a hidden `startNow` that survives a refusal); saved untouched, with
+no end or duration, the timer starts at Save's moment. On the PC the in-place form no
+longer reuses a hover preload, so a reopened form shows the current minute. Spec
+`docs/superpowers/specs/2026-10-22-timer-start-same-project-design.md`, plan
+`docs/superpowers/plans/2026-10-22-timer-start-same-project.md`; `docs/core.md` and
+`docs/app.md` updated. No decision record.
+
+- **An untouched Start means the moment Save is pressed;** a typed Start is taken as
+  typed. The stand-in's call. Source: vision, Timers; study, Timers (Kimai's "begin
+  now"); this item. Confidence: ungrounded; queued in `docs/questions.md`.
+- **A typed Start earlier than the running timer's is refused,** naming its start; the
+  running timer is not removed. The stand-in's call. Source: vision, Timers; this item.
+  Confidence: ungrounded; queued in `docs/questions.md`.
+- **A typed Start in the running timer's minute is the same time,** never refused. The
+  stand-in's call. Source: this item and its exit. Confidence: grounded.
+- **A reopened form shows the current minute;** Cancel discards what was typed. The
+  stand-in's call. Source: this item; study, Timers. Confidence: inferred.
+- **Nothing beyond the exit.** The stand-in's call. Source: this item; operator's voice;
+  study, Timers 2. Confidence: inferred.
+- **The refusal says "Start at HH:MM or later",** not "Start after HH:MM", since the
+  running minute itself is accepted. The stand-in's call, in the impeccable clarify
+  pass. Source: rule 2; the spec's anti-goal on a message the screen contradicts;
+  operator's voice. Confidence: inferred.
+- **The refusal shows under Start and in the form's alert by Save,** as every refusal on
+  this form does. The stand-in's call. Source: the spec, The form. Confidence: inferred.
+- Builder's calls (spec): "same minute" read in the new entry's zone, the new start one
+  millisecond after the running one; edits keep their saved start (no rule 2), the
+  refusal on Start only when the edit changed Start; "untouched" needs the filled date
+  and Start saved as filled with no end or duration; the running timer's date shown
+  when its local day differs.
+- Builder's rulings (build): the plain non-timer form, whose Start is blank, gets no
+  now-marker; the old "started later" copy stays only where it records history (this
+  item's text, round 1's plans, this item's spec and plan); the zone test uses a
+  half-hour-offset zone and a still-running Tokyo timer so it can fail; a hand-typed
+  Start equal to the filled minute counts as untouched (indistinguishable, same minute);
+  the impeccable pass was run by the controller, not the implementer; parked at the final
+  review: the e2e refusal test does not re-check the running timer (a core test does),
+  the spec's "plain new entry" sentence (see the first ruling), and two cases outside the
+  spec (a timer started up to a minute in the future refuses the plain path; a date-only
+  edit's refusal shows under Start).
+- Questions queued in `docs/questions.md`: whether an earlier typed Start should be
+  refused or remove the running timer; whether an untouched Start means Save's moment or
+  the shown minute.
 
 ### 19. Overlaps in the Calendar's week view
 

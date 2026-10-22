@@ -20,6 +20,34 @@ The operator answers whenever they like, here (under the entry) or in conversati
 An answer is added to [the operator's voice](operator-voice.md) in their words, and if
 it changes built work, it becomes a roadmap item.
 
+## 2026-10-22 — 18
+
+- Question: You start a timer on a project from the form and type a Start earlier
+  than that project's running timer (you type 08:00, the running one started 09:00).
+  Should the save be refused, or should it go through and remove the running timer
+  (it would have no time left), undoable?
+- Call made: Refused, in the form, with a message that names the running timer's
+  start and says what to do: start at 09:00 or later, or stop that timer first. It is the
+  smaller change (today's refusal with a clearer message). Removing an entry as a
+  side effect of starting another is a bigger step than "starting stops that
+  project's timer" (vision, Timers), and nothing on record covers this case.
+- If answered differently: the save goes through and the running timer is removed
+  (or ended at its own start), in the same history batch as the new timer, so one
+  Undo brings it back; the message and its tests go.
+
+## 2026-10-22 — 18
+
+- Question: When a timer is started from the form with Start left as it was filled
+  (the current minute, e.g. 06:09), does it start at the moment Save is pressed or at
+  the minute shown (06:09:00)?
+- Call made: At the moment Save is pressed. The filled Start means "now", as Kimai's
+  ▶, Toggl's and Clockify's Start do (study, Timers), and it puts the new timer after
+  any timer on that project already running, so starting stops it, as the vision says.
+  A Start the user typed is taken as typed. Nothing on record says which you expect.
+- If answered differently: an untouched Start saves the shown minute (06:09:00), and
+  a timer on that project started later within the same minute is still stopped
+  (item 18's exit: never refused), ending where the new one starts.
+
 ## 2026-10-21 — 15d
 
 - Question: On the PC, how wide should Account, Users and Backup be: about half the

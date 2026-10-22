@@ -133,6 +133,7 @@ export function templateFormData(core: Core, t: Template | null, back: string): 
 		duration: t === null ? '' : shownDuration(t),
 		endDays: t?.startTime != null && t.endTime != null && t.endTime <= t.startTime ? 1 : 0,
 		endZone: null,
+		startNow: '',
 		timeZone: t?.timeZone ?? '',
 		projectId: t?.projectId ?? '',
 		activityId: t?.activityId ?? '',

@@ -47,7 +47,10 @@ export const actions: Actions = {
 		const back = safeBack(text(form, 'back'));
 		const read = createInput(form);
 		if (!read.ok) return fail(400, unreadFailure(read.fields, form));
-		const r = c.entries.create(read.input);
+		// An untouched Start means now: the timer starts at the request's time, not the form's.
+		const r = read.startsNow
+			? c.timers.start({ ...read.input, start: undefined })
+			: c.entries.create(read.input);
 		if (!r.ok) return fail(400, coreFailure('save', r.error, form));
 		done(c, cookies, r, back);
 	}

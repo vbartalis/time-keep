@@ -11,6 +11,13 @@ const FORM_PAGES = new Set([
 ]);
 
 /**
+ * `href` with a query nothing reads, so `preloadData` loads the form again. SvelteKit
+ * keeps the result of a hover preload for the same address; a form opened from it would
+ * show the Start of that earlier load, not of this open.
+ */
+const fresh = (href: string): string => `${href}${href.includes('?') ? '&' : '?'}_=${Date.now()}`;
+
+/**
  * Opens the entry form at `href` (`/entries/new?…`, `/entries/<id>?…`, or a template's
  * `/templates/new?…`, `/templates/<id>?…`) over the
  * current screen, through shallow routing: the address shows the form's URL, so the
@@ -26,7 +33,7 @@ export async function openForm(href: string): Promise<void> {
 		await goto(href);
 		return;
 	}
-	const result = await preloadData(href);
+	const result = await preloadData(fresh(href));
 	if (result.type === 'loaded' && result.status === 200 && 'mode' in result.data) {
 		const entryForm = { ...(result.data as EntryFormData), href };
 		// eslint-disable-next-line svelte/no-navigation-without-resolve -- an address from a resolved link

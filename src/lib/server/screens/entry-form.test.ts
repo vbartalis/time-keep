@@ -91,7 +91,8 @@ describe('createInput', () => {
 				start: '2026-10-19T09:00',
 				end: '2026-10-19T14:30',
 				timeZone: zone
-			}
+			},
+			startsNow: false
 		});
 	});
 	it('puts an end at or before the start on the next day', () => {
@@ -373,6 +374,7 @@ describe('valuesFromEntry', () => {
 			duration: '8:30',
 			endDays: 1,
 			endZone: null,
+			startNow: '',
 			timeZone: zone,
 			projectId: project.id,
 			activityId: '',
@@ -437,6 +439,7 @@ describe('newValues and templateValues', () => {
 			duration: '',
 			endDays: 0,
 			endZone: null,
+			startNow: '',
 			timeZone: zone,
 			projectId: '',
 			activityId: '',

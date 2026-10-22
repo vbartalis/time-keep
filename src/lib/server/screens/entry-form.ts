@@ -54,6 +54,7 @@ export function valuesFromEntry(e: EntryItem): EntryFormValues {
 		duration: finished ? durationText(Math.floor((e.endAt! - e.startAt) / 60_000)) : '',
 		endDays: finished ? daysBetween(date, formatDate(e.endAt!, endZone)) : 0,
 		endZone: finished && endZone !== e.startZone ? endZone : null,
+		startNow: '',
 		timeZone: e.startZone,
 		projectId: e.projectId,
 		activityId: e.activityId ?? '',
@@ -77,6 +78,7 @@ export function newValues(opts: { date: string; zone: string; start?: string }):
 		duration: '',
 		endDays: 0,
 		endZone: null,
+		startNow: '',
 		timeZone: opts.zone,
 		projectId: '',
 		activityId: '',
@@ -190,6 +192,11 @@ export function formPickers(
 	};
 }
 
+/** `FormRead` for a new entry: whether its Start is untouched, so means the moment of saving. */
+export type CreateRead =
+	| { ok: true; input: Record<string, unknown>; startsNow: boolean }
+	| { ok: false; fields: Record<string, string> };
+
 export type FormRead =
 	{ ok: true; input: Record<string, unknown> } | { ok: false; fields: Record<string, string> };
 
@@ -238,9 +245,10 @@ function endsAt(date: string, start: string, zone: string, minutes: number): str
  * date, read in the posted zone; an end at or before the start falls on the next day.
  * An end and a duration that agree (in the zone, across DST) send the duration, so a span of days keeps them;
  * otherwise the end wins. Neither makes a running timer. Blank pickers and text are
- * left out.
+ * left out. `startsNow` is true when `startNow` was posted untouched (equal to the date and
+ * start read, no end, no duration): the start is then the moment of saving.
  */
-export function createInput(form: FormData): FormRead {
+export function createInput(form: FormData): CreateRead {
 	const timeZone = given(form, 'timeZone') ?? '';
 	const t = readTimes(form, timeZone);
 	if (Object.keys(t.fields).length > 0) return { ok: false, fields: t.fields };
@@ -259,7 +267,10 @@ export function createInput(form: FormData): FormRead {
 		const value = given(form, key);
 		if (value !== undefined) input[key] = value;
 	}
-	return { ok: true, input };
+	// Untouched: the form filled date and Start with now, and nothing else was set.
+	const startsNow =
+		(given(form, 'startNow') ?? '') === input.start && t.end == null && t.duration == null;
+	return { ok: true, input, startsNow };
 }
 
 /**
@@ -396,7 +407,10 @@ export function newEntryValues(
 				}
 			: v;
 	const base = timer
-		? newValues({ date: here.date, zone, start: here.time })
+		? {
+				...newValues({ date: here.date, zone, start: here.time }),
+				startNow: `${here.date}T${here.time}`
+			}
 		: withEnd(
 				newValues({
 					date: date.ok ? date.value : here.date,
@@ -449,6 +463,7 @@ const FORM_FIELDS = [
 	'start',
 	'end',
 	'duration',
+	'startNow',
 	'projectId',
 	'activityId',
 	'locationId',
@@ -546,7 +561,7 @@ export function goneFailure(
 /**
  * A core refusal for the form: errors on its fields stay beside them, the others become
  * the general message. Only a stale form gets a conflict (the form offers a reload);
- * other conflicts (a timer that started later) read like any refusal.
+ * other conflicts (the project's timer running since a later minute) read like any refusal.
  */
 export function coreFailure(
 	action: EntryFormFailure['action'],

@@ -12,6 +12,7 @@ const values = (over: Partial<EntryFormValues> = {}): EntryFormValues => ({
 	duration: '5:30',
 	endDays: 0,
 	endZone: null,
+	startNow: '',
 	timeZone: 'Europe/Budapest',
 	projectId: 'p2',
 	activityId: '',
@@ -137,6 +138,34 @@ const button = (body: string, name: string) =>
 	);
 
 describe('EntryForm rendered on the server (no JavaScript)', () => {
+	it('posts startNow from a new entry that holds it, and from an edit never', () => {
+		const hidden = /<input[^>]*name="startNow"[^>]*>/;
+		const tag = hidden.exec(html(newData({ startNow: '2026-10-19T09:00' })))?.[0] ?? '';
+		expect(tag).toContain('type="hidden"');
+		expect(tag).toContain('value="2026-10-19T09:00"');
+		expect(html(newData())).not.toMatch(hidden);
+		expect(html(data({ values: values({ startNow: '2026-10-19T09:00' }) }))).not.toMatch(hidden);
+	});
+	it('keeps the refused post startNow when the reloaded load has none', () => {
+		const base = newData({ startNow: '' });
+		const body = html({
+			...base,
+			failure: {
+				action: 'save',
+				error: 'The input is not valid.',
+				fields: { description: 'Too long.' },
+				conflict: false,
+				gone: false,
+				back: '/entries',
+				values: { ...base.values, startNow: '2026-10-19T09:00' } as unknown as Record<
+					string,
+					string
+				>
+			}
+		});
+		const tag = /<input[^>]*name="startNow"[^>]*>/.exec(body)?.[0] ?? '';
+		expect(tag).toContain('value="2026-10-19T09:00"');
+	});
 	it('labels the fields in order', () => {
 		const order = [
 			'Date',

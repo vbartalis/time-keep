@@ -356,6 +356,9 @@
 		class="flex flex-col gap-4"
 	>
 		{#if editing}<input type="hidden" name="version" value={version} />{/if}
+		{#if !editing && !isTemplate && shown('startNow') !== ''}
+			<input type="hidden" name="startNow" value={shown('startNow')} />
+		{/if}
 		<input type="hidden" name="back" value={back} />
 		{#if isTemplate}
 			<div class={row}>

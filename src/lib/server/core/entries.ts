@@ -9,7 +9,7 @@ import { change } from '../db/schema';
 import type { Entry } from '../db/schema';
 import { newId } from '../id';
 import { fail, fromZod, ok, type CoreError, type Result, type Warning } from './result';
-import { isTimeZone, parseTime } from './time';
+import { isTimeZone, localParts, parseTime } from './time';
 import { registerBatchCheck, registerRules, table, type Row, type Tx, type Writer } from './write';
 
 export type { Entry };
@@ -31,7 +31,6 @@ const BOTH = 'Give an end or a duration, not both.';
 const INSTANT_MESSAGE = 'Use an instant with an offset, like 2026-10-18T09:00:00+02:00.';
 const MINUTE = 60_000;
 const DAY = 86_400_000;
-const STARTED_LATER = 'The running timer on this project started later; stop it first.';
 const IN_FUTURE = 'A timer cannot start in the future.';
 const STOP_IN_FUTURE = 'A timer cannot stop in the future.';
 const STOP_BEFORE_START = 'A timer cannot stop before it started.';
@@ -88,12 +87,30 @@ function entryError(tx: Handle, row: Row): CoreError | null {
 registerRules('entry', [entryError]);
 
 /**
- * Called before an entry on `projectId` becomes running at `startAt` (a create without
- * an end, an edit that removes the end, or one that moves a running entry): stops the
- * user's running entry on that project (other than `exceptId`) at `startAt`, in its
- * start zone. Throws `conflict` when that entry started at or after `startAt`.
+ * The refusal copy naming a running timer's start, read in `zone`; it carries the date
+ * when that local day is not the new start's.
  */
-function beforeRunning(w: Writer, projectId: string, startAt: number, exceptId?: string): void {
+function runningSince(runningAt: number, startAt: number, zone: string): string {
+	const run = localParts(runningAt, zone);
+	const at = run.date === localParts(startAt, zone).date ? run.time : `${run.date} ${run.time}`;
+	return `This project's timer has been running since ${at}. Start at ${at} or later, or stop that timer first.`;
+}
+
+/**
+ * Called before an entry on `projectId` becomes running at `startAt` (a create without
+ * an end, an edit that removes the end, or one that moves a running entry). For each
+ * running entry on that project (other than `exceptId`): it started before `startAt`,
+ * so it is stopped there, in its start zone; it started in the same minute (in `zone`)
+ * and this is not an edit, so it is stopped at its start + 1 ms and the new entry
+ * starts there; otherwise `conflict`, with `fields.start` unless this is an edit whose
+ * input gave no start. Returns the start the new running entry gets.
+ */
+function beforeRunning(
+	w: Writer,
+	projectId: string,
+	startAt: number,
+	opts: { zone: string; exceptId?: string; startGiven?: boolean; edit?: boolean }
+): number {
 	const e = table('entry');
 	const running = w.tx
 		.select()
@@ -103,16 +120,31 @@ function beforeRunning(w: Writer, projectId: string, startAt: number, exceptId?:
 				eq(e.userId, w.userId),
 				eq(e.projectId, projectId),
 				isNull(e.endAt),
-				exceptId === undefined ? undefined : ne(e.id, exceptId)
+				opts.exceptId === undefined ? undefined : ne(e.id, opts.exceptId)
 			)
 		)
 		.all();
+	let start = startAt;
 	for (const other of running) {
-		if (other.startAt >= startAt) {
-			w.refuse({ code: 'conflict', message: STARTED_LATER });
+		if (startAt > other.startAt) {
+			w.update('entry', other.id, { endAt: startAt, endZone: other.startZone });
+			continue;
 		}
-		w.update('entry', other.id, { endAt: startAt, endZone: other.startZone });
+		const a = localParts(other.startAt, opts.zone);
+		const b = localParts(startAt, opts.zone);
+		if (!opts.edit && a.date === b.date && a.time === b.time) {
+			start = other.startAt + 1;
+			w.update('entry', other.id, { endAt: start, endZone: other.startZone });
+			continue;
+		}
+		const message = runningSince(other.startAt, startAt, opts.zone);
+		w.refuse({
+			code: 'conflict',
+			message,
+			...(!opts.edit || opts.startGiven ? { fields: { start: message } } : {})
+		});
 	}
+	return start;
 }
 
 /** At most one running entry per project, over the projects of the touched entries. */
@@ -349,7 +381,12 @@ function insertEntry(w: Writer, row: Row): Result<Entry> {
 	}
 	const error = entryError(w.tx, row);
 	if (error) return { ok: false, error };
-	if (row.endAt === null) beforeRunning(w, row.projectId as string, row.startAt as number);
+	if (row.endAt === null) {
+		const start = beforeRunning(w, row.projectId as string, row.startAt as number, {
+			zone: row.startZone as string
+		});
+		return ok(w.insert('entry', { ...row, startAt: start }) as Entry);
+	}
 	return ok(w.insert('entry', row) as Entry);
 }
 
@@ -491,7 +528,12 @@ export function updateEntry(w: Writer, input: unknown): Result<Entry> {
 	const error = entryError(w.tx, next);
 	if (error) return { ok: false, error };
 	if (endAt === null && (row.endAt !== null || next.projectId !== row.projectId)) {
-		beforeRunning(w, next.projectId as string, startAt, row.id);
+		beforeRunning(w, next.projectId as string, startAt, {
+			zone: next.startZone as string,
+			exceptId: row.id,
+			edit: true,
+			startGiven: data.start !== undefined
+		});
 	}
 	return ok((w.update('entry', row.id, next) ?? row) as Entry);
 }

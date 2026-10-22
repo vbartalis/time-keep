@@ -18,6 +18,11 @@ export type EntryFormValues = {
 	endDays: number;
 	/** The end zone, only when it differs from `timeZone`. */
 	endZone: string | null;
+	/**
+	 * `${date}T${start}` when the form filled both with now (timer mode), else `''`: posted
+	 * back, it tells an untouched Start, which means the moment of saving.
+	 */
+	startNow: string;
 	/** The start zone. */
 	timeZone: string;
 	projectId: string;

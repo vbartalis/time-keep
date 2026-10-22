@@ -96,7 +96,7 @@ It is the same on every screen; no screen draws its own title or navigation.
 - **Entry form over the screen.** Any link marked `data-entry-form` is opened in place by
   the layout (`openInPlace`, a plain click only; a modified click goes to the page).
   `EntryOverlay` shows the form in a native modal `<dialog>` while `page.state.entryForm`
-  holds it: a centred dialog from `lg`, a sheet from under the top bar below it, ending
+  holds it (its data is loaded at each open, through an address with a throwaway query so a hover preload of the same link is not reused: a form opened again shows the current minute): a centred dialog from `lg`, a sheet from under the top bar below it, ending
   at the visual viewport so Cancel and Save stay above the phone keyboard. The address
   is the form's, so the browser's Back closes it, and so do Escape, Cancel and a click
   on the dimmed screen (PC); a saved form follows its redirect to `back` with the data
@@ -791,7 +791,7 @@ typed last, an untouched end by default; nothing is rewritten until typed, and a
 duration posted as it was shown is not read again, so an entry under a minute (`0:00`)
 saves; "next day",
 "+N days" and the end's other zone beside End; "No end: this starts a timer." when
-both are empty, "No end: the timer keeps running." on the running entry; "Start at previous end HH:MM" from `/entries/previous-end`),
+both are empty, "No end: the timer keeps running." on the running entry; in timer mode (`?timer=1`) the form fills date and Start with now and posts them with a hidden `startNow` (`date` + `T` + start), so an untouched Start (still that value, no end, no duration) starts the timer at Save, via `timers.start`, not at the minute the form opened; "Start at previous end HH:MM" from `/entries/previous-end`),
 Customer › project (`ProjectPicker.svelte`: a grouped select without JavaScript, a
 combobox matching words of customer and project with `matchProjects`), Activity,
 Location, Reference, Description. Focus starts on Start, or on the project when the
