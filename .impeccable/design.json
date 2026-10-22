@@ -648,6 +648,14 @@
       "css": ".ds-cal{position:relative;width:260px;height:180px;background:var(--card,#fff);font:400 0.75rem/15px \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif}.ds-blk{--edge:var(--project-1,#1a7f95);--fill:var(--project-1-fill,#dcecef);--ink:var(--project-1-ink,#0d4552);position:absolute;left:1px;right:1px;box-sizing:border-box;overflow:hidden;padding:2px 6px 0;border-left:3px solid var(--edge);border-radius:2px;background:var(--fill);color:var(--ink);text-decoration:none;outline:none}.ds-blk b{font-weight:600}.ds-blk>span,.ds-blk>b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ds-blk:hover{filter:brightness(0.97)}.ds-blk:focus-visible{z-index:3;box-shadow:0 0 0 2px var(--ring,#0b63c9)}.ds-ovl{border-top:2px solid var(--destructive,#c4291c)}.ds-live{border-bottom:2px dashed var(--primary,#0b63c9)}.ds-run{color:var(--primary,#0b63c9);font-weight:600}.ds-one{display:flex!important;gap:6px}.ds-n{font-variant-numeric:tabular-nums}"
     },
     {
+      "name": "More Chip",
+      "kind": "custom",
+      "refersTo": "calendar-more-chip",
+      "description": "The PC week's \"+n\" where blocks meet in more lanes than fit: as tall as the hidden run's time (a line at least), \"+n\" at its top, the lane's width, surface with an input stroke, semibold text colour; a link to the day.",
+      "html": "<div class=\"ds-mc\"><a class=\"ds-mb\" href=\"#\"><b>ClientY – ProjectZ</b></a><a class=\"ds-more\" href=\"#\" aria-label=\"4 more entries from 06:12, Thursday 22 October; open the day\">+4</a></div>",
+      "css": ".ds-mc{position:relative;width:150px;height:40px;background:var(--card,#fff);font:600 0.75rem/15px \"Public Sans Variable\",ui-sans-serif,system-ui,sans-serif}.ds-mb{position:absolute;left:1px;top:0;width:72px;height:38px;box-sizing:border-box;overflow:hidden;padding:2px 2px 0;border-left:3px solid var(--project-1,#1a7f95);border-radius:2px;background:var(--project-1-fill,#dcecef);color:var(--project-1-ink,#0d4552);text-decoration:none}.ds-more{position:absolute;left:76px;top:0;width:72px;height:17px;box-sizing:border-box;display:flex;align-items:center;padding:0 6px;border:1px solid var(--input,#c8cbd0);border-radius:2px;background:var(--card,#fff);color:var(--foreground,#1d2025);text-decoration:none;font-variant-numeric:tabular-nums;outline:none;transition:background-color 150ms ease-out}.ds-more:hover{background:var(--accent,#eef0f3)}.ds-more:focus-visible{box-shadow:0 0 0 2px var(--ring,#0b63c9)}"
+    },
+    {
       "name": "Line at Now and Today",
       "kind": "custom",
       "refersTo": "calendar-now-tag",

@@ -110,6 +110,129 @@ export function lanes<T extends { from: number; to: number }>(
 	return result;
 }
 
+/** A box to lay out: its drawn extent in minutes, and whether it runs (drawn first). */
+export type Box = { from: number; to: number; running: boolean };
+export type Laid<T> = T & { lane: number; lanes: number; group: number };
+/**
+ * A "+n" chip: in lane `lane` of `lanes`, over its hidden run's drawn time `from`–`to` (a
+ * line at least, as every box is), counting `count`.
+ */
+export type Chip = {
+	from: number;
+	to: number;
+	lane: number;
+	lanes: number;
+	count: number;
+	group: number;
+};
+
+/**
+ * One day's boxes laid out side by side. Each group of intersecting boxes gets its own lane
+ * count; lanes are filled first-fit with running boxes first, then the longest (ties by
+ * start, then end), so the shortest are the ones a crowd hides. A group wider than `fit`
+ * hides its boxes in lanes from `fit` on, and in the last lane that fits only those meeting
+ * a hidden box: that lane holds a "+n" chip over each run of hidden boxes, and its other
+ * boxes are drawn (only the crowded stretch is hidden). `shown` keeps the input order.
+ */
+export function layoutDay<T extends Box>(
+	boxes: T[],
+	fit: number
+): { shown: Laid<T>[]; chips: Chip[] } {
+	const order = boxes
+		.map((_, i) => i)
+		.sort((a, b) => boxes[a].from - boxes[b].from || boxes[a].to - boxes[b].to);
+	const groups: number[][] = [];
+	let end = -Infinity;
+	for (const i of order) {
+		if (boxes[i].from >= end) groups.push([]);
+		groups[groups.length - 1].push(i);
+		end = Math.max(end, boxes[i].to);
+	}
+	const result = new Array<Laid<T> | null>(boxes.length).fill(null);
+	const chips: Chip[] = [];
+	groups.forEach((members, group) => {
+		const length = (i: number) => boxes[i].to - boxes[i].from;
+		const ranked = [
+			...members.filter((i) => boxes[i].running),
+			...members.filter((i) => !boxes[i].running).sort((a, b) => length(b) - length(a))
+		];
+		const laneOf = new Map<number, number>();
+		const held: number[][] = [];
+		for (const i of ranked) {
+			let lane = held.findIndex((is) =>
+				is.every((j) => boxes[j].to <= boxes[i].from || boxes[i].to <= boxes[j].from)
+			);
+			if (lane === -1) lane = held.push([]) - 1;
+			held[lane].push(i);
+			laneOf.set(i, lane);
+		}
+		const width = Math.min(held.length, fit);
+		const meets = (i: number, j: number) =>
+			boxes[i].from < boxes[j].to && boxes[j].from < boxes[i].to;
+		// Lanes past the fit are hidden; a box in the chip's lane only where it meets one of
+		// them. (Boxes in one lane never meet, so hiding one there hides no other.) A run's
+		// span is the union of its hidden boxes, so a chip over it meets no drawn box.
+		const over = members.filter((i) => laneOf.get(i)! >= fit);
+		const isHidden = (i: number) => {
+			const lane = laneOf.get(i)!;
+			return lane >= fit || (lane === fit - 1 && over.some((j) => meets(i, j)));
+		};
+		const hidden: number[] = [];
+		for (const i of members) {
+			if (isHidden(i)) hidden.push(i);
+			else result[i] = { ...boxes[i], lane: laneOf.get(i)!, lanes: width, group };
+		}
+		let run: { from: number; end: number; count: number } | null = null;
+		const flush = () => {
+			if (run)
+				chips.push({
+					from: run.from,
+					to: run.end,
+					lane: width - 1,
+					lanes: width,
+					count: run.count,
+					group
+				});
+		};
+		for (const i of hidden) {
+			if (run && boxes[i].from < run.end) {
+				run.end = Math.max(run.end, boxes[i].to);
+				run.count++;
+			} else {
+				flush();
+				run = { from: boxes[i].from, end: boxes[i].to, count: 1 };
+			}
+		}
+		flush();
+	});
+	return { shown: result.filter((b): b is Laid<T> => b !== null), chips };
+}
+
+/**
+ * Each shared block's drawn end grown toward `from + want(b)`, only into free time: up to
+ * the next block in its lane or another group, or a chip's span.
+ */
+export function growShared<
+	T extends { from: number; to: number; lane: number; lanes: number; group: number }
+>(shown: T[], chips: Chip[], want: (b: T) => number): T[] {
+	return shown.map((b) => {
+		if (b.lanes <= 1) return b;
+		let limit = 1440;
+		const consider = (from: number) => {
+			if (from >= b.to && from < limit) limit = from;
+		};
+		for (const o of shown) {
+			if (o !== b && (o.group !== b.group || o.lane === b.lane)) consider(o.from);
+		}
+		for (const c of chips) {
+			if (c.group === b.group && c.lane !== b.lane) continue;
+			// A chip over this block's end blocks all growth.
+			consider(c.from < b.to && c.to > b.to ? b.to : c.from);
+		}
+		return { ...b, to: Math.max(b.to, Math.min(b.from + want(b), limit)) };
+	});
+}
+
 /** Finished entries whose half-open intervals intersect another finished one. */
 export function overlapping(
 	es: { id: string; startAt: number; endAt: number | null }[]

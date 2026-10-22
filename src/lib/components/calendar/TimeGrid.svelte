@@ -7,19 +7,23 @@
 	import { STILL, clockOf, type Draft } from '#lib/calendar/gestures.svelte.js';
 	import {
 		dragRange,
+		growShared,
 		halfHourSlot,
 		lanes,
+		layoutDay,
 		localDate,
 		localMinutes,
 		piecesOf,
 		spanText,
+		type Chip,
 		type Piece
 	} from '#lib/calendar/grid.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { openForm } from '#lib/entry-link.js';
-	import { drawnExtent, growInto, heightFor, marksOf } from './block';
+	import { LANE_FLOOR, drawnExtent, growInto, heightFor, marksOf } from './block';
 	import { BlockDrag } from './drag.svelte';
 	import EntryBlock from './EntryBlock.svelte';
+	import MoreChip from './MoreChip.svelte';
 	import NewBlock from './NewBlock.svelte';
 	import type { CalendarEntry } from './types';
 
@@ -94,6 +98,7 @@
 
 	type Drawn = { piece: Piece; entry: CalendarEntry; marks: number; from: number; to: number };
 	type Placed = Piece & { lane: number; lanes: number; drawn: { from: number; to: number } };
+	type Day = { blocks: { entry: CalendarEntry; piece: Placed }[]; chips: Chip[] };
 
 	/** A block of `lines` lines at least, by its drawn extent. */
 	const draw = (d: Drawn, lines: number): Drawn => ({
@@ -126,9 +131,17 @@
 	};
 
 	/**
-	 * Each day's pieces, side by side where their drawn blocks meet. A block too short for
-	 * a line is drawn one line tall; one sharing its column is drawn tall enough for its
-	 * project's name to wrap whole, so it never covers a neighbour.
+	 * The lanes a PC week column fits at the readable floor, measured on the rendered
+	 * column; never fewer than two (narrower, a first word may end in an ellipsis), and two
+	 * before it is measured and without JavaScript. The day views never hide a block.
+	 */
+	let weekFit = $state(2);
+
+	/**
+	 * Each day's pieces, side by side only where their drawn blocks meet, grouped once from
+	 * their one-line boxes (spec, item 19). A group wider than the week's column shows what
+	 * fits and a "+n" chip per run of the rest. A block sharing its column then grows, only
+	 * into free time, toward the lines its project's name needs; that never regroups.
 	 */
 	const placed = $derived.by(() => {
 		const byDay = new Map<string, Drawn[]>(days.map((d) => [d, []]));
@@ -139,21 +152,36 @@
 				byDay.get(p.date)?.push(draw(base, 1));
 			}
 		}
-		const place = (date: string, ds: Drawn[]): { entry: CalendarEntry; piece: Placed }[] => {
-			const first = lanes(grown(ds));
-			const wider = compact
-				? first
-				: lanes(
-						first.map((d) =>
-							d.lanes > 1 ? draw(d, Math.max(d.lanes > 2 ? 3 : 2, needOf(d.entry, date))) : d
-						)
-					);
-			return wider.map((d) => ({
-				entry: d.entry,
-				piece: { ...d.piece, lane: d.lane, lanes: d.lanes, drawn: { from: d.from, to: d.to } }
-			}));
+		const toPlaced = <D extends Drawn & { lane: number; lanes: number }>(d: D) => ({
+			entry: d.entry,
+			piece: { ...d.piece, lane: d.lane, lanes: d.lanes, drawn: { from: d.from, to: d.to } }
+		});
+		const minutesOf = (px: number) => Math.ceil((px * 60) / hour);
+		const place = (date: string, ds: Drawn[]): Day => {
+			// The phone's week: colour only, each column a link to its day; lanes as they were.
+			if (compact) return { blocks: lanes(grown(ds)).map(toPlaced), chips: [] };
+			const boxes = grown(ds).map((d) => ({ ...d, running: d.entry.running }));
+			const { shown, chips } = layoutDay(boxes, detail === 'week' ? weekFit : Infinity);
+			// Two lines for the name, or three among three or more lanes, until it has measured.
+			const want = (d: (typeof shown)[number]) =>
+				minutesOf(heightFor(Math.max(d.lanes > 2 ? 3 : 2, needOf(d.entry, date)), d.marks));
+			const blocks = growShared(shown, chips, want);
+			return { blocks: blocks.map(toPlaced), chips };
 		};
 		return new Map([...byDay].map(([date, ds]) => [date, place(date, ds)]));
+	});
+
+	/**
+	 * The day view's column holds its widest group at the floor (rule 12): the most lanes
+	 * any group takes, each at least LANE_FLOOR wide, past the column's 1 px rule. Wider
+	 * than the grid, the grid scrolls sideways; the week's columns never do.
+	 */
+	const dayColumn = $derived.by(() => {
+		if (detail !== 'day') return null;
+		let maxLanes = 1;
+		for (const { blocks } of placed.values())
+			for (const { piece } of blocks) maxLanes = Math.max(maxLanes, piece.lanes);
+		return maxLanes * LANE_FLOOR + 1;
 	});
 
 	// Moving and resizing on the PC (spec, Moving and resizing).
@@ -251,8 +279,8 @@
 	function scrollToWorkingDay() {
 		if (!scroller || !scroller.checkVisibility()) return;
 		let start = 7 * 60;
-		for (const ps of placed.values())
-			for (const { piece } of ps) if (piece.first) start = Math.min(start, piece.from);
+		for (const { blocks } of placed.values())
+			for (const { piece } of blocks) if (piece.first) start = Math.min(start, piece.from);
 		if (showsToday) {
 			const foot = scroller.scrollHeight - headHeight - body;
 			const visible = ((scroller.clientHeight - headHeight - foot) / hour) * 60;
@@ -286,6 +314,24 @@
 		});
 	});
 
+	// The week's lanes that fit: its first column's width over the floor, two at least, kept
+	// up on resize.
+	// A hidden grid (the other layout's) measures nothing and keeps what it had. Observed
+	// afresh per period, whose columns are drawn anew.
+	$effect(() => {
+		void period;
+		const body = detail === 'week' ? scroller?.querySelector<HTMLElement>('[data-body]') : null;
+		if (!body) return;
+		const measure = () => {
+			const width = body.getBoundingClientRect().width;
+			if (width > 0) weekFit = Math.max(2, Math.floor(width / LANE_FLOOR));
+		};
+		measure();
+		const observer = new ResizeObserver(measure);
+		observer.observe(body);
+		return () => observer.disconnect();
+	});
+
 	// Creating from empty time (spec, Creating from the grid).
 
 	/** The PC's drag, drawn as it grows. */
@@ -313,8 +359,13 @@
 		tapped = null;
 		if (create === 'none' || !e.isPrimary || e.button !== 0) return;
 		const target = e.target instanceof Element ? e.target : null;
-		// A block is its own (its form, and on the PC its move); so is the new one.
-		if (!target || target.closest('[data-entry-id], [data-new-block], [data-day-head]')) return;
+		// A block is its own (its form, and on the PC its move); so are a "+n" chip (its day)
+		// and the new block.
+		if (
+			!target ||
+			target.closest('[data-entry-id], [data-more-chip], [data-new-block], [data-day-head]')
+		)
+			return;
 		const body = target.closest<HTMLElement>('[data-body]');
 		const date = body?.closest<HTMLElement>('[data-date]')?.dataset.date;
 		if (!body || !date) return;
@@ -458,10 +509,10 @@
 {/snippet}
 
 {#snippet column(date: string)}
-	{@const ps = placed.get(date) ?? []}
+	{@const ps = placed.get(date) ?? { blocks: [], chips: [] }}
 	{@const up = lifted.get(date)}
 	<div data-body class="relative" style:height="{body}px">
-		{#each ps as { entry, piece } (entry.id)}
+		{#each ps.blocks as { entry, piece } (entry.id)}
 			<EntryBlock
 				{entry}
 				{piece}
@@ -473,6 +524,9 @@
 				look={moving?.id === entry.id ? 'ghost' : 'rest'}
 				onneed={measured(entry, date)}
 			/>
+		{/each}
+		{#each ps.chips as chip (`${chip.group}:${chip.from}`)}
+			<MoreChip {chip} {date} {hour} {scope} startTime={clockOf(chip.from)} />
 		{/each}
 		{#if up}
 			<EntryBlock
@@ -524,7 +578,9 @@
 			<span
 				data-now-dot
 				aria-hidden="true"
-				class="pointer-events-none absolute -left-1 z-[2] size-2 -translate-y-1/2 rounded-full bg-foreground"
+				class="pointer-events-none absolute {dayColumn !== null
+					? 'left-0'
+					: '-left-1'} z-[2] size-2 -translate-y-1/2 rounded-full bg-foreground"
 				style:top="{(nowMinutes / 60) * hour}px"
 			></span>
 		{/if}
@@ -545,7 +601,10 @@
 	<div
 		bind:this={scroller}
 		data-grid-scroll
-		class="relative flex-1 overflow-y-auto overscroll-contain"
+		data-swipe-scroll={dayColumn !== null ? '' : undefined}
+		class="relative flex-1 overflow-y-auto overscroll-contain {dayColumn !== null
+			? 'overflow-x-auto'
+			: ''}"
 		{onpointerdown}
 		{onpointermove}
 		{onpointerup}
@@ -554,8 +613,10 @@
 		{@attach drag?.attach}
 	>
 		<div
-			class="relative grid"
-			style:grid-template-columns="{gutter}px repeat({days.length}, minmax(0, 1fr))"
+			class="relative grid {dayColumn !== null ? 'min-w-max' : ''}"
+			style:grid-template-columns={dayColumn !== null
+				? `${gutter}px minmax(${dayColumn}px, 1fr)`
+				: `${gutter}px repeat(${days.length}, minmax(0, 1fr))`}
 		>
 			<!-- The rules and the shading, under the columns. -->
 			<div
@@ -583,8 +644,9 @@
 				{/each}
 			</div>
 
-			<!-- The gutter: the hours and the time now. -->
-			<div class="relative">
+			<!-- The gutter: the hours and the time now; the day's stays in view, over the blocks,
+				as its grid scrolls sideways. -->
+			<div class={dayColumn !== null ? 'sticky left-0 z-30 bg-card' : 'relative'}>
 				<div
 					class="sticky top-0 z-20 border-b border-input bg-card"
 					style:height="{headHeight}px"

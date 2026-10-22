@@ -41,3 +41,15 @@ export function growInto<T extends { from: number; to: number }>(extents: T[], l
 		return { ...e, to: Math.max(e.to, Math.min(e.from + least, next)) };
 	});
 }
+
+/**
+ * The readable floor: the narrowest lane a block is drawn in, px, so the seeded names'
+ * first words ("ClientY", "CompY", "time-keep", "Myself", "CompZ") show whole. Measured
+ * once in Chromium (2026-10-22), Public Sans semibold 12 px: the widest, "time-keep", is
+ * 59 px (ClientY 42, CompZ 41, CompY 40, Myself 40). A lane this narrow holds a block
+ * under 5rem, which draws 2 px of padding a side (`@max-[5rem]:px-0.5`), not a wider
+ * block's 6 px: 59 + 3 (edge) + 4 (padding) + 2 (the gap between lanes) = 68. The PC
+ * week's column at 1440 px (148 px) holds two lanes; a longer real first word ends in
+ * an ellipsis rather than widening it.
+ */
+export const LANE_FLOOR = 68;

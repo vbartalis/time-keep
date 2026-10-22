@@ -17,9 +17,11 @@ import {
 import {
 	PASSWORD,
 	dateIn,
+	earlyZone,
 	editElsewhere,
 	noonZone,
 	seedCalendarWeek,
+	seedCrowdedDay,
 	seedCustomer,
 	seedEmptyUser,
 	seedEntry,
@@ -28,19 +30,20 @@ import {
 	startElsewhere,
 	type CalendarWeek
 } from './seed';
+import { LANE_FLOOR } from '../src/lib/components/calendar/block';
 
 const zone = noonZone();
 test.use({ timezoneId: zone });
 
 const isPc = () => test.info().project.name === 'pc';
 
-const rememberZone = (context: BrowserContext) =>
+const rememberZone = (context: BrowserContext, at = zone) =>
 	context.addCookies([
-		{ name: 'tz', value: encodeURIComponent(zone), domain: 'localhost', path: '/' }
+		{ name: 'tz', value: encodeURIComponent(at), domain: 'localhost', path: '/' }
 	]);
 
-async function signIn(page: Page, username: string) {
-	await rememberZone(page.context());
+async function signIn(page: Page, username: string, at = zone) {
+	await rememberZone(page.context(), at);
 	await page.goto('/login');
 	await page.getByLabel('Username').fill(username);
 	await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
@@ -364,7 +367,9 @@ test('last week’s grid: blocks, totals, the overlap and the late entry', async
 	await textFits(page, 'Week');
 });
 
-test('three overlapping entries each show their project', async ({ page }) => {
+test('three overlapping entries: one and a chip in the week, all three in the day', async ({
+	page
+}) => {
 	test.skip(!isPc(), 'the PC’s week');
 	const u = await user('three');
 	seedEntry(u.id, zone, {
@@ -375,19 +380,29 @@ test('three overlapping entries each show their project', async ({ page }) => {
 		description: 'A third on top'
 	});
 	await signIn(page, u.username);
-	await page.goto(`/calendar?view=week&date=${u.lastMonday}`);
-	const marked = column(page, 'Week', u.lastWeekDay(2)).getByRole('link', {
-		name: /Overlaps another entry/
-	});
-	await expect(marked).toHaveCount(3);
+	await openCalendar(page, `/calendar?view=week&date=${u.lastMonday}`);
+	// Three lanes do not fit a week's column: the first is drawn, a chip counts the others.
+	const wednesday = column(page, 'Week', u.lastWeekDay(2));
+	const marked = wednesday.getByRole('link', { name: /Overlaps another entry/ });
+	await expect(marked).toHaveCount(1);
+	const shown = marked.locator('[data-name]');
+	await expect(shown).toHaveText('ClientY – ProjectZ');
+	expect(await overflow(shown)).toEqual({ wide: false, tall: false });
+	await expect(wednesday.locator('[data-more-chip]')).toHaveText('+2');
+	await textFits(page, 'Week');
+
+	// The day hides nothing: each shows its project whole.
+	await openCalendar(page, `/calendar?view=day&date=${u.lastWeekDay(2)}`);
+	const all = grid(page, 'Day').getByRole('link', { name: /Overlaps another entry/ });
+	await expect(all).toHaveCount(3);
 	for (const name of ['ClientY – ProjectZ', 'time-keep', 'CompY – Support']) {
-		const text = marked.filter({ hasText: name }).locator('[data-name]');
+		const text = all.filter({ hasText: name }).locator('[data-name]');
 		await expect(text).toBeVisible();
-		await expect(text).toHaveText(name);
+		await expect(text).toContainText(name);
 		// The whole name shows: nothing cut off at its side or its foot.
 		expect(await overflow(text)).toEqual({ wide: false, tall: false });
 	}
-	await textFits(page, 'Week');
+	await textFits(page, 'Day');
 });
 
 test('back-to-back short entries are drawn apart', async ({ page }) => {
@@ -416,6 +431,187 @@ test('back-to-back short entries are drawn apart', async ({ page }) => {
 		a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y;
 	expect(apart).toBe(true);
 	await textFits(page, 'Week');
+});
+
+// Crowded columns: only blocks drawn into each other share a column (spec, item 19).
+
+/** The suite's tests in a zone where it is early morning now: the crowded timer is short. */
+const early = test.extend<{ earlyAt: string }>({
+	// eslint-disable-next-line no-empty-pattern
+	earlyAt: async ({}, use) => use(earlyZone())
+});
+
+/** Pairs of boxes drawn over each other, by name. */
+const intersecting = (
+	boxes: { name: string; x: number; y: number; width: number; height: number }[]
+) =>
+	boxes.flatMap((a, i) =>
+		boxes
+			.slice(i + 1)
+			.filter(
+				(b) =>
+					a.x < b.x + b.width - 0.5 &&
+					b.x < a.x + a.width - 0.5 &&
+					a.y < b.y + b.height - 0.5 &&
+					b.y < a.y + a.height - 0.5
+			)
+			.map((b) => `${a.name} × ${b.name}`)
+	);
+
+/** Every block and chip in an element, with its box. */
+const drawnIn = (el: Locator) =>
+	el.locator('[data-entry-id], [data-more-chip]').evaluateAll((els) =>
+		els.map((e) => {
+			const r = e.getBoundingClientRect();
+			return {
+				name: e.getAttribute('aria-label') ?? '',
+				x: r.x,
+				y: r.y,
+				width: r.width,
+				height: r.height
+			};
+		})
+	);
+
+test.describe('crowded columns', () => {
+	// The browser in that zone too (over the file's), so the zone it reports keeps the cookie's.
+	early.use({ timezoneId: async ({ earlyAt }, use) => use(earlyAt) });
+	async function crowdedWeek(page: Page, at: string, name: string) {
+		const u = await seedCrowdedDay(`${test.info().project.name}-crowd-${name}`, at);
+		await signIn(page, u.username, at);
+		await openCalendar(page, `/calendar?view=week&date=${u.today}`);
+		return u;
+	}
+	const bodyOf = (page: Page, date: string) =>
+		column(page, 'Week', date).locator('[data-body]').boundingBox();
+
+	early('a lone block takes the column’s width', async ({ page, earlyAt }) => {
+		test.skip(!isPc(), 'the PC’s week');
+		const u = await crowdedWeek(page, earlyAt, 'lone');
+		const body = (await bodyOf(page, u.today))!;
+		await expect
+			.poll(async () =>
+				Math.abs((await block(page, 'Week', u.entries.audit).boundingBox())!.width - body.width + 2)
+			)
+			.toBeLessThanOrEqual(1);
+	});
+
+	early('the crowded minute shows what fits and a chip', async ({ page, earlyAt }) => {
+		test.skip(!isPc(), 'the PC’s week');
+		const u = await crowdedWeek(page, earlyAt, 'minute');
+		await expect(block(page, 'Week', u.entries.running)).toBeVisible();
+		for (const id of u.entries.crowded.slice(1))
+			await expect(block(page, 'Week', id)).toHaveCount(0);
+		const chip = column(page, 'Week', u.today).locator('[data-more-chip]');
+		await expect(chip).toHaveCount(1);
+		await expect(chip).toHaveText('+4');
+		await expect(chip).toHaveAccessibleName(
+			`4 more entries from ${u.crowdAt}, ${dayName(u.today)}; open the day`
+		);
+		await expect(chip).toHaveAttribute('href', `/calendar?view=day&date=${u.today}`);
+	});
+
+	early('names wrap only between words', async ({ page, earlyAt }) => {
+		test.skip(!isPc(), 'the PC’s week');
+		const u = await crowdedWeek(page, earlyAt, 'words');
+		await expect(block(page, 'Week', u.entries.long).locator('[data-word]').first()).toBeVisible();
+		const bad = await grid(page, 'Week').evaluate((g) => {
+			const out: string[] = [];
+			// One line per word: an ellipsis may split a word's box where it cuts, never its line.
+			for (const w of g.querySelectorAll('[data-word]')) {
+				const tops = [...w.getClientRects()].map((r) => Math.round(r.top));
+				if (tops.length === 0 || tops.some((t) => Math.abs(t - tops[0]) > 1))
+					out.push(`"${w.textContent}" in "${w.closest('[data-name]')?.textContent}" breaks`);
+			}
+			for (const name of g.querySelectorAll('[data-name]')) {
+				const first = name.querySelector('[data-word]');
+				if (!first) {
+					out.push(`"${name.textContent}" has no words`);
+					continue;
+				}
+				const w = first.getBoundingClientRect();
+				const n = name.getBoundingClientRect();
+				if (w.right > n.right + 0.5 || w.bottom > n.bottom + 0.5)
+					out.push(`"${first.textContent}" cut (${Math.round(w.right)} > ${Math.round(n.right)})`);
+			}
+			return out;
+		});
+		expect(bad).toEqual([]);
+		await textFits(page, 'Week');
+	});
+
+	early('the overlapping three share two lanes', async ({ page, earlyAt }) => {
+		test.skip(!isPc(), 'the PC’s week');
+		const u = await crowdedWeek(page, earlyAt, 'three');
+		const body = (await bodyOf(page, u.today))!;
+		const half = body.width / 2 - 2;
+		const box = async (id: string) => (await block(page, 'Week', id).boundingBox())!;
+		const [long, meeting, afternoon] = [
+			await box(u.entries.long),
+			await box(u.entries.meeting),
+			await box(u.entries.afternoon)
+		];
+		expect(Math.abs(long.width - half)).toBeLessThanOrEqual(1);
+		expect(Math.abs(meeting.width - half)).toBeLessThanOrEqual(1);
+		expect(Math.abs(afternoon.width - long.width)).toBeLessThanOrEqual(1);
+		// Side by side: the long one in the first lane, the other two in the second.
+		expect(meeting.x).toBeGreaterThanOrEqual(long.x + long.width);
+		expect(afternoon.x).toBeGreaterThanOrEqual(long.x + long.width);
+		// A lane this narrow draws the narrow block's 2 px padding, which the floor counts on.
+		await expect(block(page, 'Week', u.entries.long).locator('> span').first()).toHaveCSS(
+			'padding-left',
+			'2px'
+		);
+	});
+
+	early('the chip opens the day by keyboard', async ({ page, earlyAt }) => {
+		test.skip(!isPc(), 'the PC’s week');
+		const u = await crowdedWeek(page, earlyAt, 'chip');
+		await column(page, 'Week', u.today).locator('[data-more-chip]').focus();
+		await page.keyboard.press('Enter');
+		await expect(page).toHaveURL(new RegExp(`view=day&date=${u.today}`));
+		const ids = u.entries.crowded;
+		for (const id of ids) await expect(block(page, 'Day', id)).toBeVisible();
+		const boxes = await Promise.all(
+			ids.map(async (id) => (await block(page, 'Day', id).boundingBox())!)
+		);
+		boxes.sort((a, b) => a.x - b.x);
+		for (let i = 1; i < boxes.length; i++)
+			expect(boxes[i].x).toBeGreaterThanOrEqual(boxes[i - 1].x + boxes[i - 1].width);
+	});
+
+	early('at 1100 px a column still draws two lanes', async ({ page, earlyAt }) => {
+		test.skip(!isPc(), 'the PC’s week');
+		await page.setViewportSize({ width: 1100, height: 900 });
+		const u = await crowdedWeek(page, earlyAt, 'narrow');
+		const today = column(page, 'Week', u.today);
+		// Two lanes even under two floors' width: the crowd is one block and a chip, the
+		// running block drawn; the three overlapping ones all drawn.
+		await expect(today.locator('[data-more-chip]')).toHaveText(['+4']);
+		for (const id of [
+			u.entries.running,
+			u.entries.audit,
+			u.entries.long,
+			u.entries.meeting,
+			u.entries.afternoon
+		])
+			await expect(block(page, 'Week', id)).toBeVisible();
+		await expect(today.locator('[data-entry-id]')).toHaveCount(5);
+		expect(intersecting(await drawnIn(grid(page, 'Week')))).toEqual([]);
+	});
+
+	early(
+		'a tall block in a shared lane keeps its times and description',
+		async ({ page, earlyAt }) => {
+			test.skip(!isPc(), 'the PC’s week');
+			const u = await crowdedWeek(page, earlyAt, 'tall');
+			const long = block(page, 'Week', u.entries.long);
+			await expect(long.locator('[data-times]')).toBeVisible();
+			await expect(long.locator('[data-times]')).toHaveText('08:00–13:30');
+			await expect(long.getByText('Long development')).toBeVisible();
+			await textFits(page, 'Week');
+		}
+	);
 });
 
 test('the grid keeps its scroll as now moves on', async ({ page }) => {
@@ -513,6 +709,52 @@ test('a running timer grows to now, with the line at now in today’s column', a
 	await expect(line).toBeVisible();
 	await expect(grid(page, view).locator('[data-now-line]')).toHaveCount(1);
 	await expect(head(page, view, u.today).getByText(/^0:3\d$/)).toBeVisible();
+});
+
+test('the day’s now dot is not covered by the hour gutter', async ({ page }) => {
+	const u = await user('nowdot');
+	await signIn(page, u.username);
+	await page.goto('/calendar?view=day');
+	const dot = grid(page, 'Day').locator('[data-now-dot]');
+	await dot.scrollIntoViewIfNeeded();
+	await expect(dot).toBeVisible();
+	// The dot takes no pointer, so it is never the hit: what is drawn over its box is the
+	// gutter (the sticky hour column) or it is not.
+	const covered = await dot.evaluate((el) => {
+		const r = el.getBoundingClientRect();
+		const y = r.top + r.height / 2;
+		return [r.left + 1, r.left + r.width / 2, r.right - 1].some((x) =>
+			document.elementFromPoint(x, y)?.closest('.sticky.left-0')
+		);
+	});
+	expect(covered).toBe(false);
+});
+
+test('a long unbroken word in a description wraps within the block', async ({ page }) => {
+	const u = await user('longword');
+	const tuesday = u.lastWeekDay(1);
+	const id = seedEntry(u.id, zone, {
+		projectId: u.projects.support,
+		date: tuesday,
+		start: '05:00',
+		end: '07:00',
+		description: 'https://example.com/a/very/long/unbroken/address/that/must/wrap/somewhere'
+	});
+	await signIn(page, u.username);
+	await page.goto(`/calendar?view=day&date=${tuesday}`);
+	const b = block(page, 'Day', id);
+	await expect(b).toBeVisible();
+	// Wrapped in the word, no line of it runs past the block's right edge.
+	const clipped = await b.evaluate((el) => {
+		const d = [...el.querySelectorAll('span')].find((s) => s.textContent?.startsWith('https://'))!;
+		const range = document.createRange();
+		range.selectNodeContents(d);
+		return (
+			Math.max(...[...range.getClientRects()].map((r) => r.right)) >
+			el.getBoundingClientRect().right + 0.5
+		);
+	});
+	expect(clipped).toBe(false);
 });
 
 test('the phone’s day: blocks run the full width, text ends on whole lines', async ({ page }) => {
@@ -868,6 +1110,113 @@ test('a swipe right on the phone’s day moves to the day before', async ({ page
 	await expect(page).toHaveURL(new RegExp(`view=day&date=${addDays(u.today, -1)}$`));
 });
 
+// A day past the floor scrolls sideways; on the phone the scroll goes before the swipe
+// (spec, rules 12–13, call 17).
+
+test.describe('the day scrolls sideways', () => {
+	early.use({ timezoneId: async ({ earlyAt }, use) => use(earlyAt) });
+	async function crowdedDay(page: Page, at: string, name: string) {
+		const u = await seedCrowdedDay(`${test.info().project.name}-sideways-${name}`, at, 8);
+		await signIn(page, u.username, at);
+		await openCalendar(page, `/calendar?view=day&date=${u.today}`);
+		return u;
+	}
+	const scroller = (page: Page) => grid(page, 'Day').locator('[data-grid-scroll]');
+	const scrollLeft = (page: Page, to?: 'end' | 0) =>
+		scroller(page).evaluate((el, to) => {
+			if (to === 'end') el.scrollLeft = el.scrollWidth;
+			else if (to === 0) el.scrollLeft = 0;
+			return el.scrollLeft;
+		}, to);
+
+	early('the phone day keeps lanes readable and scrolls sideways', async ({ page, earlyAt }) => {
+		test.skip(isPc(), 'the phone’s day');
+		await page.setViewportSize({ width: 390, height: 844 });
+		const u = await crowdedDay(page, earlyAt, 'lanes');
+		for (const id of u.entries.crowded) {
+			await expect(block(page, 'Day', id)).toBeVisible();
+			expect((await block(page, 'Day', id).boundingBox())!.width).toBeGreaterThanOrEqual(
+				LANE_FLOOR - 2
+			);
+		}
+		const { scrollWidth, clientWidth } = await scroller(page).evaluate((el) => ({
+			scrollWidth: el.scrollWidth,
+			clientWidth: el.clientWidth
+		}));
+		expect(scrollWidth).toBeGreaterThan(clientWidth);
+		await expect(grid(page, 'Day').locator('[data-more-chip]')).toHaveCount(0);
+
+		// Scrolled right, the hours stay in view, over the blocks.
+		expect(await scrollLeft(page, 'end')).toBeGreaterThan(0);
+		await drawn(page);
+		const view = (await scroller(page).boundingBox())!;
+		const hour = grid(page, 'Day').locator('[data-hour="7"]');
+		const label = (await hour.boundingBox())!;
+		expect(label.x).toBeGreaterThanOrEqual(view.x);
+		expect(label.x + label.width).toBeLessThanOrEqual(view.x + view.width);
+		const atLabel = await hour.evaluate((el) => {
+			const r = el.getBoundingClientRect();
+			const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+			return hit === el || el.contains(hit);
+		});
+		expect(atLabel).toBe(true);
+	});
+
+	early('a swipe scrolls first, then changes the day', async ({ page, earlyAt }) => {
+		test.skip(isPc(), 'the phone’s swipe');
+		await page.setViewportSize({ width: 390, height: 844 });
+		const u = await crowdedDay(page, earlyAt, 'swipe');
+		const box = (await grid(page, 'Day').boundingBox())!;
+		const y = box.y + box.height / 2;
+		const left = () =>
+			touchDrag(page, { x: box.x + box.width - 40, y }, { x: box.x + 60, y: y + 10 });
+		const right = () =>
+			touchDrag(page, { x: box.x + 60, y }, { x: box.x + box.width - 40, y: y + 10 });
+
+		// From the left edge, a swipe left scrolls and the day stays.
+		expect(await scrollLeft(page, 0)).toBe(0);
+		await staysPut(page, left);
+		await expect.poll(() => scrollLeft(page)).toBeGreaterThan(0);
+		await expect(page).toHaveURL(new RegExp(`view=day&date=${u.today}$`));
+
+		// At the right edge, a swipe left moves to the next day.
+		await scrollLeft(page, 'end');
+		await drawn(page);
+		await left();
+		await expect(page).toHaveURL(new RegExp(`view=day&date=${addDays(u.today, 1)}$`));
+
+		// From the left edge, a swipe right moves to the day before.
+		await openCalendar(page, `/calendar?view=day&date=${u.today}`);
+		expect(await scrollLeft(page, 0)).toBe(0);
+		await drawn(page);
+		await right();
+		await expect(page).toHaveURL(new RegExp(`view=day&date=${addDays(u.today, -1)}$`));
+	});
+
+	early(
+		'the PC day draws eight side by side without sideways scroll',
+		async ({ page, earlyAt }) => {
+			test.skip(!isPc(), 'the PC’s day');
+			const u = await crowdedDay(page, earlyAt, 'pc');
+			const boxes = await Promise.all(
+				u.entries.crowded.map(async (id) => {
+					await expect(block(page, 'Day', id)).toBeVisible();
+					return (await block(page, 'Day', id).boundingBox())!;
+				})
+			);
+			expect(boxes).toHaveLength(8);
+			boxes.sort((a, b) => a.x - b.x);
+			for (let i = 1; i < boxes.length; i++)
+				expect(boxes[i].x).toBeGreaterThanOrEqual(boxes[i - 1].x + boxes[i - 1].width);
+			const { scrollWidth, clientWidth } = await scroller(page).evaluate((el) => ({
+				scrollWidth: el.scrollWidth,
+				clientWidth: el.clientWidth
+			}));
+			expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+		}
+	);
+});
+
 /** The phone's create bar, its block and the "+". */
 const createBar = (page: Page) => page.locator('[data-create-bar]');
 const newBlock = (page: Page) => grid(page, 'Day').locator('[data-new-block]');
@@ -1159,34 +1508,81 @@ test.describe('moving and resizing on the PC', () => {
 		page
 	}) => {
 		const u = await user('long');
-		const [tuesday, wednesday, thursday] = [u.lastWeekDay(1), u.lastWeekDay(2), u.lastWeekDay(3)];
+		// Over Saturday, which has nothing else: its middle piece runs the column's width.
+		const [friday, saturday, sunday] = [u.lastWeekDay(4), u.lastWeekDay(5), u.lastWeekDay(6)];
 		const id = seedSpan(
 			u.id,
 			zone,
 			u.projects.timeKeep,
-			`${tuesday}T22:00`,
-			`${thursday}T02:00`,
+			`${friday}T22:00`,
+			`${sunday}T02:00`,
 			'Long migration'
 		);
 		await signIn(page, u.username);
 		await openCalendar(page, `/calendar?view=week&date=${u.lastMonday}`);
-		const middle = pieceIn(page, wednesday, id);
+		const middle = pieceIn(page, saturday, id);
 		await expect(middle).toHaveAttribute('data-first', 'false');
 		await expect(middle).toHaveAttribute('data-last', 'false');
 		await expect(middle.locator('[data-handle]')).toHaveCount(0);
-		await expect(pieceIn(page, tuesday, id).locator('[data-handle="start"]')).toHaveCount(1);
-		await expect(pieceIn(page, thursday, id).locator('[data-handle="end"]')).toHaveCount(1);
+		await expect(pieceIn(page, friday, id).locator('[data-handle="start"]')).toHaveCount(1);
+		await expect(pieceIn(page, sunday, id).locator('[data-handle="end"]')).toHaveCount(1);
 
-		// Wednesday's 16:00, an hour on: the whole entry moves.
+		// Saturday's 16:00, an hour on: the whole entry moves.
 		const m = (await middle.boundingBox())!;
 		const y = await yOf(page, 'Week', 16 * 60);
 		const from = { x: m.x + m.width / 2, y };
 		await hold(page, from, { x: from.x, y: y + ((await yOf(page, 'Week', 17 * 60)) - y) + 1 });
-		await expect(tag(page)).toHaveText('Tue 23:00–03:00');
+		await expect(tag(page)).toHaveText('Fri 23:00–03:00');
 		await page.mouse.up();
 		await expect(done(page)).toBeVisible();
 		await expect(middle).toHaveAttribute('title', /23:00–03:00, 28:00/);
 		await expect(page.getByRole('dialog')).toHaveCount(0);
+	});
+
+	test('a crowded group: the chip spans its hidden run; the long block moved stays drawn', async ({
+		page
+	}) => {
+		const u = await user('crowdmove');
+		const saturday = u.lastWeekDay(5);
+		const at = (start: string, end: string, projectId: string, description: string) =>
+			seedEntry(u.id, zone, { projectId, date: saturday, start, end, description });
+		const long = at('08:00', '13:30', u.projects.projectZ, 'Long development');
+		at('08:13', '10:13', u.projects.support, 'Two hours');
+		at('09:00', '10:30', u.projects.support, 'Meeting');
+		const afternoon = at('13:00', '15:30', u.projects.timeKeep, 'Afternoon');
+		for (let n = 0; n < 5; n++) at('10:12', '10:15', u.projects.timeKeep, `Timer ${n + 1}`);
+		await signIn(page, u.username);
+		await openCalendar(page, `/calendar?view=week&date=${u.lastMonday}`);
+
+		// The longest are drawn; one chip over the hidden run, 08:13 to the timers' one-line foot.
+		const col = column(page, 'Week', saturday);
+		await expect(block(page, 'Week', long)).toBeVisible();
+		await expect(block(page, 'Week', afternoon)).toBeVisible();
+		await expect(col.locator('[data-entry-id]')).toHaveCount(2);
+		const chip = col.locator('[data-more-chip]');
+		await expect(chip).toHaveText('+7');
+		const c = (await chip.boundingBox())!;
+		const line = 25; // a 3-minute timer is drawn a line tall: 18 px at 44 px an hour
+		expect(Math.abs(c.y - (await yOf(page, 'Week', 8 * 60 + 13)))).toBeLessThanOrEqual(2);
+		expect(
+			Math.abs(c.y + c.height - (await yOf(page, 'Week', 10 * 60 + 12 + line)))
+		).toBeLessThanOrEqual(2);
+		expect(intersecting(await drawnIn(col))).toEqual([]);
+
+		// The 5.5 h block, an hour later, is still drawn at its new time.
+		const b = (await block(page, 'Week', long).boundingBox())!;
+		const y = await yOf(page, 'Week', 12 * 60);
+		await hold(
+			page,
+			{ x: b.x + b.width / 2, y },
+			{ x: b.x + b.width / 2, y: (await yOf(page, 'Week', 13 * 60)) + 1 }
+		);
+		await expect(tag(page)).toHaveText('Sat 09:00–14:30');
+		await page.mouse.up();
+		await expect(done(page)).toBeVisible();
+		await expect(block(page, 'Week', long)).toHaveAttribute('title', /09:00–14:30/);
+		await expect(block(page, 'Week', long)).toBeVisible();
+		expect(intersecting(await drawnIn(col))).toEqual([]);
 	});
 
 	test('a drop above Monday’s midnight stays on Monday at 00:00', async ({ page }) => {
@@ -1568,6 +1964,24 @@ test('the line at now crosses no block’s text, however young the timer', async
 		expect(await crossedByNow(page, view, u.today), `a timer ${age} minutes old`).toEqual([]);
 		await expect(column(page, view, u.today).locator('[data-now-dot]')).toBeVisible();
 	}
+});
+
+test('a tall running block in a shared week lane shows its running time', async ({ page }) => {
+	test.skip(!isPc(), 'the PC’s week');
+	const u = await user('tallrun');
+	seedEntry(u.id, zone, {
+		projectId: u.projects.timeKeep,
+		start: clockFromNow(-80),
+		end: clockFromNow(-20),
+		description: 'Beside'
+	});
+	const id = startElsewhere(u.id, u.projects.support, zone, clockFromNow(-90), 'Running');
+	await signIn(page, u.username);
+	await openCalendar(page, '/calendar?view=week');
+	const running = block(page, 'Week', id);
+	expect((await running.boundingBox())!.width).toBeLessThan(80);
+	await expect(running.locator('[data-running]')).toBeVisible();
+	await expect(running.locator('[data-running]')).toContainText(/Running 1:3\d/);
 });
 
 test('a running block in a narrow lane keeps its elapsed time whole', async ({ page }) => {

@@ -169,9 +169,8 @@
 				: ''
 		].join(' ')
 	);
-	/** Wraps at word boundaries first, inside a word only when it is wider than the block. */
-	const clamp =
-		'overflow-hidden wrap-break-word [display:-webkit-box] [-webkit-box-orient:vertical]';
+	/** Clamped to its lines; a name breaks only between its words (`words`). */
+	const clamp = 'overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical]';
 </script>
 
 <!-- The running time, after what gives way to it in its line (`cls` its gap): kept whole,
@@ -184,9 +183,18 @@
 	>
 {/snippet}
 
+<!-- A name's words, each kept whole: a line breaks only between them ("time-keep" too). -->
+{#snippet words(text: string, after = '')}
+	{@const ws = text.split(' ').filter(Boolean)}
+	{#each ws as w, i (i)}<span data-word class="whitespace-nowrap">{w}</span>{i < ws.length - 1
+			? ' '
+			: after}{/each}
+{/snippet}
+
 {#snippet projectName()}
-	{#if detail === 'day'}<span class="@max-[14rem]:hidden">{`${entry.customerName} › `}</span
-		>{/if}{entry.projectName}
+	{#if detail === 'day'}<span class="@max-[14rem]:hidden"
+			>{@render words(`${entry.customerName} ›`, ' ')}</span
+		>{/if}{@render words(entry.projectName)}
 {/snippet}
 
 {#if detail === 'none'}
@@ -220,8 +228,15 @@
 		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		<span class="block px-1.5 @max-[5rem]:px-0.5">
 			{#if short && lines === 1}
-				<span class="flex min-w-0 whitespace-nowrap {live ? '' : 'gap-1.5'}">
-					<span data-name class="min-w-0 truncate font-semibold">{entry.projectName}</span>
+				<!-- Sharing its column, the start wraps out of sight before the name is cut. -->
+				<span
+					class="flex min-w-0 whitespace-nowrap {live ? '' : 'gap-x-1.5'} {piece.lanes > 1 && !live
+						? 'h-[15px] flex-wrap overflow-hidden'
+						: ''}"
+				>
+					<span data-name class="min-w-0 truncate font-semibold"
+						>{@render words(entry.projectName)}</span
+					>
 					{#if live}
 						<!-- A timer just started: its running time where the start would be. -->
 						{@render elapsed('Running', 'pl-1.5')}
@@ -243,32 +258,34 @@
 					{@render elapsed('Running', '')}
 				{/if}
 			{:else}
-				<!-- One line; every line once the block is too narrow for anything else. -->
+				<!-- One line; every line once the block is too narrow for anything else (narrower than
+					a lane at the floor: LANE_FLOOR less the gap and the edge, 63 px), but the running
+					time's, which always shows. -->
 				<span
 					bind:this={nameEl}
 					data-name
-					class="{clamp} font-semibold [--name-lines:var(--room)] @max-[5rem]:[--name-lines:var(--lines)]"
-					style:--lines={nameLines}
+					class="{clamp} font-semibold [--name-lines:var(--room)] @max-[63px]:[--name-lines:var(--lines)]"
+					style:--lines={entry.running && rest.includes('times') ? lines - 1 : nameLines}
 					style:--room={nameRoom}
 					style:-webkit-line-clamp="var(--name-lines)">{@render projectName()}</span
 				>
 				{#each rest as line (line)}
 					{#if line === 'times'}
 						{#if entry.running}
-							<span data-times class="flex figures @max-[5rem]:hidden"
+							<span data-times class="flex figures"
 								><span class="min-w-0 truncate">{lead}</span>{@render elapsed(
 									runningWord,
 									''
 								)}</span
 							>
 						{:else}
-							<span data-times class="block truncate figures @max-[5rem]:hidden">{lead}{tail}</span>
+							<span data-times class="block truncate figures @max-[63px]:hidden">{lead}{tail}</span>
 						{/if}
 					{:else if line === 'meta'}
-						<span class="block truncate @max-[6rem]:hidden">{meta}</span>
+						<span class="block truncate @max-[63px]:hidden">{meta}</span>
 					{:else}
-						<span class="block @max-[6rem]:hidden">
-							<span class={clamp} style:-webkit-line-clamp={descriptionLines}
+						<span class="block @max-[63px]:hidden">
+							<span class="{clamp} wrap-break-word" style:-webkit-line-clamp={descriptionLines}
 								>{entry.description}</span
 							>
 						</span>

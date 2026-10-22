@@ -1821,7 +1821,7 @@ longer reuses a hover preload, so a reopened form shows the current minute. Spec
   refused or remove the running timer; whether an untouched Start means Save's moment or
   the shown minute.
 
-### 19. Overlaps in the Calendar's week view
+### 19. Overlaps in the Calendar's week view — done 2026-10-22
 
 The PC week view splits a whole day into lanes as narrow as its busiest overlap: the
 usability check (item 16, first run, 2026-10-22) found today's column cut into 23 px
@@ -1835,6 +1835,75 @@ Exit: the usability gate passes the Calendar's week view at 1440 px, in light an
 dark, on a seeded month with a day of several overlapping entries (the usability
 check's tasks 2, 3, 7 and 8 done first): only entries that overlap share a column,
 each at a readable width, and an entry overlapping nothing takes its day's full width.
+
+Done 2026-10-22: the week and day grids group a day's blocks once, from their one-line
+boxes (`layoutDay` in `src/lib/calendar/grid.ts`); only blocks drawn into each other
+share a column, a block in no group takes the day's full width, lanes in a group are
+equal, and a shared block grows for its name only into free time (`growShared`). A
+lane's readable floor is `LANE_FLOOR`, 68 px ("time-keep" in semibold 12 px, the 3 px
+edge, the 2 px padding a lane that narrow draws, the 2 px gap). The PC week draws as
+many lanes as its column fits at the floor and never fewer than two; where a stretch
+needs more, the last lane holds a "+n" chip (`MoreChip.svelte`) per run of hidden
+blocks, spanning the run's time and opening the day, and only that stretch is hidden.
+Running blocks take a group's first lanes, then the longest blocks, so the shortest go
+into the chip and a running block is drawn wherever two lanes are. Names wrap only between
+words; in a shared one-line block the start time gives way first; the running time is
+never cut. The day views hide nothing: past the floor the day's grid scrolls sideways
+with the hour gutter held, and on the phone a swipe scrolls it first and changes the
+day only from the edge. Spec `docs/superpowers/specs/2026-10-22-week-overlaps-design.md`,
+plan `docs/superpowers/plans/2026-10-22-week-overlaps.md`; `docs/app.md`, `DESIGN.md`
+and `.impeccable/design.json` updated. No decision record.
+
+- The stand-in's calls from the design, as recorded in the spec (calls 1–8, 17): blocks
+  share a column when drawn into each other (inferred); more than fit gives a "+n" chip
+  opening the day (inferred); lanes stay equal (ungrounded, queued); a very short entry
+  and the next sit side by side (inferred); day and week alike (inferred); readable
+  means whole words (inferred); the chip is a one-line "+n" on the surface with an
+  `input` stroke (inferred); the day view hides nothing and scrolls sideways (ungrounded,
+  queued); on the phone day the scroll goes first and the swipe changes the day from
+  the edge (ungrounded, queued). Sources in the spec.
+- **The PC week always draws at least two lanes;** below two floors' width a lane's
+  first word may end in an ellipsis ("time-ke…"), and the chip serves groups needing
+  more than fit. The stand-in's call in the build, replacing the spec's one-lane
+  minimum after the critique showed every overlap a bare chip below about 1350 px.
+  Source: study, Views 10; the spec's anti-goal on hidden overlaps and call 16; the
+  item's exit at 1440 px (`.autopilot/agents/19-narrow-week.md`). Confidence: inferred.
+- **Where a stretch needs more lanes than fit, running blocks are drawn first, then the
+  longest;** the shortest go into the chip. The stand-in's call after gate attempt 1,
+  where a dragged 5.5 h block vanished into a chip. Source: study, Views (Samsung's
+  "+3" where short events crowd), Views 10; the spec's anti-goal; the gate's finding
+  (`.autopilot/agents/19-gate-1-calls.md`). Confidence: inferred.
+- **The "+n" chip spans its hidden run's time,** "+n" at its top, call 7's look
+  otherwise; it replaces call 7's one-line chip. The stand-in's call after gate attempt
+  1, where a one-line "+7" left hidden 2 h and 1.5 h entries reading as free time.
+  Source: the gate's finding; study, Views 10; the spec's anti-goals (same file).
+  Confidence: inferred.
+- Builder's calls (spec, 9–16): the grouping done once from one-line boxes; one chip
+  per run of hidden blocks; the floor measured from the seeded names' first words, two
+  lanes as the week's fallback without JavaScript; the phone week unchanged; the gate
+  checks the day view too; a cut name's ellipsis where CSS puts it; the floor a fixed
+  constant; a running block never behind a chip (at a fit of two or more).
+- Builder's rulings (build): the floor measured with the 2 px padding a block that
+  narrow draws, not 6 px (76 px fitted one lane in the 148 px column at 1440); rule 10
+  read locally, so only blocks in lanes past the fit and chip-lane blocks meeting them
+  are hidden; at a fit of one a running block would hide behind its chip (moot under
+  the two-lane minimum); `growShared` also stops at a chip still on screen at a block's
+  end; the crowded-day e2e fixture runs in an early-morning zone so its running timer
+  has not run into later blocks; the word-wrap e2e checks a word's boxes share one line;
+  a shared one-line block drops its start time whenever the full name does not fit;
+  times and descriptions hide only below a 63 px block (the floor's content width); the
+  day column's minimum is lanes × floor + 1 px for its border, and the day grid takes
+  `min-w-max` so its rules follow a sideways scroll; descriptions keep in-word wrapping
+  and the day view's now dot clears the held gutter (final review). Deferred minors: the
+  opening scroll ignores hidden blocks and chips (with longest-first, a group's
+  earliest block can be hidden); chips come after a column's blocks in
+  tab order; the chip's accessible name says "4 more entries" beside a visible "+4"; a
+  chip's focus ring near the top is clipped under the day head; near midnight a chip
+  names its drawn, not its real, start; PC drag and create untested under a sideways
+  scroll.
+- Questions queued in `docs/questions.md`: whether lanes in a group should widen into
+  free room; whether the day view should scroll sideways or hide past the floor;
+  whether the phone day's swipe should scroll first or change the day.
 
 ### 20. The phone's timer strip with several timers running
 

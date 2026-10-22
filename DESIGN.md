@@ -247,6 +247,13 @@ components:
     typography: "{typography.label}"
     rounded: "{rounded.sm}"
     padding: "2px 6px 0"
+  calendar-more-chip:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    typography: "{typography.label}"
+    rounded: "{rounded.sm}"
+    padding: "0 6px"
+    height: "the hidden run's time, 17px at least"
   calendar-today:
     backgroundColor: "{colors.foreground}"
     textColor: "{colors.ground}"
@@ -1023,7 +1030,11 @@ Time laid out as blocks: Kimai's calendar in this system's colours.
   muted figures ("07:00"; the phone week's bare "7"). Each day's head is sticky over an
   `input` rule: the `caps` weekday ("TUE"; the phone week's letter), the date (today in
   its filled text-colour circle) and the day's total in semibold figures (muted when
-  none; "–" on the phone week).
+  none; "–" on the phone week). The day view hides no block: its lanes keep the floor's
+  68 px, and a day whose widest group needs more than the column holds scrolls sideways,
+  the hour gutter and its head staying in view on the card's surface over the blocks. On
+  the phone that scroll goes before the swipe; from the grid's edge the swipe changes the
+  day.
 - **The line at now:** a 2 px text-colour line across today's column with an 8 px dot
   at its left, and the time ("14:24") in a semibold tag, `ground` on the text colour,
   in the gutter; an hour label it would cover gives way. The line runs behind the
@@ -1035,12 +1046,32 @@ Time laid out as blocks: Kimai's calendar in this system's colours.
   ("10:00–12:30"; the day adds " · 2:30", the week a reference), then on the day
   activity · location · reference, then the description; lines give way from the
   bottom as the block shortens. Hover darkens it 3 % (dark: brightens 10 %); focus is
-  the 2 px blue ring. Blocks that meet sit side by side; an overlapping entry has a
-  2 px red top edge. A block under 45 minutes is one line, the project then the start
-  ("ClientY – Proj… 09:30"). A piece continued past midnight reads "from the previous
-  day" where its start would be. On the phone week a block is colour only and the
+  the 2 px blue ring. Only blocks drawn into each other (each at least a line tall)
+  sit side by side, in equal lanes; a block that meets none runs its column's full
+  width. An overlapping entry has a 2 px red top edge (the core's overlap, not the
+  layout). A name breaks only between its words, never inside one ("time-keep"
+  included); where the room ends it ends in an ellipsis. The PC week fits as many lanes
+  as its column holds at the readable floor (68 px: "time-keep" whole with the narrow
+  block's 2 px padding a side; 148 px at 1440 px holds two), and never fewer than two:
+  narrower, a first word may end in an ellipsis ("time-ke…"). A shared block at the floor
+  keeps its times, meta and description where its height allows, and a running block's
+  time always shows. A block sharing its column grows
+  only into free time under it for its name's lines. A block under 45 minutes is one
+  line, the project then the start ("ClientY – Proj… 09:30"); sharing its column, the
+  start gives way before the name is cut. A piece continued past midnight reads "from
+  the previous day" where its start would be. On the phone week a block is colour only and the
   column is the link to its day; on the phone day a block grows toward 44 px into the
   free time under it.
+- **More chip:** where blocks meet in more lanes than the PC week's column fits, it
+  draws as many as fit (running blocks first, then the longest, so a crowd hides its
+  shortest) and hides only the crowded stretch: in the last lane that fits, a block
+  clear of the hidden ones is still drawn, and the lane holds a "+4" over each run of
+  the rest: as tall as the run's time (one line at least), "+4" at its top, so taken
+  time never reads as free; the lane's width, surface with
+  a 1 px `input` stroke, 2 px corners, 12 px semibold text colour; hover fills it with
+  accent, focus is the 2 px blue ring. It links to that day ("4 more entries from
+  06:12, Thursday 22 October; open the day"), whose grid hides nothing. Never a blue or
+  red fill.
 - **Running block:** from its start to now, growing, with a 2 px dashed blue foot at
   now and "now · Running 1:40" in semibold blue where the end would be; a one-line
   block shows "Running 0:04" after the name. In a narrow lane the name gives way first,

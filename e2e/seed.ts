@@ -658,3 +658,78 @@ export function seedMoveBatch(
 		})
 	);
 }
+
+/**
+ * A fixed-offset zone where it is now 06:xx (05:xx in an hour's last ten minutes), so a
+ * timer started early this morning is still short and ends before 07:00 while a test
+ * runs. The zero offset is named `UTC`, as Chromium names it.
+ */
+export function earlyZone(now = new Date()): string {
+	const hour = now.getUTCMinutes() < 50 ? 6 : 5;
+	const offset = ((hour - now.getUTCHours() + 36) % 24) - 12;
+	if (offset === 0) return 'UTC';
+	return offset > 0 ? `Etc/GMT-${offset}` : `Etc/GMT+${-offset}`;
+}
+
+/**
+ * A crowded day for the calendar (in `zone`, best an `earlyZone`), today: `crowd` entries
+ * from 06:12, alternating ClientY – ProjectZ and time-keep, the first a timer still running
+ * and the rest 06:12–06:15; a lone CompZ – Audit 2026 at 07:00–07:20; and three that
+ * overlap in a chain, 08:00–13:30, 09:00–10:30 and 13:00–15:30. Where it is not yet 06:20
+ * in `zone`, the crowded minute is 00:12 instead, so the timer never starts in the future.
+ */
+export async function seedCrowdedDay(prefix: string, zone: string, crowd = 5) {
+	const user = await newUser(prefix);
+	const core = asUi(user.id);
+	const today = dateIn(zone);
+	const clock = new Intl.DateTimeFormat('en-GB', {
+		timeZone: zone,
+		hour: '2-digit',
+		minute: '2-digit',
+		hourCycle: 'h23'
+	}).format(new Date());
+	const crowdAt = clock >= '06:20' ? '06:12' : '00:12';
+	const crowdEnd = `${crowdAt.slice(0, 3)}15`;
+
+	const compX = value(core.customers.create({ name: 'CompX' })).id;
+	const myself = value(core.customers.create({ name: 'Myself' })).id;
+	const compZ = value(core.customers.create({ name: 'CompZ' })).id;
+	const projectZ = value(
+		core.projects.create({ customerId: compX, name: 'ClientY – ProjectZ' })
+	).id;
+	const support = value(core.projects.create({ customerId: compX, name: 'CompY – Support' })).id;
+	const timeKeep = value(core.projects.create({ customerId: myself, name: 'time-keep' })).id;
+	const audit = value(core.projects.create({ customerId: compZ, name: 'CompZ – Audit 2026' })).id;
+
+	const entry = (projectId: string, start: string, end: string, description: string) =>
+		value(
+			core.entries.create({
+				projectId,
+				description,
+				start: `${today}T${start}`,
+				end: `${today}T${end}`,
+				timeZone: zone
+			})
+		).id;
+
+	const crowded: string[] = [];
+	for (let i = 1; i < crowd; i++)
+		crowded.push(entry(i % 2 === 0 ? projectZ : timeKeep, crowdAt, crowdEnd, `Crowded ${i + 1}`));
+	const running = startElsewhere(user.id, projectZ, zone, crowdAt, 'Crowded 1');
+	return {
+		...user,
+		today,
+		/** The crowded minute, `HH:mm`. */
+		crowdAt,
+		projects: { projectZ, support, timeKeep, audit },
+		entries: {
+			running,
+			/** The crowded minute's entries, the running one first. */
+			crowded: [running, ...crowded],
+			audit: entry(audit, '07:00', '07:20', 'Audit'),
+			long: entry(projectZ, '08:00', '13:30', 'Long development'),
+			meeting: entry(support, '09:00', '10:30', 'Meeting'),
+			afternoon: entry(timeKeep, '13:00', '15:30', 'Afternoon')
+		}
+	};
+}

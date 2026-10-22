@@ -20,6 +20,51 @@ The operator answers whenever they like, here (under the entry) or in conversati
 An answer is added to [the operator's voice](operator-voice.md) in their words, and if
 it changes built work, it becomes a roadmap item.
 
+## 2026-10-22 — 19
+
+- Question: On the phone's day view, a horizontal swipe changes the day, and where
+  more than five entries overlap the grid scrolls sideways for that stretch. How
+  should the two work together?
+- Call made: The scroll goes first. While the grid can still scroll in the swipe's
+  direction, the swipe scrolls it and the day stays. A swipe that starts with the
+  grid already at its edge in that direction (or where nothing scrolls) changes the
+  day, as now. One touch never does both. This keeps the earlier call that nothing is
+  hidden, and the swipe still works across the whole grid (the study follows
+  Samsung's swipe; Kimai's grid that ignores a swipe is the finding against). It is
+  rare: it takes six entries at one time on one day.
+- If answered differently: the swipe works only outside the wide stretch (e.g. on the
+  day's head), or the phone day stops scrolling sideways and shows a "+n" chip past
+  five lanes that opens that day's entries in Entries; the gesture code, its tests and
+  the gate's phone check change with it.
+
+## 2026-10-22 — 19
+
+- Question: In the Calendar's day view, where the "+n" chip would only lead back to
+  the same view, what happens when more entries overlap than fit side by side at a
+  readable width (on the phone, about five)?
+- Call made: Every lane keeps its readable width and the day's grid scrolls sideways
+  for that stretch, so no entry is hidden and none is drawn as a sliver. The reference
+  study asks for both ("side by side, never hidden"; "a readable minimum width"), and
+  nothing on record says which you would give up. It is rare: it takes six entries at
+  one time on one day.
+- If answered differently: the day view narrows the lanes past the readable width
+  (names cut), or hides the extra entries behind a chip that opens a list of them; the
+  layout code, its tests and the gate's screenshots change with it.
+
+## 2026-10-22 — 19
+
+- Question: In the Calendar's day and week views, when entries overlap and share a
+  column, should a block whose neighbours end before it (or start after it) keep the
+  group's narrow width all the way, or widen into the room left free beside it, as
+  some calendar apps do?
+- Call made: It keeps the group's width. Only the entries that overlap share a column,
+  and an entry that overlaps nothing takes the full width (item 19's exit); inside a
+  group the blocks keep equal lanes. It is the smaller change, and nothing on record
+  says how you want it.
+- If answered differently: a block whose lanes beside it are free for its whole span
+  widens into them, in the day and week views; the layout code, its unit tests and the
+  gate's screenshots change with it.
+
 ## 2026-10-22 — 18
 
 - Question: You start a timer on a project from the form and type a Start earlier
