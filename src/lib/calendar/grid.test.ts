@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	dayTotals,
 	dragRange,
+	growChips,
 	growShared,
 	halfHourSlot,
 	lanes,
@@ -278,14 +279,45 @@ describe('layoutDay', () => {
 		);
 		expect(shown).toHaveLength(1);
 		expect(shown[0]).toMatchObject({ lane: 0, lanes: 2 });
-		expect(chips).toEqual([{ from: 372, to: 397, lane: 1, lanes: 2, count: 4, group: 0 }]);
+		expect(chips).toEqual([
+			{ from: 372, to: 397, lane: 1, lanes: 2, count: 4, group: 0, hidden: [1, 2, 3, 4] }
+		]);
+	});
+
+	it('a chip names the boxes it folds, in start order', () => {
+		// A running timer and seven short ones all meeting, listed out of start order, at a fit
+		// of 4: the running one and the two longest are drawn, the other five fold.
+		const boxes = [
+			box(1088, 1095),
+			box(1083, 1095),
+			box(1086, 1095),
+			box(1083, 1200, true),
+			box(1085, 1095),
+			box(1084, 1095),
+			box(1089, 1095),
+			box(1087, 1095)
+		];
+		const { shown, chips } = layoutDay(boxes, 4);
+		expect(shown).toHaveLength(3);
+		expect(shown.find((b) => b.running)).toMatchObject({ lane: 0 });
+		expect(chips).toHaveLength(1);
+		expect(chips[0].count).toBe(5);
+		expect(chips[0].hidden).toHaveLength(5);
+		const starts = chips[0].hidden.map((i) => boxes[i].from);
+		expect(starts).toEqual([...starts].sort((a, b) => a - b));
+		// Every box is drawn or folded, never both: the running one is drawn, never folded.
+		expect(new Set(chips[0].hidden).size).toBe(5);
+		expect(shown.length + chips[0].hidden.length).toBe(boxes.length);
+		expect(chips[0].hidden).not.toContain(3);
 	});
 
 	it('running blocks take the first lanes', () => {
 		const { shown, chips } = layoutDay([box(372, 397), box(372, 397), box(372, 500, true)], 2);
 		expect(shown).toHaveLength(1);
 		expect(shown[0]).toMatchObject({ running: true, lane: 0 });
-		expect(chips).toEqual([{ from: 372, to: 397, lane: 1, lanes: 2, count: 2, group: 0 }]);
+		expect(chips).toEqual([
+			{ from: 372, to: 397, lane: 1, lanes: 2, count: 2, group: 0, hidden: [0, 1] }
+		]);
 	});
 
 	it('one chip per run', () => {
@@ -315,7 +347,9 @@ describe('layoutDay', () => {
 			[480, 0, 2],
 			[780, 1, 2]
 		]);
-		expect(chips).toEqual([{ from: 520, to: 630, lane: 1, lanes: 2, count: 4, group: 0 }]);
+		expect(chips).toEqual([
+			{ from: 520, to: 630, lane: 1, lanes: 2, count: 4, group: 0, hidden: [1, 2, 3, 4] }
+		]);
 	});
 
 	it('each chip-lane block meeting a hidden one is hidden too', () => {
@@ -328,7 +362,9 @@ describe('layoutDay', () => {
 			[480, 0],
 			[650, 1]
 		]);
-		expect(chips).toEqual([{ from: 500, to: 620, lane: 1, lanes: 2, count: 3, group: 0 }]);
+		expect(chips).toEqual([
+			{ from: 500, to: 620, lane: 1, lanes: 2, count: 3, group: 0, hidden: [1, 2, 3] }
+		]);
 	});
 
 	it('a chip never meets a drawn block', () => {
@@ -356,7 +392,9 @@ describe('layoutDay', () => {
 			[480, 810, 0],
 			[780, 930, 1]
 		]);
-		expect(chips).toEqual([{ from: 493, to: 637, lane: 1, lanes: 2, count: 7, group: 0 }]);
+		expect(chips).toEqual([
+			{ from: 493, to: 637, lane: 1, lanes: 2, count: 7, group: 0, hidden: [1, 2, 4, 5, 6, 7, 8] }
+		]);
 	});
 
 	it('a long block moved an hour later stays drawn', () => {
@@ -380,7 +418,9 @@ describe('layoutDay', () => {
 	it('fit of one', () => {
 		const { shown, chips } = layoutDay([box(360, 420), box(380, 440)], 1);
 		expect(shown).toEqual([]);
-		expect(chips).toEqual([{ from: 360, to: 440, lane: 0, lanes: 1, count: 2, group: 0 }]);
+		expect(chips).toEqual([
+			{ from: 360, to: 440, lane: 0, lanes: 1, count: 2, group: 0, hidden: [0, 1] }
+		]);
 		expect(layoutDay([box(360, 420)], 1).shown).toHaveLength(1);
 	});
 
@@ -392,6 +432,69 @@ describe('layoutDay', () => {
 		expect(shown).toHaveLength(10);
 		expect(shown.every((b) => b.lanes === 10)).toBe(true);
 		expect(chips).toEqual([]);
+	});
+});
+
+describe('growChips', () => {
+	const chip = (from: number, to: number, lane = 1, group = 0) => ({
+		from,
+		to,
+		lane,
+		lanes: 2,
+		count: 2,
+		group,
+		hidden: [1, 2]
+	});
+	const placed = (from: number, to: number, lane: number, group: number) => ({
+		from,
+		to,
+		lane,
+		group
+	});
+
+	it('grows a chip into free time toward `least`', () => {
+		expect(growChips([chip(600, 603)], [placed(600, 650, 0, 0)], 47)[0].to).toBe(647);
+	});
+	it('stops at the next block in its lane of its group', () => {
+		expect(growChips([chip(600, 603)], [placed(620, 640, 1, 0)], 47)[0].to).toBe(620);
+	});
+	it('ignores blocks in other lanes of its group', () => {
+		expect(growChips([chip(600, 603)], [placed(610, 700, 0, 0)], 47)[0].to).toBe(647);
+	});
+	it('stops at another group’s first block, and at another chip', () => {
+		expect(growChips([chip(600, 603)], [placed(615, 640, 0, 1)], 47)[0].to).toBe(615);
+		expect(growChips([chip(600, 603), chip(610, 612, 1, 1)], [], 47)[0].to).toBe(610);
+	});
+	it('never shrinks a chip, nor passes midnight', () => {
+		expect(growChips([chip(600, 700)], [], 47)[0]).toMatchObject({ from: 600, to: 700 });
+		expect(growChips([chip(600, 700)], [], 47)[0].top).toBeUndefined();
+		expect(growChips([chip(1430, 1433)], [], 47)[0].to).toBe(1440);
+	});
+	it('with room under it, grows downward only', () => {
+		const [c] = growChips([chip(600, 603)], [placed(500, 590, 1, 0)], 47);
+		expect(c).toMatchObject({ from: 600, to: 647 });
+		expect(c.top).toBeUndefined();
+	});
+	it('short of `least` under it, grows up by what it lacks, from its run start', () => {
+		const [c] = growChips([chip(1430, 1433)], [], 47);
+		expect(c).toMatchObject({ from: 1430, to: 1440, top: 1393 });
+		const [held] = growChips([chip(600, 603)], [placed(610, 640, 1, 0)], 47);
+		expect(held).toMatchObject({ from: 600, to: 610, top: 563 });
+	});
+	it('grows up only into free time, never past midnight at the top', () => {
+		const up = (shown: ReturnType<typeof placed>[], others: ReturnType<typeof chip>[] = []) =>
+			growChips([chip(1430, 1433), ...others], shown, 47)[0].top;
+		expect(up([placed(1380, 1410, 1, 0)])).toBe(1410);
+		expect(up([placed(1300, 1420, 0, 0)])).toBe(1393);
+		expect(up([placed(1400, 1415, 0, 1)])).toBe(1415);
+		expect(up([], [chip(1370, 1420, 1, 1)])).toBe(1420);
+		expect(up([placed(1380, 1430, 1, 0)])).toBeUndefined();
+		expect(growChips([chip(10, 13)], [placed(13, 30, 1, 0)], 47)[0].top).toBe(0);
+	});
+	it('grows up only above where another chip grew down', () => {
+		const [early, late] = growChips([chip(1350, 1352, 1, 0), chip(1430, 1433, 1, 1)], [], 47);
+		expect(early.to).toBe(1397);
+		expect(late.top).toBe(1397);
 	});
 });
 
@@ -422,10 +525,17 @@ describe('growShared', () => {
 		// A block whose end falls inside a chip's span does not grow at all.
 		const inside = growShared(
 			[{ from: 500, to: 540, lane: 1, lanes: 2, group: 0 }],
-			[{ from: 520, to: 600, lane: 1, lanes: 2, count: 2, group: 0 }],
+			[{ from: 520, to: 600, lane: 1, lanes: 2, count: 2, group: 0, hidden: [1, 2] }],
 			() => 200
 		);
 		expect(inside[0].to).toBe(540);
+		// A chip grown up takes its drawn time from its top.
+		const above = growShared(
+			[{ from: 1300, to: 1350, lane: 1, lanes: 2, group: 0 }],
+			[{ from: 1430, to: 1440, top: 1393, lane: 1, lanes: 2, count: 2, group: 0, hidden: [1] }],
+			() => 200
+		);
+		expect(above[0].to).toBe(1393);
 	});
 
 	it('never shrinks and leaves lone blocks alone', () => {

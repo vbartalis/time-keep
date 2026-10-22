@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
@@ -7,6 +7,7 @@
 	import { STILL, clockOf, type Draft } from '#lib/calendar/gestures.svelte.js';
 	import {
 		dragRange,
+		growChips,
 		growShared,
 		halfHourSlot,
 		lanes,
@@ -24,6 +25,7 @@
 	import { BlockDrag } from './drag.svelte';
 	import EntryBlock from './EntryBlock.svelte';
 	import MoreChip from './MoreChip.svelte';
+	import MoreSheet from './MoreSheet.svelte';
 	import NewBlock from './NewBlock.svelte';
 	import type { CalendarEntry } from './types';
 
@@ -95,10 +97,17 @@
 	/** The compact gutter is wide enough for the time now's tag ("13:52"). */
 	const gutter = $derived(compact ? 40 : day ? 52 : 56);
 	const body = $derived(24 * hour);
+	/** The phone's day, which folds a crowded run as the week does (item 21). */
+	const phoneDay = $derived(create === 'tap' && !compact);
 
 	type Drawn = { piece: Piece; entry: CalendarEntry; marks: number; from: number; to: number };
 	type Placed = Piece & { lane: number; lanes: number; drawn: { from: number; to: number } };
-	type Day = { blocks: { entry: CalendarEntry; piece: Placed }[]; chips: Chip[] };
+	/**
+	 * A "+n" chip, with the entries it folds in start order and `start`, its run's first
+	 * start in minutes: the time it names (its drawn `from` is lifted near midnight).
+	 */
+	type Folded = Chip & { entries: CalendarEntry[]; start: number };
+	type Day = { blocks: { entry: CalendarEntry; piece: Placed }[]; chips: Folded[] };
 
 	/** A block of `lines` lines at least, by its drawn extent. */
 	const draw = (d: Drawn, lines: number): Drawn => ({
@@ -133,15 +142,24 @@
 	/**
 	 * The lanes a PC week column fits at the readable floor, measured on the rendered
 	 * column; never fewer than two (narrower, a first word may end in an ellipsis), and two
-	 * before it is measured and without JavaScript. The day views never hide a block.
+	 * before it is measured and without JavaScript.
 	 */
 	let weekFit = $state(2);
+	/**
+	 * The lanes the phone's day column fits at the floor, measured as the week's are; four
+	 * (a 390 px phone's) before it is measured and without JavaScript. The PC's day never
+	 * hides a block (item 21).
+	 */
+	let dayFit = $state(4);
 
 	/**
 	 * Each day's pieces, side by side only where their drawn blocks meet, grouped once from
-	 * their one-line boxes (spec, item 19). A group wider than the week's column shows what
-	 * fits and a "+n" chip per run of the rest. A block sharing its column then grows, only
-	 * into free time, toward the lines its project's name needs; that never regroups.
+	 * their one-line boxes (spec, item 19). A group wider than the week's column, or the
+	 * phone's day column (item 21), shows what fits and a "+n" chip per run of the rest; a
+	 * chip keeps the folded boxes' indices. On the phone's day a chip grows toward 44 px into
+	 * free time (under it, then above) first, so no block grows into its time. A block
+	 * sharing its column then grows, only into free time, toward the lines its project's
+	 * name needs; that never regroups.
 	 */
 	const placed = $derived.by(() => {
 		const byDay = new Map<string, Drawn[]>(days.map((d) => [d, []]));
@@ -161,27 +179,59 @@
 			// The phone's week: colour only, each column a link to its day; lanes as they were.
 			if (compact) return { blocks: lanes(grown(ds)).map(toPlaced), chips: [] };
 			const boxes = grown(ds).map((d) => ({ ...d, running: d.entry.running }));
-			const { shown, chips } = layoutDay(boxes, detail === 'week' ? weekFit : Infinity);
+			const fit = detail === 'week' ? weekFit : phoneDay ? dayFit : Infinity;
+			const { shown, chips: folded } = layoutDay(boxes, fit);
+			const chips = phoneDay ? growChips(folded, shown, Math.ceil((44 * 60) / hour)) : folded;
 			// Two lines for the name, or three among three or more lanes, until it has measured.
 			const want = (d: (typeof shown)[number]) =>
 				minutesOf(heightFor(Math.max(d.lanes > 2 ? 3 : 2, needOf(d.entry, date)), d.marks));
 			const blocks = growShared(shown, chips, want);
-			return { blocks: blocks.map(toPlaced), chips };
+			return {
+				blocks: blocks.map(toPlaced),
+				chips: chips.map((c) => ({
+					...c,
+					entries: c.hidden.map((i) => boxes[i].entry),
+					start: Math.min(...c.hidden.map((i) => boxes[i].piece.from))
+				}))
+			};
 		};
 		return new Map([...byDay].map(([date, ds]) => [date, place(date, ds)]));
 	});
 
 	/**
-	 * The day view's column holds its widest group at the floor (rule 12): the most lanes
-	 * any group takes, each at least LANE_FLOOR wide, past the column's 1 px rule. Wider
-	 * than the grid, the grid scrolls sideways; the week's columns never do.
+	 * The PC's day column holds its widest group at the floor (rule 12): the most lanes any
+	 * group takes, each at least LANE_FLOOR wide, past the column's 1 px rule. Wider than
+	 * the grid, the grid scrolls sideways. The week's columns never do, nor the phone's day,
+	 * which folds what it cannot fit (item 21).
 	 */
 	const dayColumn = $derived.by(() => {
-		if (detail !== 'day') return null;
+		if (detail !== 'day' || phoneDay) return null;
 		let maxLanes = 1;
 		for (const { blocks } of placed.values())
 			for (const { piece } of blocks) maxLanes = Math.max(maxLanes, piece.lanes);
 		return maxLanes * LANE_FLOOR + 1;
+	});
+
+	// The phone day's chip opens a sheet of the entries it folds (item 21).
+
+	const chipKey = (chip: Chip) => `${chip.group}:${chip.from}`;
+	/** The chip whose sheet is open, by key: its entries follow the layout as it changes. */
+	let sheet = $state<{ key: string } | null>(null);
+	const sheetChip = $derived.by(() => {
+		if (!sheet) return null;
+		for (const { chips } of placed.values())
+			for (const chip of chips) if (chipKey(chip) === sheet.key) return chip;
+		return null;
+	});
+	const sheetTitle = (chip: Folded) =>
+		`${chip.count} more ${chip.count === 1 ? 'entry' : 'entries'} from ${clockOf(chip.start)}`;
+
+	// A change that takes the chip away (its run thinned out) closes its sheet; the dialog's
+	// focus, which would return to the chip, goes to the grid instead.
+	$effect(() => {
+		if (!sheet || sheetChip) return;
+		sheet = null;
+		void tick().then(() => scroller?.focus({ preventScroll: true }));
 	});
 
 	// Moving and resizing on the PC (spec, Moving and resizing).
@@ -314,17 +364,21 @@
 		});
 	});
 
-	// The week's lanes that fit: its first column's width over the floor, two at least, kept
-	// up on resize.
+	// The week's lanes that fit, or the phone day's: its first column's width over the floor,
+	// two at least, kept up on resize.
 	// A hidden grid (the other layout's) measures nothing and keeps what it had. Observed
 	// afresh per period, whose columns are drawn anew.
 	$effect(() => {
 		void period;
-		const body = detail === 'week' ? scroller?.querySelector<HTMLElement>('[data-body]') : null;
+		const week = detail === 'week';
+		const body = week || phoneDay ? scroller?.querySelector<HTMLElement>('[data-body]') : null;
 		if (!body) return;
 		const measure = () => {
 			const width = body.getBoundingClientRect().width;
-			if (width > 0) weekFit = Math.max(2, Math.floor(width / LANE_FLOOR));
+			if (width <= 0) return;
+			const fit = Math.max(2, Math.floor(width / LANE_FLOOR));
+			if (week) weekFit = fit;
+			else dayFit = fit;
 		};
 		measure();
 		const observer = new ResizeObserver(measure);
@@ -455,6 +509,11 @@
 			const target = e.target instanceof Element ? e.target : null;
 			if (tapped || target?.closest('[data-create-bar], [data-new-block]')) return;
 			draft = null;
+			// A tap on a "+n" chip only drops the block: no sheet, no link followed.
+			if (target?.closest('[data-more-chip]')) {
+				e.preventDefault();
+				e.stopPropagation();
+			}
 		};
 		document.addEventListener('click', onclick, true);
 		return () => document.removeEventListener('click', onclick, true);
@@ -525,8 +584,15 @@
 				onneed={measured(entry, date)}
 			/>
 		{/each}
-		{#each ps.chips as chip (`${chip.group}:${chip.from}`)}
-			<MoreChip {chip} {date} {hour} {scope} startTime={clockOf(chip.from)} />
+		{#each ps.chips as chip (chipKey(chip))}
+			<MoreChip
+				{chip}
+				{date}
+				{hour}
+				{scope}
+				startTime={clockOf(chip.start)}
+				onopen={phoneDay ? () => (sheet = { key: chipKey(chip) }) : undefined}
+			/>
 		{/each}
 		{#if up}
 			<EntryBlock
@@ -716,6 +782,17 @@
 	>
 		<input type="hidden" name="back" value={back} />
 	</form>
+{/if}
+
+{#if phoneDay}
+	<MoreSheet
+		open={sheetChip !== null}
+		title={sheetChip ? sheetTitle(sheetChip) : ''}
+		entries={sheetChip?.entries ?? []}
+		{back}
+		{now}
+		onclose={() => (sheet = null)}
+	/>
 {/if}
 
 <!-- The phone's create bar, over the bottom bar (outside the grid, whose isolation would keep

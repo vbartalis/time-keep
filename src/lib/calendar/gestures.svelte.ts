@@ -15,7 +15,10 @@ export function swipeYields(dir: -1 | 1, room: Room | null): boolean {
 	return room !== null && (dir === -1 ? room.back : room.on);
 }
 
-/** The room of the sideways scroller (`data-swipe-scroll`) under a touch; none if it fits. */
+/**
+ * The room of the sideways scroller (`data-swipe-scroll`) under a touch; none if it fits.
+ * The phone's day has none: it folds a crowded run into a chip (item 21).
+ */
 function roomAt(target: EventTarget | null): Room | null {
 	const el = target instanceof Element ? target.closest('[data-swipe-scroll]') : null;
 	if (!el || el.scrollWidth <= el.clientWidth + 1) return null;

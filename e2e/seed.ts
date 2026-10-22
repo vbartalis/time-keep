@@ -8,6 +8,7 @@ import { openCore, type Result } from '../src/lib/server/core/index';
 import { openDb, type DB } from '../src/lib/server/db/index';
 import { createUser } from '../src/lib/server/users';
 import { seedMonth as seedRealMonth } from '../scripts/seed-month';
+import { addDays } from '../src/lib/calendar/dates';
 
 /** The database `playwright.config.ts` hands the test server. */
 const DB_PATH = fileURLToPath(new URL('../test-results/e2e/time-keep.db', import.meta.url));
@@ -679,19 +680,22 @@ export function earlyZone(now = new Date()): string {
  * and the rest 06:12–06:15; a lone CompZ – Audit 2026 at 07:00–07:20; and three that
  * overlap in a chain, 08:00–13:30, 09:00–10:30 and 13:00–15:30. Where it is not yet 06:20
  * in `zone`, the crowded minute is 00:12 instead, so the timer never starts in the future.
+ * `late` puts the day on yesterday instead, the crowd at 23:56–23:59 (the timer still
+ * running from 23:56): a crowd in the day's last minutes.
  */
-export async function seedCrowdedDay(prefix: string, zone: string, crowd = 5) {
+export async function seedCrowdedDay(prefix: string, zone: string, crowd = 5, late = false) {
 	const user = await newUser(prefix);
 	const core = asUi(user.id);
 	const today = dateIn(zone);
+	const day = late ? addDays(today, -1) : today;
 	const clock = new Intl.DateTimeFormat('en-GB', {
 		timeZone: zone,
 		hour: '2-digit',
 		minute: '2-digit',
 		hourCycle: 'h23'
 	}).format(new Date());
-	const crowdAt = clock >= '06:20' ? '06:12' : '00:12';
-	const crowdEnd = `${crowdAt.slice(0, 3)}15`;
+	const crowdAt = late ? '23:56' : clock >= '06:20' ? '06:12' : '00:12';
+	const crowdEnd = late ? '23:59' : `${crowdAt.slice(0, 3)}15`;
 
 	const compX = value(core.customers.create({ name: 'CompX' })).id;
 	const myself = value(core.customers.create({ name: 'Myself' })).id;
@@ -708,8 +712,8 @@ export async function seedCrowdedDay(prefix: string, zone: string, crowd = 5) {
 			core.entries.create({
 				projectId,
 				description,
-				start: `${today}T${start}`,
-				end: `${today}T${end}`,
+				start: `${day}T${start}`,
+				end: `${day}T${end}`,
 				timeZone: zone
 			})
 		).id;
@@ -717,10 +721,19 @@ export async function seedCrowdedDay(prefix: string, zone: string, crowd = 5) {
 	const crowded: string[] = [];
 	for (let i = 1; i < crowd; i++)
 		crowded.push(entry(i % 2 === 0 ? projectZ : timeKeep, crowdAt, crowdEnd, `Crowded ${i + 1}`));
-	const running = startElsewhere(user.id, projectZ, zone, crowdAt, 'Crowded 1');
+	const running = value(
+		core.timers.start({
+			projectId: projectZ,
+			start: `${day}T${crowdAt}`,
+			timeZone: zone,
+			description: 'Crowded 1'
+		})
+	).id;
 	return {
 		...user,
 		today,
+		/** The day seeded: today, or yesterday when `late`. */
+		day,
 		/** The crowded minute, `HH:mm`. */
 		crowdAt,
 		projects: { projectZ, support, timeKeep, audit },

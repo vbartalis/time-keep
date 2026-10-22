@@ -1110,87 +1110,307 @@ test('a swipe right on the phone’s day moves to the day before', async ({ page
 	await expect(page).toHaveURL(new RegExp(`view=day&date=${addDays(u.today, -1)}$`));
 });
 
-// A day past the floor scrolls sideways; on the phone the scroll goes before the swipe
-// (spec, rules 12–13, call 17).
+// A crowded day: the phone's folds a run past its lanes into a "+n" chip and keeps to the
+// screen's width, the swipe changing the day anywhere; the PC's draws every lane (item 21).
 
-test.describe('the day scrolls sideways', () => {
+test.describe('a crowded day', () => {
 	early.use({ timezoneId: async ({ earlyAt }, use) => use(earlyAt) });
-	async function crowdedDay(page: Page, at: string, name: string) {
-		const u = await seedCrowdedDay(`${test.info().project.name}-sideways-${name}`, at, 8);
+	async function crowdedDay(page: Page, at: string, name: string, late = false) {
+		const u = await seedCrowdedDay(`${test.info().project.name}-sideways-${name}`, at, 8, late);
 		await signIn(page, u.username, at);
-		await openCalendar(page, `/calendar?view=day&date=${u.today}`);
+		await openCalendar(page, `/calendar?view=day&date=${u.day}`);
 		return u;
 	}
 	const scroller = (page: Page) => grid(page, 'Day').locator('[data-grid-scroll]');
-	const scrollLeft = (page: Page, to?: 'end' | 0) =>
-		scroller(page).evaluate((el, to) => {
-			if (to === 'end') el.scrollLeft = el.scrollWidth;
-			else if (to === 0) el.scrollLeft = 0;
-			return el.scrollLeft;
-		}, to);
+	const widths = (page: Page) =>
+		scroller(page).evaluate((el) => ({ scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }));
+	const chipOf = (page: Page) => grid(page, 'Day').locator('[data-more-chip]');
+	/** The crowded minute's blocks drawn, with their widths. */
+	const drawnCrowd = (page: Page, ids: string[]) =>
+		grid(page, 'Day')
+			.locator('[data-entry-id]')
+			.evaluateAll(
+				(els, ids) =>
+					els
+						.filter((e) => ids.includes(e.getAttribute('data-entry-id')!))
+						.map((e) => ({
+							id: e.getAttribute('data-entry-id')!,
+							width: e.getBoundingClientRect().width
+						})),
+				ids
+			);
 
-	early('the phone day keeps lanes readable and scrolls sideways', async ({ page, earlyAt }) => {
+	early('the phone’s crowded day keeps to the screen’s width', async ({ page, earlyAt }) => {
 		test.skip(isPc(), 'the phone’s day');
 		await page.setViewportSize({ width: 390, height: 844 });
-		const u = await crowdedDay(page, earlyAt, 'lanes');
-		for (const id of u.entries.crowded) {
-			await expect(block(page, 'Day', id)).toBeVisible();
-			expect((await block(page, 'Day', id).boundingBox())!.width).toBeGreaterThanOrEqual(
-				LANE_FLOOR - 2
-			);
-		}
-		const { scrollWidth, clientWidth } = await scroller(page).evaluate((el) => ({
-			scrollWidth: el.scrollWidth,
-			clientWidth: el.clientWidth
-		}));
-		expect(scrollWidth).toBeGreaterThan(clientWidth);
-		await expect(grid(page, 'Day').locator('[data-more-chip]')).toHaveCount(0);
-
-		// Scrolled right, the hours stay in view, over the blocks.
-		expect(await scrollLeft(page, 'end')).toBeGreaterThan(0);
-		await drawn(page);
-		const view = (await scroller(page).boundingBox())!;
-		const hour = grid(page, 'Day').locator('[data-hour="7"]');
-		const label = (await hour.boundingBox())!;
-		expect(label.x).toBeGreaterThanOrEqual(view.x);
-		expect(label.x + label.width).toBeLessThanOrEqual(view.x + view.width);
-		const atLabel = await hour.evaluate((el) => {
-			const r = el.getBoundingClientRect();
-			const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
-			return hit === el || el.contains(hit);
-		});
-		expect(atLabel).toBe(true);
+		const u = await crowdedDay(page, earlyAt, 'width');
+		await expect(chipOf(page)).toHaveText(['+5']);
+		await expect(block(page, 'Day', u.entries.running)).toBeVisible();
+		const { scrollWidth, clientWidth } = await widths(page);
+		expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+		const crowd = await drawnCrowd(page, u.entries.crowded);
+		expect(crowd).toHaveLength(3);
+		expect(crowd.map((c) => c.id)).toContain(u.entries.running);
+		for (const { width } of crowd) expect(width).toBeGreaterThanOrEqual(LANE_FLOOR - 2);
+		// A lone block runs the column's width.
+		const body = (await column(page, 'Day', u.today).locator('[data-body]').boundingBox())!;
+		const audit = (await block(page, 'Day', u.entries.audit).boundingBox())!;
+		expect(Math.abs(audit.width - body.width)).toBeLessThanOrEqual(2);
+		// The day's total is on the screen.
+		const total = (await head(page, 'Day', u.today).boundingBox())!;
+		expect(total.x).toBeGreaterThanOrEqual(0);
+		expect(total.x + total.width).toBeLessThanOrEqual(390);
+		expect(intersecting(await drawnIn(grid(page, 'Day')))).toEqual([]);
 	});
 
-	early('a swipe scrolls first, then changes the day', async ({ page, earlyAt }) => {
+	early('at 412 px the phone’s crowded day still fits', async ({ page, earlyAt }) => {
+		test.skip(isPc(), 'the phone’s day');
+		await page.setViewportSize({ width: 412, height: 915 });
+		const u = await crowdedDay(page, earlyAt, 'wider');
+		await expect(chipOf(page)).toHaveCount(1);
+		const { scrollWidth, clientWidth } = await widths(page);
+		expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+		// Five lanes fit: four of the crowd drawn, the running one among them, and the chip.
+		await expect(chipOf(page)).toHaveText(['+4']);
+		const crowd = await drawnCrowd(page, u.entries.crowded);
+		expect(crowd).toHaveLength(4);
+		expect(crowd.map((c) => c.id)).toContain(u.entries.running);
+		const count = Number((await chipOf(page).textContent())!.replace('+', ''));
+		expect(crowd.length + count).toBe(8);
+	});
+
+	early('a swipe on the crowded phone day changes the day', async ({ page, earlyAt }) => {
 		test.skip(isPc(), 'the phone’s swipe');
 		await page.setViewportSize({ width: 390, height: 844 });
 		const u = await crowdedDay(page, earlyAt, 'swipe');
+		await drawn(page);
 		const box = (await grid(page, 'Day').boundingBox())!;
 		const y = box.y + box.height / 2;
-		const left = () =>
-			touchDrag(page, { x: box.x + box.width - 40, y }, { x: box.x + 60, y: y + 10 });
-		const right = () =>
-			touchDrag(page, { x: box.x + 60, y }, { x: box.x + box.width - 40, y: y + 10 });
-
-		// From the left edge, a swipe left scrolls and the day stays.
-		expect(await scrollLeft(page, 0)).toBe(0);
-		await staysPut(page, left);
-		await expect.poll(() => scrollLeft(page)).toBeGreaterThan(0);
-		await expect(page).toHaveURL(new RegExp(`view=day&date=${u.today}$`));
-
-		// At the right edge, a swipe left moves to the next day.
-		await scrollLeft(page, 'end');
-		await drawn(page);
-		await left();
-		await expect(page).toHaveURL(new RegExp(`view=day&date=${addDays(u.today, 1)}$`));
-
-		// From the left edge, a swipe right moves to the day before.
-		await openCalendar(page, `/calendar?view=day&date=${u.today}`);
-		expect(await scrollLeft(page, 0)).toBe(0);
-		await drawn(page);
-		await right();
+		await touchDrag(page, { x: box.x + 60, y }, { x: box.x + box.width - 40, y: y + 10 });
 		await expect(page).toHaveURL(new RegExp(`view=day&date=${addDays(u.today, -1)}$`));
+
+		await openCalendar(page, `/calendar?view=day&date=${u.today}`);
+		await drawn(page);
+		await touchDrag(page, { x: box.x + box.width - 40, y }, { x: box.x + 60, y: y + 10 });
+		await expect(page).toHaveURL(new RegExp(`view=day&date=${addDays(u.today, 1)}$`));
+	});
+
+	early('the phone day’s chip grows toward 44 px into free time', async ({ page, earlyAt }) => {
+		test.skip(isPc(), 'the phone’s day');
+		await page.setViewportSize({ width: 390, height: 844 });
+		await crowdedDay(page, earlyAt, 'chip');
+		// Free time under the chip: nothing in its lane starts before the audit at 07:00.
+		await expect(chipOf(page)).toHaveCount(1);
+		expect((await chipOf(page).boundingBox())!.height).toBeGreaterThanOrEqual(43);
+	});
+
+	// The chip on the phone's day opens a sheet of what it folds (spec, items 5-10).
+	const sheetOf = (page: Page, u: { crowdAt: string }, n = 5) =>
+		page.getByRole('dialog', { name: `${n} more entries from ${u.crowdAt}` });
+	/** The crowded ids the grid does not draw. */
+	const folded = async (page: Page, ids: string[]) => {
+		const shown = (await drawnCrowd(page, ids)).map((c) => c.id);
+		return ids.filter((id) => !shown.includes(id));
+	};
+	early('a chip in the day’s last minutes grows up toward 44 px', async ({ page, earlyAt }) => {
+		test.skip(isPc(), 'the phone’s day');
+		await page.setViewportSize({ width: 390, height: 844 });
+		const u = await crowdedDay(page, earlyAt, 'late', true);
+		await expect(chipOf(page)).toHaveText(['+5']);
+		// No free time under it, the day ends at 24:00: it takes the free time above.
+		const chip = (await chipOf(page).boundingBox())!;
+		const body = (await column(page, 'Day', u.day).locator('[data-body]').boundingBox())!;
+		expect(chip.height).toBeGreaterThanOrEqual(43);
+		expect(chip.y + chip.height).toBeLessThanOrEqual(body.y + body.height + 0.5);
+		// Its name and its sheet keep the run's start.
+		await expect(chipOf(page)).toHaveAccessibleName('5 more entries from 23:56; show them');
+		await chipOf(page).tap();
+		const sheet = sheetOf(page, u);
+		await expect(sheet).toBeVisible();
+		const rows = sheet.locator('a[data-entry-form]');
+		await expect(rows).toHaveCount(5);
+		const ids = await rows.evaluateAll((els) => els.map((e) => e.getAttribute('data-entry-id')));
+		expect(new Set(ids)).toEqual(new Set(await folded(page, u.entries.crowded)));
+		expect(intersecting(await drawnIn(grid(page, 'Day')))).toEqual([]);
+	});
+
+	async function openSheet(page: Page, at: string, name: string) {
+		await page.setViewportSize({ width: 390, height: 844 });
+		const u = await crowdedDay(page, at, name);
+		await expect(chipOf(page)).toHaveText(['+5']);
+		await chipOf(page).tap();
+		await expect(sheetOf(page, u)).toBeVisible();
+		return u;
+	}
+
+	early('the chip opens a sheet of exactly the folded entries', async ({ page, earlyAt }) => {
+		test.skip(isPc(), 'the phone’s day');
+		const u = await openSheet(page, earlyAt, 'sheet');
+		await expect(chipOf(page)).toHaveAccessibleName(`5 more entries from ${u.crowdAt}; show them`);
+		const rows = sheetOf(page, u).locator('a[data-entry-form]');
+		await expect(rows).toHaveCount(5);
+		const ids = await rows.evaluateAll((els) => els.map((e) => e.getAttribute('data-entry-id')));
+		expect(new Set(ids)).toEqual(new Set(await folded(page, u.entries.crowded)));
+		// Every row is a touch target, and nothing in it is cut.
+		const cut = await rows.evaluateAll((els) =>
+			els.flatMap((a) => [
+				...(a.getBoundingClientRect().height < 43.5 ? [`${a.textContent} is short`] : []),
+				...[...a.querySelectorAll('span')]
+					.filter((s) => s.scrollWidth > s.clientWidth + 1)
+					.map((s) => `"${s.textContent}" is cut`)
+			])
+		);
+		expect(cut).toEqual([]);
+		await expect(rows.first()).toContainText('›');
+		// A tap on the scrim, above the sheet, closes it.
+		const box = (await sheetOf(page, u).boundingBox())!;
+		expect(box.y).toBeGreaterThan(20);
+		await page.touchscreen.tap(10, 10);
+		await expect(sheetOf(page, u)).toBeHidden();
+	});
+
+	early(
+		'the sheet’s head is the other sheets’: 16 px in, 12 px above and below',
+		async ({ page, earlyAt }) => {
+			test.skip(isPc(), 'the phone’s day');
+			const u = await openSheet(page, earlyAt, 'head');
+			const sheet = (await sheetOf(page, u).boundingBox())!;
+			const title = (await sheetOf(page, u).getByRole('heading').boundingBox())!;
+			const close = (await sheetOf(page, u).getByRole('button', { name: 'Close' }).boundingBox())!;
+			expect(Math.round(title.x - sheet.x)).toBe(16);
+			expect(Math.round(sheet.x + sheet.width - (close.x + close.width))).toBe(16);
+			// The 44 px × with 12 px above and below it, as the form dialog's and the template's.
+			expect(Math.round(close.y - sheet.y)).toBe(12 + 1);
+			const rows = sheetOf(page, u).locator('ul');
+			expect(Math.round((await rows.boundingBox())!.y - (close.y + close.height))).toBe(12 + 1);
+		}
+	);
+
+	early(
+		'a folded entry opens its form from the sheet, and Undo restores it',
+		async ({ page, earlyAt }) => {
+			test.skip(isPc(), 'the phone’s day');
+			const u = await openSheet(page, earlyAt, 'edit');
+			const row = sheetOf(page, u).locator('a[data-entry-form]').first();
+			const id = (await row.getAttribute('data-entry-id'))!;
+			await row.tap();
+			const form = page.getByRole('dialog', { name: 'Edit entry' });
+			await expect(form).toBeVisible();
+			await expect(sheetOf(page, u)).toBeHidden();
+			const old = await field(page, 'description').inputValue();
+			expect(old).toMatch(/^Crowded \d+$/);
+			await field(page, 'description').fill('Fixed from the sheet');
+			await form.getByRole('button', { name: 'Save', exact: true }).click();
+			await expect(form).toBeHidden();
+			await expect(grid(page, 'Day')).toBeVisible();
+			await expect(done(page)).toBeVisible();
+			await chipOf(page).tap();
+			const again = sheetOf(page, u).locator(`[data-entry-id="${id}"]`);
+			await expect(again).toContainText('Fixed from the sheet');
+			await page.keyboard.press('Escape');
+			await expect(sheetOf(page, u)).toBeHidden();
+			await done(page).getByRole('button', { name: 'Undo' }).click();
+			await expect(page.getByRole('status').filter({ hasText: 'Undone.' })).toBeVisible();
+			await chipOf(page).tap();
+			await expect(again).toContainText(old);
+			await expect(again).not.toContainText('Fixed from the sheet');
+		}
+	);
+
+	early('Delete from the sheet’s form: the chip counts one fewer', async ({ page, earlyAt }) => {
+		test.skip(isPc(), 'the phone’s day');
+		const u = await openSheet(page, earlyAt, 'delete');
+		await sheetOf(page, u).locator('a[data-entry-form]').first().tap();
+		const form = page.getByRole('dialog', { name: 'Edit entry' });
+		await form.getByRole('button', { name: 'Delete', exact: true }).click();
+		await expect(form).toBeHidden();
+		await expect(chipOf(page)).toHaveText(['+4']);
+		await chipOf(page).tap();
+		await expect(sheetOf(page, u, 4).locator('a[data-entry-form]')).toHaveCount(4);
+		await page.keyboard.press('Escape');
+		await expect(sheetOf(page, u, 4)).toBeHidden();
+		await done(page).getByRole('button', { name: 'Undo' }).click();
+		await expect(chipOf(page)).toHaveText(['+5']);
+	});
+
+	early(
+		'the chip by keyboard: Enter opens the sheet, Escape returns to the chip',
+		async ({ page, earlyAt }) => {
+			test.skip(isPc(), 'the phone’s day');
+			await page.setViewportSize({ width: 390, height: 844 });
+			const u = await crowdedDay(page, earlyAt, 'keys');
+			await chipOf(page).focus();
+			await page.keyboard.press('Enter');
+			await expect(sheetOf(page, u)).toBeVisible();
+			expect(await sheetOf(page, u).evaluate((d) => d.contains(document.activeElement))).toBe(true);
+			await page.keyboard.press('Escape');
+			await expect(sheetOf(page, u)).toBeHidden();
+			expect(await chipOf(page).evaluate((c) => c === document.activeElement)).toBe(true);
+			await expect(page).toHaveURL(new RegExp(`view=day&date=${u.today}$`));
+		}
+	);
+
+	early(
+		'a tap on the chip with a block pending drops the block and opens nothing',
+		async ({ page, earlyAt }) => {
+			test.skip(isPc(), 'the phone’s day');
+			await page.setViewportSize({ width: 390, height: 844 });
+			const u = await crowdedDay(page, earlyAt, 'pending');
+			await tapAt(page, u.today, 20 * 60 + 10);
+			await expect(newBlock(page)).toBeVisible();
+			await scrollTo(page, 'Day', 6 * 60);
+			await staysPut(page, () => chipOf(page).tap());
+			await expect(newBlock(page)).toHaveCount(0);
+			await expect(createBar(page)).toHaveCount(0);
+			await expect(sheetOf(page, u)).toBeHidden();
+		}
+	);
+
+	early(
+		'a swipe that starts on the chip changes the day, with no sheet',
+		async ({ page, earlyAt }) => {
+			test.skip(isPc(), 'the phone’s swipe');
+			await page.setViewportSize({ width: 390, height: 844 });
+			const u = await crowdedDay(page, earlyAt, 'cswipe');
+			await drawn(page);
+			const c = (await chipOf(page).boundingBox())!;
+			const from = { x: c.x + c.width / 2, y: c.y + c.height / 2 };
+			// The chip is in the last lane, at the screen's right edge: 200 px left, to the next day.
+			await touchDrag(page, from, { x: from.x - 200, y: from.y + 10 });
+			await expect(page).toHaveURL(new RegExp(`view=day&date=${addDays(u.today, 1)}$`));
+			await expect(page.getByRole('dialog')).toHaveCount(0);
+		}
+	);
+
+	test.describe('without JavaScript', () => {
+		test.use({ javaScriptEnabled: false });
+
+		early('the chip links to Entries on that day, in scope', async ({ page, earlyAt }) => {
+			test.skip(isPc(), 'the phone’s day');
+			await page.setViewportSize({ width: 390, height: 844 });
+			// Ten crowded, so the filter's one project still folds some.
+			const u = await seedCrowdedDay(`${test.info().project.name}-sideways-nojs`, earlyAt, 10);
+			await signIn(page, u.username, earlyAt);
+			const entries = `/entries?range=custom&from=${u.today}&to=${u.today}`;
+			await page.goto(`/calendar?view=day&date=${u.today}`);
+			await expect(chipOf(page)).toHaveAttribute('href', entries);
+			const hidden = await folded(page, u.entries.crowded);
+			expect(hidden.length).toBeGreaterThan(0);
+
+			const scope = `project=${u.projects.timeKeep}`;
+			await page.goto(`/calendar?view=day&date=${u.today}&${scope}`);
+			await expect(chipOf(page)).toHaveAttribute('href', `${entries}&${scope}`);
+
+			await page.goto(`/calendar?view=day&date=${u.today}`);
+			await chipOf(page).click();
+			await expect(page).toHaveURL(new RegExp(`/entries\\?range=custom&from=${u.today}`));
+			for (const id of hidden) {
+				const description = `Crowded ${u.entries.crowded.indexOf(id) + 1}`;
+				await expect(
+					page.getByText(description, { exact: true }).locator('visible=true').first()
+				).toBeVisible();
+			}
+		});
 	});
 
 	early(
@@ -1205,13 +1425,11 @@ test.describe('the day scrolls sideways', () => {
 				})
 			);
 			expect(boxes).toHaveLength(8);
+			await expect(grid(page, 'Day').locator('[data-more-chip]')).toHaveCount(0);
 			boxes.sort((a, b) => a.x - b.x);
 			for (let i = 1; i < boxes.length; i++)
 				expect(boxes[i].x).toBeGreaterThanOrEqual(boxes[i - 1].x + boxes[i - 1].width);
-			const { scrollWidth, clientWidth } = await scroller(page).evaluate((el) => ({
-				scrollWidth: el.scrollWidth,
-				clientWidth: el.clientWidth
-			}));
+			const { scrollWidth, clientWidth } = await widths(page);
 			expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
 		}
 	);

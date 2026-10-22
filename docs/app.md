@@ -39,8 +39,8 @@ Hook types come from `@sveltejs/kit/hooks`.
 | `src/lib/components/reports/` | The Reports screen's part: one list (`TotalsTable`, a titled section of label and duration rows with a Total row). |
 | `src/lib/components/output/` | What Copy-out and Reports share: the choice's `GET` form with its no-JavaScript Apply (`ChoiceForm`), the choice as hidden fields (`ChoiceFields`), the column toggle chips (`ColumnChips`), the options (`OutputOptions`), the phone's Options button and sheet (`OptionsSheet`), the running line (`RunningLine`). |
 | `src/lib/components/history/` | The History screen's parts: the PC's ruled table (`HistoryTable`), the phone's rows with their leading Undo and Redo (`PhoneHistory`), a batch's row (`BatchRow`) and its changes (`ChangeList`), the band that is the toolbar or the bulk bar, on the phone the strip with Select or its bar (`HistoryBar`, its state from `barState` in `selection.ts`), and the types its load returns. |
-| `src/lib/calendar/` | The Calendar's pure logic, shared by server and browser and unit-tested: `dates.ts` (`readView`, `periodDays`, `shift`, `isoWeek`, `periodTitle`, `dayName`, `calendarHref`, `hm`), `grid.ts` (`localDate`, `localMinutes`, `instantAt`, `piecesOf`, `lanes`, `layoutDay`, `growShared`, `overlapping`, `dayTotals` in exact ms, `wholeMinutes` and `spanText` truncating a span to whole minutes as every screen does, `snap`, `halfHourSlot`, `dragRange`), `drag.ts` (`dropTimes`, `clampDay`, `keepIn`) and `gestures.svelte.ts` (the `swipe` attachment, `swipeYields`, `clockOf`). `drawnExtent`, `growInto` and `LANE_FLOOR` are in `src/lib/components/calendar/block.ts`. |
-| `src/lib/components/calendar/` | The Calendar's parts: `CalendarToolbar`, `DatePicker`, `TimeGrid` (day and week), `EntryBlock`, `MoreChip`, `NewBlock`, `MonthGrid`, `PhoneMonth`; `block.ts` (a block's text and lines), `drag.svelte.ts` (the PC's `BlockDrag`), `now.svelte.ts` (`nowTicker`) and `types.ts`. |
+| `src/lib/calendar/` | The Calendar's pure logic, shared by server and browser and unit-tested: `dates.ts` (`readView`, `periodDays`, `shift`, `isoWeek`, `periodTitle`, `dayName`, `calendarHref`, `hm`), `grid.ts` (`localDate`, `localMinutes`, `instantAt`, `piecesOf`, `lanes`, `layoutDay`, `growShared`, `growChips`, `overlapping`, `dayTotals` in exact ms, `wholeMinutes` and `spanText` truncating a span to whole minutes as every screen does, `snap`, `halfHourSlot`, `dragRange`), `drag.ts` (`dropTimes`, `clampDay`, `keepIn`) and `gestures.svelte.ts` (the `swipe` attachment, `swipeYields`, `clockOf`). `drawnExtent`, `growInto` and `LANE_FLOOR` are in `src/lib/components/calendar/block.ts`. |
+| `src/lib/components/calendar/` | The Calendar's parts: `CalendarToolbar`, `DatePicker`, `TimeGrid` (day and week), `EntryBlock`, `MoreChip`, `MoreSheet`, `NewBlock`, `MonthGrid`, `PhoneMonth`; `block.ts` (a block's text and lines), `drag.svelte.ts` (the PC's `BlockDrag`), `now.svelte.ts` (`nowTicker`) and `types.ts`. |
 | `src/lib/keys.ts` | `screenKey`: whether an unmodified key press is the screen's (outside fields, no dialog or open `data-holds-keys` details), shared by the layout and the Calendar. |
 | `src/lib/components/account/` | The Account screen's Agent access parts: the token table and rows with their ⋯ (`TokenList`), the New token dialog that shows the made token once with Copy and Done (`NewToken`), and Revoke…'s confirm (`RevokeToken`). |
 | `src/lib/components/admin/` | What Account, Users and Backup share: `PanelSection` (a section head over its surface panel, Setup's section), `Panel` (that surface panel alone, also the shell's error page's), `ActionMenu` (a row's ⋯: the popover from `lg`, the row sheet below, a disclosure without the script), `FormDialog` (Setup's create dialog generalised: head, body, pinned foot; `inline` the no-JavaScript panel); `items.ts` (`MenuItem`, `userItems`, `tokenItems`). |
@@ -270,14 +270,32 @@ lanes, filled first-fit with running blocks first, then the longest (ties by sta
 end), so a crowd hides its shortest; a block in no group runs the full width. The PC week fits
 `max(2, floor(column / LANE_FLOOR))` lanes (`block.ts`, 68 px, measured on the first
 column's body by a `ResizeObserver`; two before that and without JavaScript; under two
-floors' width a lane's first word may end in an ellipsis). A group needing more hides its
+floors' width a lane's first word may end in an ellipsis), and the phone's day (`create="tap"`,
+not compact) by the same rule on its column (four at 390 px, and four before measuring
+and without JavaScript). A group needing more hides its
 boxes in the lanes past the fit and, in the last lane that fits, only those meeting a
 hidden one, so only the crowded stretch is hidden; that lane holds a `MoreChip` over each run of
 the rest, spanning the run's drawn time (a line at least) with "+4" at its top ("+4", a link to that day, `data-more-chip`, named "4 more entries from 06:12,
 Thursday 22 October; open the day"; pressing it starts no create drag and `BlockDrag`
-never lifts it). The day views fit every lane and hide nothing: the day's column is at
-least its widest group's lanes at `LANE_FLOOR` (`minmax(lanes × 68 + 1 px, 1fr)`, the 1 px its
-rule), and past the view's width its grid scrolls sideways under a sticky hour gutter. A block sharing its column
+never lifts it). A chip keeps the folded boxes' indices (`hidden`, in start order). On the
+phone's day the chip first grows toward 44 px into the free time after it (`growChips`: up
+to the next block in its lane, another group's first block or another chip), and where
+that falls short (midnight, or something drawn right under it) its drawn top (`top`) also
+grows up by what it lacks, into the free time above (back to the last such thing to end,
+or 00:00), so no block grows into its time; its name, title and sheet still give the run's
+first start (the earliest folded piece's, not its drawn `from`, which a run near midnight
+lifts to fit a line). It is named "4 more entries from 18:04; show them", and a tap opens
+`MoreSheet`: the bottom `Sheet` titled "4 more entries from 18:04" with exactly the folded
+entries in start order, as rows in the phone month's day-list look, each a link to its
+form (`data-entry-form`, carrying the Calendar's `back`) that closes the sheet as the form
+opens; Close, Escape, the scrim and Back close it and return the focus to the chip, and a
+change that takes the chip away closes it. Without JavaScript the chip is a link to
+Entries on that day (`/entries?range=custom&from=<date>&to=<date>`, with the filter's
+scope); a tap on it while a new block is pending only drops the block. The PC's day fits
+every lane and hides nothing: its column is at least its widest group's lanes at
+`LANE_FLOOR` (`minmax(lanes × 68 + 1 px, 1fr)`, the 1 px its rule), and past the view's
+width its grid scrolls sideways under a sticky hour gutter. The phone's day keeps to the
+screen's width and never scrolls sideways. A block sharing its column
 then grows (`growShared`) toward the lines its name needs (two, three among three or more
 lanes, or what it measured) only into free time below it (a chip's span is taken), which never regroups; the
 phone's week keeps `lanes`. An `EntryBlock` is a link to the entry's form
@@ -331,8 +349,9 @@ them): `←`/`k` and `→`/`j` the previous and next period, `t` today,
 `swipe` attachment in `#lib/calendar/gestures.svelte`: at least 60 px across and twice its
 vertical travel, listened to passively) moves a period, a right swipe back; with the
 phone's new block pending it drops the block instead, and while one of its handles is held
-it is no swipe. Over a sideways scroller (`data-swipe-scroll`, the day view's grid) the
-scroll goes first (`swipeYields`): when the touch began, if the grid could still scroll in
+it is no swipe. On the phone's day, which folds instead of scrolling, a swipe anywhere on
+the grid moves the day, one starting on a "+n" chip included. Over a sideways scroller
+(`data-swipe-scroll`, the PC's day grid, for a touch screen at that width) the scroll goes first (`swipeYields`): when the touch began, if the grid could still scroll in
 the swipe's direction, the swipe is its scroll and the day stays; from its edge, or where
 nothing scrolls, it moves the day. Its room is read only at the touch's start, so reaching
 the edge mid-swipe never moves the day; the next swipe does.
@@ -1308,7 +1327,8 @@ no-JavaScript posts; `history.test.ts` covers History with a user of its own per
   tests in `mcp/http.test.ts`.
 - The Calendar's unit tests: `src/lib/calendar/dates.test.ts` (views, dates, titles and day
   names from the address, weeks from Monday), `grid.test.ts` (pieces cut by day, lanes,
-  overlaps, exact day totals and whole minutes truncated, the half hour, the dragged
+  overlaps, a crowded group's fold and the boxes each chip folds, a chip's growth into
+  free time, exact day totals and whole minutes truncated, the half hour, the dragged
   range), `drag.test.ts` (the drop times, keeping a drop in the period), `gestures.test.ts`
   (a swipe yielding to a sideways scroll),
   `src/lib/components/calendar/block.test.ts` (drawn extents, growing into free time),
@@ -1322,7 +1342,9 @@ no-JavaScript posts; `history.test.ts` covers History with a user of its own per
   in a narrow lane) and the reload past midnight, blocks and month lines named with their day,
   a block opening its form over the calendar, the phone's day, week and
   month, the PC's month, the keys, creating by drag, click, and on the phone by tap, handles
-  and swipe (a crowded day's sideways scroll going first), moving and resizing by drag with Undo and its refusals and limits, and the
+  and swipe, the crowded day (the phone's folding a run into a chip whose sheet lists and
+  opens exactly what it folds, keeping to the screen's width with the swipe anywhere, its
+  link to Entries without JavaScript; the PC's drawing every lane), moving and resizing by drag with Undo and its refusals and limits, and the
   toolbar's layout and focus order. `touch-targets.test.ts` also checks the calendar's
   controls.
 - `e2e/backup.test.ts` covers Backup with the seeded admin: a non-admin refused on the

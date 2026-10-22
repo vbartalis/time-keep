@@ -1968,7 +1968,7 @@ decision record.
 - Questions queued in `docs/questions.md`: the strip's layout (two rows, one layout
   for any count, wrapping names).
 
-### 21. Crowded runs in the phone's day view
+### 21. Crowded runs in the phone's day view — done 2026-10-22
 
 The usability check's second run (item 16, 2026-10-22) failed one finding: at 390 px
 the Calendar's day view scrolls sideways when a run of short entries overlaps (seven
@@ -1980,6 +1980,84 @@ entries). The PC's day view is unchanged.
 
 Exit: the usability gate passes the Calendar's day view at 390 px, light and dark,
 with the second run's crowded day, and no other screen changes.
+
+Done 2026-10-22: the phone's day view keeps to the screen's width. It fits as many
+lanes as its column holds at the 68 px floor (four at 390 px, five at 412 px; four
+before measuring and without JavaScript; two at least), and a run that needs more folds
+into a "+n" chip by the week's rule, running blocks drawn first. The chip grows toward
+44 px into the free time under it, and no block grows into that time. Its name is "n
+more entries from HH:mm; show them". A tap or Enter opens a bottom sheet with that
+title, listing exactly the folded entries in start order in the phone month's day-list
+look. Each row opens its entry's form and closes the sheet. Escape, the scrim, Back
+and Close return focus to the chip. The sheet follows the current layout and closes
+when its chip goes. Without JavaScript the chip links to Entries on that day, carrying
+the filter's scope. The phone's day has no sideways scroller, so a swipe anywhere on
+it changes the day. A tap on the chip with a new block pending drops the block and
+opens nothing. The PC's day keeps every lane and its sideways scroll; both weeks and
+the months are unchanged. Spec
+`docs/superpowers/specs/2026-10-22-crowded-phone-day-design.md`, plan
+`docs/superpowers/plans/2026-10-22-crowded-phone-day.md`; DESIGN.md (the day view's
+crowding, the chip on the phone's day, the More sheet, `calendar-more-chip`) and
+`docs/app.md` (Calendar, `MoreSheet`) updated. No decision record.
+
+- **Tapping the chip opens a sheet with exactly the folded entries,** each row opening
+  its form; Entries on that day is the fallback without JavaScript. The stand-in's
+  call. Source: roadmap item 21; item 12's exit; study, Phone against desktop; the
+  phone's other sheets; operator's voice. Confidence: inferred.
+- **The phone's day fits as many lanes as its column holds at the 68 px floor.** The
+  stand-in's call. Source: roadmap items 19 and 21; study, Views 10. Confidence:
+  grounded.
+- **The chip grows toward 44 px into free time.** The stand-in's call. Source:
+  DESIGN.md (the phone day's 44 px growth and targets); roadmap item 11. Confidence:
+  inferred.
+- **The swipe keeps its direction** (left forward, right back). The stand-in's call.
+  Source: docs/app.md (Calendar, the swipe); item 21's exit. Confidence: grounded.
+- **Focus after a delete from the Calendar stays as it is** (the page body, as from a
+  drawn block); a later item sends it to the strip's Undo, as item 14's call does
+  elsewhere. The stand-in's call. Source: item 21's exit; item 14's call; roadmap, How
+  an item is worked. Confidence: inferred.
+- **A day-list row's name may still break inside "time-keep" at 200 % text,** as the
+  phone month's does, since the sheet shares that row look; a later item keeps words
+  whole in both. The stand-in's call. Source: spec rule 5; DESIGN.md (names break only
+  between words); item 21's exit. Confidence: inferred.
+- **The PC's day keeps item 19's sideways scroll; the fit falls back to four and is two
+  at least; the sheet closes when a row's form opens; the sheet's title names the count
+  and the run's first start; the swipe changes the day anywhere on the phone's grid;
+  the chip keeps its place in the tab order.** The builder's calls 3–9, in the spec.
+- **The fold-order unit test uses its own fixture** (a running box and seven meeting
+  boxes, 3 drawn and 5 folded at a fit of 4); the plan's fixture gives 6 drawn and a
+  chip of 2. The plan is left as approved. The builder's ruling.
+- **The 412 px test pins five lanes** (4 crowded drawn with the running one, "+4"),
+  beyond the plan's sum-only check, as its Review Focus asks. The builder's ruling.
+- **Test details:** the day's total is checked on the head's box; the chip-swipe test
+  swipes left, since 200 px right of the rightmost lane is off screen; the scoped
+  no-JavaScript test seeds ten crowded entries so the scoped day still folds; the tap
+  with a block pending is stopped by the grid's existing capture listener. The
+  builder's rulings.
+- **Critique and audit ran in one implementer's context;** their one in-scope finding
+  gave the More sheet the other sheets' head spacing, pinned by an e2e. The builder's
+  ruling.
+- **Deferred minors:** no e2e is left for the PC day's sideways scroll past the view
+  (a crowd wider than a 1024 px column); the focus fallback to the grid's scroller when
+  the chip goes relies on Chromium (no `tabindex="-1"`); the sheet's key (group and
+  start) can close the sheet when the run's first folded entry changes though a chip
+  remains; the "n more entries" phrase is built twice; untested: a folded running
+  row's "now", focus after Back or Close, scoped rows with JavaScript; a leftover seed
+  name in a test; DESIGN.md's no-JavaScript chip line omits the scope; a stale comment
+  in `MoreChip.svelte`; a few long prose lines; near the grid's foot, the focused chip
+  after Save can sit partly under the "+" while the Undo strip pushes the grid. The
+  builder's ruling.
+- **Gate attempt 1 failed one finding:** with the run in the day's last minutes, the
+  chip was 34 px, capped by midnight. **Gate fix 1: a chip short of 44 px under it (the
+  day's end, or a block right under it) also grows up into the free time above it,** by
+  what it lacks, never past 00:00 and only into time other chips left; only its drawn
+  top moves (`Chip.top`), and its `from` and the sheet's key are unchanged. The name and
+  the sheet's title now give the earliest folded entry's start, not the chip's drawn
+  `from`, which a run near midnight lifts to fit a line (23:56 read "23:38"); this also
+  corrects the week chip's name near midnight. The builder's rulings. Deferred: the
+  late-run seed copies `startElsewhere`'s body; no test of the week chip's name near
+  midnight; the sheet's key is the drawn `from`, not the run's start.
+- Questions queued in `docs/questions.md`: none.
 
 ### 16. Usability check
 

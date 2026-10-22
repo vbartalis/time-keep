@@ -115,15 +115,20 @@ export type Box = { from: number; to: number; running: boolean };
 export type Laid<T> = T & { lane: number; lanes: number; group: number };
 /**
  * A "+n" chip: in lane `lane` of `lanes`, over its hidden run's drawn time `from`–`to` (a
- * line at least, as every box is), counting `count`.
+ * line at least, as every box is), counting `count`. `hidden` holds the folded boxes, as
+ * indices into `layoutDay`'s input, in start order (ties by end, then by index). `from`
+ * stays the run's first start; `top`, set only where `growChips` grew it upward, is where
+ * its drawn box begins instead.
  */
 export type Chip = {
 	from: number;
 	to: number;
+	top?: number;
 	lane: number;
 	lanes: number;
 	count: number;
 	group: number;
+	hidden: number[];
 };
 
 /**
@@ -182,7 +187,7 @@ export function layoutDay<T extends Box>(
 			if (isHidden(i)) hidden.push(i);
 			else result[i] = { ...boxes[i], lane: laneOf.get(i)!, lanes: width, group };
 		}
-		let run: { from: number; end: number; count: number } | null = null;
+		let run: { from: number; end: number; is: number[] } | null = null;
 		const flush = () => {
 			if (run)
 				chips.push({
@@ -190,17 +195,19 @@ export function layoutDay<T extends Box>(
 					to: run.end,
 					lane: width - 1,
 					lanes: width,
-					count: run.count,
-					group
+					count: run.is.length,
+					group,
+					hidden: run.is
 				});
 		};
+		// `members` is in start order (ties by end, then index), and so is each run.
 		for (const i of hidden) {
 			if (run && boxes[i].from < run.end) {
 				run.end = Math.max(run.end, boxes[i].to);
-				run.count++;
+				run.is.push(i);
 			} else {
 				flush();
-				run = { from: boxes[i].from, end: boxes[i].to, count: 1 };
+				run = { from: boxes[i].from, end: boxes[i].to, is: [i] };
 			}
 		}
 		flush();
@@ -227,9 +234,47 @@ export function growShared<
 		for (const c of chips) {
 			if (c.group === b.group && c.lane !== b.lane) continue;
 			// A chip over this block's end blocks all growth.
-			consider(c.from < b.to && c.to > b.to ? b.to : c.from);
+			const top = c.top ?? c.from;
+			consider(top < b.to && c.to > b.to ? b.to : top);
 		}
 		return { ...b, to: Math.max(b.to, Math.min(b.from + want(b), limit)) };
+	});
+}
+
+/**
+ * Each chip's drawn end grown toward `from + least`, only into free time: up to the next
+ * block in its lane of its group, the first block of another group, or another chip. A chip
+ * still short of `least` (midnight, or something drawn right under it) then grows its
+ * drawn top up by what it lacks, as far as the free time above it goes: the last such
+ * thing to end above it, or midnight. Its `from`, the run's start, never moves.
+ */
+export function growChips<T extends { from: number; to: number; lane: number; group: number }>(
+	chips: Chip[],
+	shown: T[],
+	least: number
+): Chip[] {
+	const near = (c: Chip, o: T) => o.group !== c.group || o.lane === c.lane;
+	const down = chips.map((c) => {
+		let limit = 1440;
+		const consider = (from: number) => {
+			if (from >= c.to && from < limit) limit = from;
+		};
+		for (const o of shown) if (near(c, o)) consider(o.from);
+		for (const o of chips) if (o !== c) consider(o.from);
+		return { ...c, to: Math.max(c.to, Math.min(c.from + least, limit)) };
+	});
+	// Upward against the others as grown down, so two chips never take the same time.
+	return down.map((c) => {
+		const lacks = least - (c.to - c.from);
+		if (lacks <= 0) return c;
+		let floor = 0;
+		const consider = (to: number) => {
+			if (to <= c.from && to > floor) floor = to;
+		};
+		for (const o of shown) if (near(c, o)) consider(o.to);
+		for (const o of down) if (o !== c) consider(o.to);
+		const top = Math.max(floor, c.from - lacks);
+		return top < c.from ? { ...c, top } : c;
 	});
 }
 

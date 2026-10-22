@@ -254,7 +254,7 @@ components:
     typography: "{typography.label}"
     rounded: "{rounded.sm}"
     padding: "0 6px"
-    height: "the hidden run's time, 17px at least"
+    height: "the hidden run's time, 17px at least; on the phone day toward 44px into free time, under it first, then above"
   calendar-today:
     backgroundColor: "{colors.foreground}"
     textColor: "{colors.ground}"
@@ -1049,11 +1049,12 @@ Time laid out as blocks: Kimai's calendar in this system's colours.
   muted figures ("07:00"; the phone week's bare "7"). Each day's head is sticky over an
   `input` rule: the `caps` weekday ("TUE"; the phone week's letter), the date (today in
   its filled text-colour circle) and the day's total in semibold figures (muted when
-  none; "–" on the phone week). The day view hides no block: its lanes keep the floor's
-  68 px, and a day whose widest group needs more than the column holds scrolls sideways,
-  the hour gutter and its head staying in view on the card's surface over the blocks. On
-  the phone that scroll goes before the swipe; from the grid's edge the swipe changes the
-  day.
+  none; "–" on the phone week). The PC's day view hides no block: its lanes keep the
+  floor's 68 px, and a day whose widest group needs more than the column holds scrolls
+  sideways, the hour gutter and its head staying in view on the card's surface over the
+  blocks. The phone's day keeps to the screen's width and never scrolls sideways: it fits
+  as many lanes as its column holds at the floor (four at 390 px) and folds a crowded run
+  into a "+n" chip, as the PC week does, so a swipe anywhere on its grid changes the day.
 - **The line at now:** a 2 px text-colour line across today's column with an 8 px dot
   at its left, and the time ("14:24") in a semibold tag, `ground` on the text colour,
   in the gutter; an hour label it would cover gives way. The line runs behind the
@@ -1081,16 +1082,28 @@ Time laid out as blocks: Kimai's calendar in this system's colours.
   the previous day" where its start would be. On the phone week a block is colour only and the
   column is the link to its day; on the phone day a block grows toward 44 px into the
   free time under it.
-- **More chip:** where blocks meet in more lanes than the PC week's column fits, it
+- **More chip:** where blocks meet in more lanes than the PC week's column or the phone's
+  day fits, it
   draws as many as fit (running blocks first, then the longest, so a crowd hides its
   shortest) and hides only the crowded stretch: in the last lane that fits, a block
   clear of the hidden ones is still drawn, and the lane holds a "+4" over each run of
   the rest: as tall as the run's time (one line at least), "+4" at its top, so taken
   time never reads as free; the lane's width, surface with
   a 1 px `input` stroke, 2 px corners, 12 px semibold text colour; hover fills it with
-  accent, focus is the 2 px blue ring. It links to that day ("4 more entries from
-  06:12, Thursday 22 October; open the day"), whose grid hides nothing. Never a blue or
-  red fill.
+  accent, focus is the 2 px blue ring. In the week it links to that day ("4 more entries
+  from 06:12, Thursday 22 October; open the day"), whose grid hides nothing on the PC. On
+  the phone's day it grows toward 44 px into the free time under it, as a block there
+  does, and where that is too short (the day's end, or a block right under it) also up
+  into the free time above it; no block grows into that time, and its name keeps the
+  run's first start; a tap opens its sheet ("4 more entries from
+  18:04; show them"), and without JavaScript it links to Entries on that day. Never a
+  blue or red fill.
+- **More sheet (phone day):** the chip's bottom sheet: a head with the 17 px bold title
+  "4 more entries from 18:04" and a ghost × (44 px) over a `border` rule, then exactly
+  the folded entries in start order, as rows in the phone month's day-list look (the
+  project's 4 px edge bar, start over end, customer › project in semibold, activity ·
+  description muted, "Overlaps another entry" in red, the duration at the right), each
+  at least 44 px and a link to its entry's form; the sheet closes as the form opens.
 - **Running block:** from its start to now, growing, with a 2 px dashed blue foot at
   now and "now · Running 1:40" in semibold blue where the end would be; a one-line
   block shows "Running 0:04" after the name. In a narrow lane the name gives way first,
