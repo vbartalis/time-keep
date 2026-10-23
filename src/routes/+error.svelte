@@ -11,6 +11,8 @@
 <svelte:head><title>{title}</title></svelte:head>
 
 <CardPage {title}>
-	<p class="text-center text-sm text-muted-foreground">{errorSentence(page.status)}</p>
+	<p class="text-center text-sm text-muted-foreground">
+		{errorSentence(page.status, page.error?.message ?? '')}
+	</p>
 	<Button href={resolve('/(app)')} variant="outline" class="w-full">Back to Today</Button>
 </CardPage>

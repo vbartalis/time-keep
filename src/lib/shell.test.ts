@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	barItems,
 	currentItem,
+	errorSentence,
 	inMore,
 	moreItems,
 	ownsStrip,
@@ -122,5 +123,22 @@ describe('ownsStrip', () => {
 		}
 		expect(ownsStrip('/(app)/reports')).toBe(false);
 		expect(ownsStrip(null)).toBe(false);
+	});
+});
+
+describe('errorSentence', () => {
+	it('names admins only for the admin guard', () => {
+		expect(errorSentence(403, 'Admins only')).toBe('Only an admin can open this page.');
+	});
+
+	it('does not blame the admin rule for another refusal', () => {
+		expect(errorSentence(403, 'Cross-site POST form submissions are forbidden')).toBe(
+			'The request was refused.'
+		);
+	});
+
+	it('keeps the 404 and other sentences', () => {
+		expect(errorSentence(404, 'Not Found')).toBe('There is nothing at this address.');
+		expect(errorSentence(500, 'Internal Error')).toBe('Something went wrong on this page.');
 	});
 });

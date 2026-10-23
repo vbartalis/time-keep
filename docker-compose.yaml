@@ -13,6 +13,10 @@ services:
       - 'ADMIN_PASSWORD=${SERVICE_PASSWORD_ADMIN}'
       # Fixed here so no deployment setting can point the database off the volume.
       - DATABASE_PATH=/data/time-keep.db
+      # Visitors arrive over https through a Cloudflare tunnel, while Coolify's proxy
+      # sees and forwards plain http. Empty, adapter-node takes the scheme as https, so
+      # the origin check matches the browser's; the host still comes from the proxy.
+      - PROTOCOL_HEADER=
     healthcheck:
       test:
         - CMD

@@ -126,9 +126,10 @@ export function errorTitle(status: number, message: string): string {
 	return status === 404 ? 'Not found' : message;
 }
 
-/** The one sentence an error page gives under its title. */
-export function errorSentence(status: number): string {
+/** The one sentence an error page gives under its title; admins only for the admin guard's 403. */
+export function errorSentence(status: number, message: string): string {
 	if (status === 404) return 'There is nothing at this address.';
-	if (status === 403) return 'Only an admin can open this page.';
+	if (status === 403 && message === 'Admins only') return 'Only an admin can open this page.';
+	if (status === 403) return 'The request was refused.';
 	return 'Something went wrong on this page.';
 }

@@ -1432,3 +1432,15 @@ admin's password, shown among the resource's environment variables; `ADMIN_USERN
 defaults to `admin`. Both are read only on the first start. The health check runs
 `node` (the slim image has no curl). Coolify adds the restart policy, the network and
 the proxy labels.
+
+Visitors arrive over https through a Cloudflare tunnel, which hands the request to
+Coolify's proxy over plain http; the proxy then forwards `x-forwarded-proto: http`, and
+the form posts' origin check (the browser's `https://` against the app's `http://`)
+refused every sign-in. The compose file therefore sets `PROTOCOL_HEADER` empty: the
+image's `x-forwarded-proto` is overridden and adapter-node takes the scheme as https.
+The host still comes from `x-forwarded-host`, so the check still compares the real
+host. The service's domain in Coolify stays `http://`, as the other tunnelled services
+have it; an `https://` domain there makes the proxy wait for TLS the tunnel never sends.
+
+A 403 page names the admin rule only for the admin guard's refusal ("Admins only");
+any other 403, such as a refused form post, reads "The request was refused."
