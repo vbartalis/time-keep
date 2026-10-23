@@ -74,12 +74,16 @@ Details in [docs/app.md](docs/app.md#configuration).
 
 ## Deploy
 
-The `Dockerfile` builds the image; it is deployed on Coolify from this repository.
+Coolify deploys [`docker-compose.yaml`](docker-compose.yaml) with its **Docker
+Compose** build pack ([decision 10](docs/decisions/010-the-app-deploys-from-a-compose-file.md)).
+The file builds the image from the `Dockerfile` and declares everything else: the
+database's persistent volume at `/data`, its path, and the health check.
 
-- Mount a **persistent volume at `/data`**: the database lives there.
-- Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` for the first start.
-- Serve it on its own domain through Coolify's proxy; the image already reads the
-  proxy's headers. The health check is `/healthz`.
+1. In Coolify, create a resource from this repository with the Docker Compose build
+   pack.
+2. Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` (the first admin; read only on the first
+   start).
+3. Give the `app` service its domain as `https://<domain>:3000`, and deploy.
 
 Migrations run on start. Backups are taken and restored from the app's Backup screen
 (admin only).

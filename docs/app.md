@@ -1416,5 +1416,15 @@ uploaded in one request), `PORT=3000`, `PROTOCOL_HEADER=x-forwarded-proto`,
 `HOST_HEADER=x-forwarded-host`, `ADDRESS_HEADER=X-Forwarded-For` and `XFF_DEPTH=1`,
 which suits one reverse proxy (Coolify's). `/data` is a volume and must be persistent.
 The image contains `drizzle/` for startup migrations. The healthcheck calls
-`/healthz`. Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` in the deployment environment
-for the first start.
+`/healthz`.
+
+## Deployment
+
+Coolify deploys `docker-compose.yaml` with its Docker Compose build pack (decision
+10). The file builds the image from the `Dockerfile`, mounts the named volume
+`time-keep-data` at `/data` (Coolify keeps it across redeploys), fixes
+`DATABASE_PATH=/data/time-keep.db` so no deployment setting can move the database off
+the volume, requires `ADMIN_USERNAME` and `ADMIN_PASSWORD` (read only on the first
+start), exposes port 3000 without publishing it, and carries the health check. In
+Coolify the only settings are those two values and the service's domain, given as
+`https://<domain>:3000` so the proxy reaches the app's port.
