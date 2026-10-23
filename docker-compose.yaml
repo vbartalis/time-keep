@@ -7,8 +7,8 @@ services:
     restart: unless-stopped
     environment:
       # Read only on the first start, while no admin exists.
-      ADMIN_USERNAME: ${ADMIN_USERNAME:?set the first admin's username}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set the first admin's password}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?changeme}
       # Fixed here so no deployment setting can point the database off the volume.
       DATABASE_PATH: /data/time-keep.db
     volumes:
