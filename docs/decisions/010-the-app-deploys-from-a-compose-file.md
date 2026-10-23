@@ -9,11 +9,14 @@
 ## Rule
 
 Coolify deploys the app with its Docker Compose build pack from `docker-compose.yaml`
-in the repository root. The file builds the image from the `Dockerfile`, mounts the
-named volume `time-keep-data` at `/data`, fixes `DATABASE_PATH` to
-`/data/time-keep.db`, requires `ADMIN_USERNAME` and `ADMIN_PASSWORD`, and carries the
-health check. Everything the deployment needs, other than the domain and those two
-values, is in the file; nothing is set up by hand in Coolify.
+in the repository root, written the way Coolify's own service templates are: it builds
+the image from the `Dockerfile`, mounts the named volume `time-keep-data` at `/data`,
+fixes `DATABASE_PATH` to `/data/time-keep.db`, and uses Coolify's magic variables, so
+`SERVICE_URL_APP_3000` makes Coolify generate the domain and route to port 3000 and
+`SERVICE_PASSWORD_ADMIN` makes it generate the first admin's password
+(`ADMIN_USERNAME` defaults to `admin`). It carries the health check. Coolify adds the
+restart policy, network and labels. Nothing has to be filled in or set up by hand in
+Coolify; the domain and the username may be changed there.
 
 ## Why
 

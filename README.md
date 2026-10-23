@@ -79,11 +79,11 @@ Compose** build pack ([decision 10](docs/decisions/010-the-app-deploys-from-a-co
 The file builds the image from the `Dockerfile` and declares everything else: the
 database's persistent volume at `/data`, its path, and the health check.
 
-1. In Coolify, create a resource from this repository with the Docker Compose build
-   pack.
-2. Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` (the first admin; read only on the first
-   start).
-3. Give the `app` service its domain as `https://<domain>:3000`, and deploy.
+In Coolify, create a resource from this repository with the Docker Compose build pack
+and deploy. Coolify generates the domain (`SERVICE_URL_APP_3000`) and the first admin's
+password (`SERVICE_PASSWORD_ADMIN`, shown among the resource's environment variables);
+the username is `admin` unless `ADMIN_USERNAME` is set. Change the domain in the
+service's settings if you want your own.
 
 Migrations run on start. Backups are taken and restored from the app's Backup screen
 (admin only).

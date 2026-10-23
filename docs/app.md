@@ -1421,10 +1421,14 @@ The image contains `drizzle/` for startup migrations. The healthcheck calls
 ## Deployment
 
 Coolify deploys `docker-compose.yaml` with its Docker Compose build pack (decision
-10). The file builds the image from the `Dockerfile`, mounts the named volume
-`time-keep-data` at `/data` (Coolify keeps it across redeploys), fixes
-`DATABASE_PATH=/data/time-keep.db` so no deployment setting can move the database off
-the volume, requires `ADMIN_USERNAME` and `ADMIN_PASSWORD` (read only on the first
-start), exposes port 3000 without publishing it, and carries the health check. In
-Coolify the only settings are those two values and the service's domain, given as
-`https://<domain>:3000` so the proxy reaches the app's port.
+10), written like Coolify's service templates so nothing is filled in by hand. The
+file builds the image from the `Dockerfile` and mounts the named volume
+`time-keep-data` at `/data`, which Coolify prefixes with the resource's id and keeps
+across redeploys. `DATABASE_PATH=/data/time-keep.db` is fixed so no deployment setting
+can move the database off the volume. Coolify's magic variables do the rest:
+`SERVICE_URL_APP_3000` generates the domain and routes the proxy to port 3000 (change
+the domain in the service's settings), and `SERVICE_PASSWORD_ADMIN` generates the first
+admin's password, shown among the resource's environment variables; `ADMIN_USERNAME`
+defaults to `admin`. Both are read only on the first start. The health check runs
+`node` (the slim image has no curl). Coolify adds the restart policy, the network and
+the proxy labels.

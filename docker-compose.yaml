@@ -1,30 +1,28 @@
-# Deployment on Coolify (Docker Compose build pack). Coolify builds the image from the
-# Dockerfile, keeps the named volume across redeploys, and asks for the two variables
-# marked required. Set the service's domain in Coolify as https://<domain>:3000.
+# Deployment on Coolify (Docker Compose build pack, decision 10). Nothing to fill in:
+# SERVICE_URL_APP_3000 makes Coolify generate the domain and route its proxy to port
+# 3000, SERVICE_PASSWORD_ADMIN makes it generate the first admin's password (shown in
+# the resource's environment variables), and the named volume is kept across redeploys.
 services:
   app:
     build: .
-    restart: unless-stopped
-    environment:
-      # Read only on the first start, while no admin exists.
-      ADMIN_USERNAME: ${ADMIN_USERNAME:?admin}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?changeme}
-      # Fixed here so no deployment setting can point the database off the volume.
-      DATABASE_PATH: /data/time-keep.db
     volumes:
-      - time-keep-data:/data
-    expose:
-      - '3000'
+      - 'time-keep-data:/data'
+    environment:
+      - SERVICE_URL_APP_3000
+      - 'ADMIN_USERNAME=${ADMIN_USERNAME:-admin}'
+      - 'ADMIN_PASSWORD=${SERVICE_PASSWORD_ADMIN}'
+      # Fixed here so no deployment setting can point the database off the volume.
+      - DATABASE_PATH=/data/time-keep.db
     healthcheck:
       test:
         - CMD
         - node
-        - -e
+        - '-e'
         - "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-      interval: 30s
-      timeout: 5s
-      start_period: 20s
-      retries: 3
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 10s
 
 volumes:
   time-keep-data:
